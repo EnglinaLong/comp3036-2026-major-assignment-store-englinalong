@@ -1,3 +1,9 @@
+> This project was originally based on code submitted for Assignment 2 and will be significantly extended for the COMP3036 major assignment.
+
+# Assignment 2 - Blog - Client App
+
+The goal of this assignment is to implement all the client side functionality.
+
 # Assignment 2 - Blog - Client App
 
 The goal of this assignment is to implement all the client side functionality.
