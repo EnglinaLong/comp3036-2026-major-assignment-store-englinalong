@@ -1,0 +1,80 @@
+.page {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  gap: 20px;
+}
+
+.sidebar {
+  align-self: start;
+}
+
+.menuSection {
+  margin-bottom: 20px;
+}
+
+.sectionTitle {
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.menuList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.menuItem {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--foreground);
+  text-decoration: none;
+}
+
+.menuItem:hover {
+  background: var(--surface-hover);
+}
+
+.count {
+  font-size: 12px;
+}
+
+.main {
+  min-width: 0;
+}
+
+.topBar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.searchInput {
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--foreground);
+}
+
+.themeButton {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+.postHeader {
+  margin-bottom: 16px;
+}
