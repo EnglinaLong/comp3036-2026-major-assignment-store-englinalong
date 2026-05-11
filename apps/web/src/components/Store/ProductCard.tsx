@@ -2,24 +2,11 @@ import type { Post } from "@repo/db/data";
 import Link from "next/link";
 import Image from "next/image";
 import { categorySlug } from "@/functions/categories";
+import { getProductHref } from "@/functions/productHref";
 import { normalizeTag } from "@/functions/tags";
 
-function slugifyTitle(text: string) {
-  return text
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-");
-}
-
-function getPostHref(post: Post) {
-  return "urlId" in post && post.urlId
-    ? `/post/${post.urlId}`
-    : `/post/${slugifyTitle(post.title)}`;
-}
-
 export function ProductCard({ post }: { post: Post }) {
-  const productHref = getPostHref(post);
+  const productHref = getProductHref(post);
   const collectionTags = post.tags
     .split(",")
     .map((tag) => tag.trim())
@@ -27,7 +14,7 @@ export function ProductCard({ post }: { post: Post }) {
 
   return (
     <article
-      className="group flex h-full flex-col overflow-hidden rounded-[28px] border border-black/10 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_70px_rgba(15,23,42,0.14)]"
+      className="group flex h-full flex-col overflow-hidden rounded-[28px] border border-black/10 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_70px_rgba(15,23,42,0.14)] dark:border-white/10 dark:bg-neutral-900 dark:shadow-[0_20px_60px_rgba(0,0,0,0.30)]"
       data-testid={`blog-post-${post.id}`}
       data-test-id={`blog-post-${post.id}`}
     >
@@ -48,7 +35,7 @@ export function ProductCard({ post }: { post: Post }) {
         <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">
           <Link
             href={`/category/${categorySlug(post.category)}`}
-            className="rounded-full bg-neutral-100 px-3 py-1 transition hover:bg-neutral-200"
+            className="rounded-full bg-neutral-100 px-3 py-1 transition hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700"
           >
             {post.category}
           </Link>
@@ -60,11 +47,11 @@ export function ProductCard({ post }: { post: Post }) {
         <div className="space-y-3">
           <Link
             href={productHref}
-            className="block text-2xl font-semibold leading-tight text-neutral-950 transition hover:text-[color:var(--color-wsu)]"
+            className="block text-2xl font-semibold leading-tight text-neutral-950 transition hover:text-[color:var(--color-wsu)] dark:text-neutral-50"
           >
             {post.title.replace(/!$/, "")}
           </Link>
-          <p className="line-clamp-3 text-sm leading-7 text-neutral-600">
+          <p className="line-clamp-3 text-sm leading-7 text-neutral-600 dark:text-neutral-300">
             {post.description}
           </p>
         </div>
@@ -74,15 +61,15 @@ export function ProductCard({ post }: { post: Post }) {
             <Link
               key={tag}
               href={`/tags/${normalizeTag(tag)}`}
-              className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-sm text-neutral-600 transition hover:border-neutral-300 hover:bg-white hover:text-neutral-900"
+              className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-sm text-neutral-600 transition hover:border-neutral-300 hover:bg-white hover:text-neutral-900 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-300 dark:hover:border-neutral-600 dark:hover:bg-neutral-900 dark:hover:text-neutral-50"
             >
               {tag}
             </Link>
           ))}
         </div>
 
-        <div className="mt-auto flex flex-col gap-4 border-t border-neutral-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-4 text-sm text-neutral-500">
+        <div className="mt-auto flex flex-col gap-4 border-t border-neutral-100 pt-4 sm:flex-row sm:items-center sm:justify-between dark:border-neutral-800">
+          <div className="flex flex-wrap items-center gap-4 text-sm text-neutral-500 dark:text-neutral-400">
             <span>{post.views} views</span>
             <span>{post.likes} saved</span>
           </div>

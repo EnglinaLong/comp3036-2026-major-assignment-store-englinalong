@@ -29,7 +29,7 @@ export function TopMenu({
   });
 
   return (
-    <header className="sticky top-4 z-20 rounded-[28px] border border-black/10 bg-white/85 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur supports-[backdrop-filter]:bg-white/75">
+    <header className="sticky top-4 z-20 rounded-[28px] border border-black/10 bg-white/85 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur supports-[backdrop-filter]:bg-white/75 dark:border-white/10 dark:bg-neutral-950/85 dark:shadow-[0_18px_50px_rgba(0,0,0,0.35)] dark:supports-[backdrop-filter]:bg-neutral-950/75">
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center justify-between gap-4">
@@ -37,7 +37,7 @@ export function TopMenu({
               <div className="text-xs font-semibold uppercase tracking-[0.28em] text-[color:var(--color-wsu)]">
                 Full Stack Store
               </div>
-              <div className="truncate text-lg font-semibold text-neutral-950">
+              <div className="truncate text-lg font-semibold text-neutral-950 dark:text-neutral-50">
                 Everyday products for modern projects
               </div>
             </Link>
@@ -47,28 +47,28 @@ export function TopMenu({
             </div>
           </div>
 
-          <nav className="flex flex-wrap items-center gap-2 text-sm text-neutral-600">
+          <nav className="flex flex-wrap items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300">
             <Link
               href="/"
-              className="rounded-full px-4 py-2 transition hover:bg-neutral-100 hover:text-neutral-950"
+              className="rounded-full px-4 py-2 transition hover:bg-neutral-100 hover:text-neutral-950 dark:hover:bg-neutral-800 dark:hover:text-neutral-50"
             >
               Home
             </Link>
             <a
               href="#featured-products"
-              className="rounded-full px-4 py-2 transition hover:bg-neutral-100 hover:text-neutral-950"
+              className="rounded-full px-4 py-2 transition hover:bg-neutral-100 hover:text-neutral-950 dark:hover:bg-neutral-800 dark:hover:text-neutral-50"
             >
               Products
             </a>
             <a
               href="#shop-by-category"
-              className="rounded-full px-4 py-2 transition hover:bg-neutral-100 hover:text-neutral-950"
+              className="rounded-full px-4 py-2 transition hover:bg-neutral-100 hover:text-neutral-950 dark:hover:bg-neutral-800 dark:hover:text-neutral-50"
             >
               Categories
             </a>
             <a
               href="#collections"
-              className="rounded-full px-4 py-2 transition hover:bg-neutral-100 hover:text-neutral-950"
+              className="rounded-full px-4 py-2 transition hover:bg-neutral-100 hover:text-neutral-950 dark:hover:bg-neutral-800 dark:hover:text-neutral-50"
             >
               Collections
             </a>
@@ -86,7 +86,7 @@ export function TopMenu({
               }}
               name="q"
               placeholder={placeholder}
-              className="w-full rounded-full border border-neutral-200 bg-neutral-50 px-5 py-3 text-sm text-neutral-900 outline-none transition focus:border-[color:var(--color-wsu)] focus:bg-white"
+              className="w-full rounded-full border border-neutral-200 bg-neutral-50 px-5 py-3 text-sm text-neutral-900 outline-none transition focus:border-[color:var(--color-wsu)] focus:bg-white dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:placeholder:text-neutral-400 dark:focus:bg-neutral-950"
             />
           </form>
 
