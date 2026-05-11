@@ -2,8 +2,51 @@ import { headers } from "next/headers";
 import { marked } from "marked";
 import { TopMenu } from "@/components/Layout/TopMenu";
 import ProductDetailView from "@/components/Store/ProductDetailView";
-import { getRequestIp, hasLikedPost, incrementPostViews } from "@/app/posts";
+import {
+  getPosts,
+  getRequestIp,
+  hasLikedPost,
+  incrementPostViews,
+} from "@/app/posts";
 import { normalizeTag } from "@/functions/tags";
+import type { Post } from "@repo/db/data";
+
+function getNormalizedTags(value: string) {
+  return value
+    .split(",")
+    .map((tag) => normalizeTag(tag))
+    .filter(Boolean);
+}
+
+function getRelatedProducts(products: Post[], currentProduct: Post) {
+  const currentTags = new Set(getNormalizedTags(currentProduct.tags));
+
+  const rankedMatches = products
+    .filter((product) => product.id !== currentProduct.id)
+    .map((product) => {
+      const productTags = getNormalizedTags(product.tags);
+      const sharedTags = productTags.filter((tag) =>
+        currentTags.has(tag),
+      ).length;
+      const sameCategory = product.category === currentProduct.category ? 1 : 0;
+      const score = sameCategory * 3 + sharedTags * 2;
+
+      return { product, score };
+    })
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return a.product.id - b.product.id;
+    });
+
+  const matched = rankedMatches
+    .filter((item) => item.score > 0)
+    .map((item) => item.product);
+  const fallback = rankedMatches
+    .filter((item) => item.score === 0)
+    .map((item) => item.product);
+
+  return [...matched, ...fallback].slice(0, 3);
+}
 
 export default async function Page({
   params,
@@ -34,6 +77,10 @@ export default async function Page({
     post.id,
     getRequestIp(requestHeaders),
   );
+  const activeProducts = await getPosts({
+    active: true,
+  });
+  const relatedProducts = getRelatedProducts(activeProducts, post);
   const contentHtml = await marked.parse(post.content);
   const tags = post.tags
     .split(",")
@@ -53,6 +100,7 @@ export default async function Page({
       <ProductDetailView
         post={post}
         tags={tags}
+        relatedProducts={relatedProducts}
         contentHtml={contentHtml}
         initialSaved={initialLiked}
       />

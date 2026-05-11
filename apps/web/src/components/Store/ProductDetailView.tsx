@@ -5,20 +5,18 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Post } from "@repo/db/data";
 import { getProductHref } from "@/functions/productHref";
-
-function getProductPrice(postId: number) {
-  const dollars = 39 + postId * 14;
-  return `$${dollars}.00`;
-}
+import { getProductPrice } from "@/functions/productPrice";
 
 export default function ProductDetailView({
   post,
   tags,
+  relatedProducts,
   contentHtml,
   initialSaved,
 }: {
   post: Post;
   tags: { label: string; href: string }[];
+  relatedProducts: Post[];
   contentHtml: string;
   initialSaved: boolean;
 }) {
@@ -165,6 +163,86 @@ export default function ProductDetailView({
           dangerouslySetInnerHTML={{ __html: contentHtml }}
         />
       </section>
+
+      {relatedProducts.length > 0 ? (
+        <section className="space-y-6">
+          <div className="max-w-3xl">
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[color:var(--color-wsu)]">
+              More to explore
+            </p>
+            <h2 className="mt-3 text-3xl font-semibold text-neutral-950 dark:text-neutral-50">
+              You may also like
+            </h2>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {relatedProducts.map((relatedProduct) => {
+              const productHref = getProductHref(relatedProduct);
+
+              return (
+                <article
+                  key={relatedProduct.id}
+                  className="flex h-full flex-col overflow-hidden rounded-[28px] border border-black/10 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_70px_rgba(15,23,42,0.14)] dark:border-white/10 dark:bg-neutral-900 dark:shadow-[0_20px_60px_rgba(0,0,0,0.30)]"
+                >
+                  <Link href={productHref} className="block">
+                    <div className="relative overflow-hidden">
+                      <Image
+                        src={relatedProduct.imageUrl}
+                        alt={relatedProduct.title}
+                        width={1200}
+                        height={900}
+                        className="h-52 w-full object-cover"
+                      />
+                      <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/25 to-transparent" />
+                    </div>
+                  </Link>
+
+                  <div className="flex flex-1 flex-col gap-4 p-5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
+                        {relatedProduct.category}
+                      </span>
+                      <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                        Available Now
+                      </span>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Link
+                        href={productHref}
+                        className="block text-xl font-semibold leading-tight text-neutral-950 transition hover:text-[color:var(--color-wsu)] dark:text-neutral-50"
+                      >
+                        {relatedProduct.title.replace(/!$/, "")}
+                      </Link>
+                      <p className="line-clamp-3 text-sm leading-7 text-neutral-600 dark:text-neutral-300">
+                        {relatedProduct.description}
+                      </p>
+                    </div>
+
+                    <div className="mt-auto flex items-center justify-between gap-4 border-t border-neutral-100 pt-4 dark:border-neutral-800">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.22em] text-neutral-500 dark:text-neutral-400">
+                          Store price
+                        </p>
+                        <p className="mt-1 text-lg font-semibold text-neutral-950 dark:text-neutral-50">
+                          {getProductPrice(relatedProduct.id)}
+                        </p>
+                      </div>
+
+                      <Link
+                        href={productHref}
+                        className="inline-flex items-center justify-center rounded-full bg-[color:var(--color-wsu)] px-4 py-2 font-medium text-white transition hover:bg-[color:var(--color-wsu-light)]"
+                      >
+                        View Product
+                      </Link>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
     </article>
   );
 }
