@@ -32,7 +32,10 @@ export async function StoreHomepage({ posts }: { posts: Post[] }) {
 
   return (
     <div className="space-y-14 pb-14">
-      <section className="relative overflow-hidden rounded-[36px] bg-[linear-gradient(135deg,#fff7ed_0%,#ffffff_35%,#fee2e2_100%)] px-6 py-10 shadow-[0_25px_80px_rgba(127,29,29,0.12)] ring-1 ring-black/5 sm:px-8 lg:px-10 lg:py-12 dark:bg-[linear-gradient(135deg,#1f2937_0%,#111827_45%,#3f1d2e_100%)] dark:shadow-[0_25px_80px_rgba(0,0,0,0.35)] dark:ring-white/10">
+      <section
+        id="store-top"
+        className="relative overflow-hidden rounded-[36px] bg-[linear-gradient(135deg,#fff7ed_0%,#ffffff_35%,#fee2e2_100%)] px-6 py-10 shadow-[0_25px_80px_rgba(127,29,29,0.12)] ring-1 ring-black/5 sm:px-8 lg:px-10 lg:py-12 dark:bg-[linear-gradient(135deg,#1f2937_0%,#111827_45%,#3f1d2e_100%)] dark:shadow-[0_25px_80px_rgba(0,0,0,0.35)] dark:ring-white/10"
+      >
         <div className="bg-[color:var(--color-wsu)]/10 absolute -right-24 top-12 h-64 w-64 rounded-full blur-3xl" />
         <div className="absolute bottom-0 left-1/2 h-40 w-40 -translate-x-1/2 rounded-full bg-amber-200/40 blur-3xl" />
 
@@ -121,7 +124,7 @@ export async function StoreHomepage({ posts }: { posts: Post[] }) {
         </div>
       </section>
 
-      <section id="shop-by-category" className="space-y-5">
+      <section id="shop-by-category" className="scroll-mt-32 space-y-5">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[color:var(--color-wsu)]">
@@ -163,7 +166,7 @@ export async function StoreHomepage({ posts }: { posts: Post[] }) {
 
       <section
         id="collections"
-        className="grid gap-6 xl:grid-cols-[1.4fr_0.6fr]"
+        className="grid scroll-mt-32 gap-6 xl:grid-cols-[1.4fr_0.6fr]"
       >
         <div className="rounded-[28px] border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-neutral-900">
           <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -223,7 +226,7 @@ export async function StoreHomepage({ posts }: { posts: Post[] }) {
         </div>
       </section>
 
-      <section id="featured-products" className="space-y-6">
+      <section id="featured-products" className="scroll-mt-32 space-y-6">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[color:var(--color-wsu)]">
