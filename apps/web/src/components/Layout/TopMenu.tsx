@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ThemeSwitch from "../Themes/ThemeSwitcher";
 
@@ -17,12 +17,28 @@ function debounce<T extends (...args: string[]) => void>(fn: T, delay = 300) {
 export function TopMenu({
   query,
   placeholder = "Search products",
+  searchValue,
+  onSearchChange,
 }: {
   query?: string;
   placeholder?: string;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
 }) {
   const router = useRouter();
   const [search, setSearch] = useState(query ?? "");
+
+  useEffect(() => {
+    if (typeof searchValue === "string") {
+      setSearch(searchValue);
+    }
+  }, [searchValue]);
+
+  useEffect(() => {
+    if (typeof searchValue !== "string") {
+      setSearch(query ?? "");
+    }
+  }, [query, searchValue]);
 
   const handleSearch = debounce((value: string) => {
     router.push(`/search?q=${encodeURIComponent(value.trim())}`);
@@ -54,24 +70,24 @@ export function TopMenu({
             >
               Home
             </Link>
-            <a
+            <Link
               href="/#featured-products"
               className="rounded-full px-4 py-2 transition hover:bg-neutral-100 hover:text-neutral-950 dark:hover:bg-neutral-800 dark:hover:text-neutral-50"
             >
               Products
-            </a>
-            <a
+            </Link>
+            <Link
               href="/#shop-by-category"
               className="rounded-full px-4 py-2 transition hover:bg-neutral-100 hover:text-neutral-950 dark:hover:bg-neutral-800 dark:hover:text-neutral-50"
             >
               Categories
-            </a>
-            <a
+            </Link>
+            <Link
               href="/#collections"
               className="rounded-full px-4 py-2 transition hover:bg-neutral-100 hover:text-neutral-950 dark:hover:bg-neutral-800 dark:hover:text-neutral-50"
             >
               Collections
-            </a>
+            </Link>
           </nav>
         </div>
 
@@ -82,7 +98,11 @@ export function TopMenu({
               onChange={(event) => {
                 const value = event.target.value;
                 setSearch(value);
-                handleSearch(value);
+                if (onSearchChange) {
+                  onSearchChange(value);
+                } else {
+                  handleSearch(value);
+                }
               }}
               name="q"
               placeholder={placeholder}

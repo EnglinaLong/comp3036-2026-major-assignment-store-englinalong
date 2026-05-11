@@ -1,9 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import type { Post } from "@repo/db/data";
-import { categories, categorySlug } from "@/functions/categories";
-import { history } from "@/functions/history";
+import { categorySlug } from "@/functions/categories";
 import { getProductHref } from "@/functions/productHref";
-import { normalizeTag, tags } from "@/functions/tags";
+import { normalizeTag } from "@/functions/tags";
 import { SummaryItem } from "@/components/Menu/SummaryItem";
 import ProductCard from "./ProductCard";
 
@@ -23,12 +24,24 @@ const months = [
   "December",
 ];
 
-export async function StoreHomepage({ posts }: { posts: Post[] }) {
-  const featuredProducts = posts.slice(0, 6);
-  const categoryItems = categories(posts);
-  const collectionItems = await tags(posts);
-  const historyItems = history(posts);
-  const spotlightItems = featuredProducts.slice(0, 3);
+export function StoreHomepage({
+  posts,
+  filteredPosts,
+  searchQuery,
+  categoryItems,
+  collectionItems,
+  historyItems,
+}: {
+  posts: Post[];
+  filteredPosts: Post[];
+  searchQuery: string;
+  categoryItems: { name: string; count: number }[];
+  collectionItems: { name: string; count: number }[];
+  historyItems: { year: number; month: number; count: number }[];
+}) {
+  const featuredProducts = filteredPosts.slice(0, 6);
+  const spotlightItems = posts.slice(0, 3);
+  const hasSearchQuery = searchQuery.trim().length > 0;
 
   return (
     <div className="space-y-14 pb-14">
@@ -242,10 +255,28 @@ export async function StoreHomepage({ posts }: { posts: Post[] }) {
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 2xl:grid-cols-3">
-          {featuredProducts.map((post) => (
-            <ProductCard key={post.id} post={post} />
-          ))}
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-neutral-600 dark:text-neutral-300">
+            Showing {filteredPosts.length} of {posts.length} products
+            {hasSearchQuery ? ` for "${searchQuery.trim()}"` : ""}
+          </p>
+
+          {featuredProducts.length === 0 ? (
+            <div className="rounded-[28px] border border-dashed border-neutral-300 bg-white px-6 py-14 text-center shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
+              <p className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">
+                No products found. Try another keyword.
+              </p>
+              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">
+                Search by product name, category, collection, or description.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 2xl:grid-cols-3">
+              {featuredProducts.map((post) => (
+                <ProductCard key={post.id} post={post} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </div>
