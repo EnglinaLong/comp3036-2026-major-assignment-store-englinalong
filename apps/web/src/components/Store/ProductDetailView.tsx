@@ -116,7 +116,7 @@ export default function ProductDetailView({
               aria-pressed={saved}
               className="inline-flex items-center justify-center rounded-full border border-neutral-300 bg-white px-5 py-3 font-medium text-neutral-900 transition hover:border-neutral-400 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100 dark:hover:border-neutral-600 dark:hover:bg-neutral-900"
             >
-              {saved ? "Saved to Wishlist" : "Save Product"}
+              {saved ? "Saved to Wishlist" : "Save to Wishlist"}
             </button>
           </div>
 
@@ -141,7 +141,7 @@ export default function ProductDetailView({
             href={productHref}
             className="inline-flex w-fit items-center rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition hover:border-neutral-400 hover:text-neutral-950 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200 dark:hover:border-neutral-600 dark:hover:text-neutral-50"
           >
-            Share Product
+            Share Resource
           </Link>
         </div>
       </div>
@@ -152,7 +152,7 @@ export default function ProductDetailView({
             Product Details
           </p>
           <h2 className="mt-3 text-3xl font-semibold text-neutral-950 dark:text-neutral-50">
-            Description
+            Product Overview
           </h2>
         </div>
 

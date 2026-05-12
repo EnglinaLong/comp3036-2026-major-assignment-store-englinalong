@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { Post } from "@repo/db/data";
 import { TopMenu } from "@/components/Layout/TopMenu";
+import { getStorefrontProduct } from "@/functions/storefrontProduct";
 import StoreHomepage from "./Homepage";
 
 function normalizeSearchValue(value: string) {
@@ -41,16 +42,20 @@ export function HomepageClient({
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const normalizedQuery = normalizeSearchValue(searchQuery);
+  const storefrontPosts = useMemo(
+    () => posts.map((post) => getStorefrontProduct(post)),
+    [posts],
+  );
 
   const filteredPosts = useMemo(() => {
     if (!normalizedQuery) {
-      return posts;
+      return storefrontPosts;
     }
 
-    return posts.filter((post) =>
+    return storefrontPosts.filter((post) =>
       createProductSearchText(post).includes(normalizedQuery),
     );
-  }, [normalizedQuery, posts]);
+  }, [normalizedQuery, storefrontPosts]);
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-4 sm:px-6 lg:px-8">
@@ -59,7 +64,7 @@ export function HomepageClient({
       </div>
 
       <StoreHomepage
-        posts={posts}
+        posts={storefrontPosts}
         filteredPosts={filteredPosts}
         searchQuery={searchQuery}
         categoryItems={categoryItems}

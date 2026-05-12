@@ -8,6 +8,7 @@ import {
   hasLikedPost,
   incrementPostViews,
 } from "@/app/posts";
+import { getStorefrontProduct } from "@/functions/storefrontProduct";
 import { normalizeTag } from "@/functions/tags";
 import type { Post } from "@repo/db/data";
 
@@ -77,12 +78,15 @@ export default async function Page({
     post.id,
     getRequestIp(requestHeaders),
   );
+  const storefrontPost = getStorefrontProduct(post);
   const activeProducts = await getPosts({
     active: true,
   });
-  const relatedProducts = getRelatedProducts(activeProducts, post);
-  const contentHtml = await marked.parse(post.content);
-  const tags = post.tags
+  const relatedProducts = getRelatedProducts(activeProducts, post).map((item) =>
+    getStorefrontProduct(item),
+  );
+  const contentHtml = await marked.parse(storefrontPost.content);
+  const tags = storefrontPost.tags
     .split(",")
     .map((tag) => tag.trim())
     .filter(Boolean)
@@ -98,7 +102,7 @@ export default async function Page({
       </div>
 
       <ProductDetailView
-        post={post}
+        post={storefrontPost}
         tags={tags}
         relatedProducts={relatedProducts}
         contentHtml={contentHtml}
