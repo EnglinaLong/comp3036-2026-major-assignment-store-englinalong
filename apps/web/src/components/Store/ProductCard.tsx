@@ -1,9 +1,11 @@
 import type { Post } from "@repo/db/data";
 import Link from "next/link";
 import Image from "next/image";
-import { categorySlug } from "@/functions/categories";
 import { getProductHref } from "@/functions/productHref";
-import { normalizeTag } from "@/functions/tags";
+import {
+  getStorefrontCategoryHref,
+  getStorefrontCollectionHref,
+} from "@/functions/storefrontNavigation";
 
 export function ProductCard({ post }: { post: Post }) {
   const productHref = getProductHref(post);
@@ -34,7 +36,7 @@ export function ProductCard({ post }: { post: Post }) {
       <div className="flex flex-1 flex-col gap-4 p-6">
         <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">
           <Link
-            href={`/category/${categorySlug(post.category)}`}
+            href={getStorefrontCategoryHref()}
             className="rounded-full bg-neutral-100 px-3 py-1 transition hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700"
           >
             {post.category}
@@ -60,7 +62,7 @@ export function ProductCard({ post }: { post: Post }) {
           {collectionTags.map((tag) => (
             <Link
               key={tag}
-              href={`/tags/${normalizeTag(tag)}`}
+              href={getStorefrontCollectionHref()}
               className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-sm text-neutral-600 transition hover:border-neutral-300 hover:bg-white hover:text-neutral-900 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-300 dark:hover:border-neutral-600 dark:hover:bg-neutral-900 dark:hover:text-neutral-50"
             >
               {tag}

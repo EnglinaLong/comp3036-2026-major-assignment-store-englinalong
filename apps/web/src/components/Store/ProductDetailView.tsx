@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { Post } from "@repo/db/data";
+import { useCart } from "@/components/Store/CartProvider";
 import { getProductHref } from "@/functions/productHref";
 import { getProductPrice } from "@/functions/productPrice";
 
@@ -23,6 +24,7 @@ export default function ProductDetailView({
   const [saved, setSaved] = useState(initialSaved);
   const [savedCount, setSavedCount] = useState(post.likes);
   const [cartAdded, setCartAdded] = useState(false);
+  const { addToCart } = useCart();
   const productHref = getProductHref(post);
 
   function handleSaveToggle() {
@@ -31,6 +33,21 @@ export default function ProductDetailView({
       setSavedCount((count) => Math.max(0, count + (next ? 1 : -1)));
       return next;
     });
+  }
+
+  useEffect(() => {
+    if (!cartAdded) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setCartAdded(false);
+    }, 1600);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [cartAdded]);
+
+  function handleAddToCart() {
+    addToCart(post);
+    setCartAdded(true);
   }
 
   return (
@@ -102,7 +119,7 @@ export default function ProductDetailView({
           <div className="flex flex-col gap-3 sm:flex-row">
             <button
               type="button"
-              onClick={() => setCartAdded(true)}
+              onClick={handleAddToCart}
               className="inline-flex items-center justify-center rounded-full bg-[color:var(--color-wsu)] px-5 py-3 font-medium text-white transition hover:bg-[color:var(--color-wsu-light)]"
             >
               {cartAdded ? "Added to Cart" : "Add to Cart"}

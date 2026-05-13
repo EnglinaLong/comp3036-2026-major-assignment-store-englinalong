@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import type { Post } from "@repo/db/data";
-import { categorySlug } from "@/functions/categories";
 import { getProductHref } from "@/functions/productHref";
-import { normalizeTag } from "@/functions/tags";
 import { SummaryItem } from "@/components/Menu/SummaryItem";
+import {
+  getStorefrontCategoryHref,
+  getStorefrontCollectionHref,
+} from "@/functions/storefrontNavigation";
 import ProductCard from "./ProductCard";
 
 const months = [
@@ -28,6 +30,9 @@ export function StoreHomepage({
   posts,
   filteredPosts,
   searchQuery,
+  selectedHistoryKey,
+  selectedHistoryLabel,
+  onHistorySelect,
   categoryItems,
   collectionItems,
   historyItems,
@@ -35,6 +40,9 @@ export function StoreHomepage({
   posts: Post[];
   filteredPosts: Post[];
   searchQuery: string;
+  selectedHistoryKey: string | null;
+  selectedHistoryLabel: string | null;
+  onHistorySelect: (historyKey: string) => void;
   categoryItems: { name: string; count: number }[];
   collectionItems: { name: string; count: number }[];
   historyItems: { year: number; month: number; count: number }[];
@@ -42,6 +50,23 @@ export function StoreHomepage({
   const featuredProducts = filteredPosts.slice(0, 6);
   const spotlightItems = posts.slice(0, 3);
   const hasSearchQuery = searchQuery.trim().length > 0;
+  const hasHistoryFilter = Boolean(selectedHistoryLabel);
+  const visibleProductCount = filteredPosts.length;
+
+  const filterStatusText = hasHistoryFilter
+    ? `Showing products from ${selectedHistoryLabel}`
+    : "Showing all products";
+
+  const productCountLabel = `${visibleProductCount} ${
+    visibleProductCount === 1 ? "product" : "products"
+  }`;
+  const featuredCountText = hasHistoryFilter
+    ? `Showing ${productCountLabel} from ${selectedHistoryLabel}${
+        hasSearchQuery ? ` for "${searchQuery.trim()}"` : ""
+      }`
+    : hasSearchQuery
+      ? `Showing ${productCountLabel} for "${searchQuery.trim()}"`
+      : `Showing all ${posts.length} products`;
 
   return (
     <div className="space-y-14 pb-14">
@@ -157,7 +182,7 @@ export function StoreHomepage({
           {categoryItems.map((item) => (
             <Link
               key={item.name}
-              href={`/category/${categorySlug(item.name)}`}
+              href={getStorefrontCategoryHref()}
               className="hover:border-[color:var(--color-wsu)]/20 group rounded-[24px] border border-black/10 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.10)] dark:border-white/10 dark:bg-neutral-900 dark:shadow-[0_18px_40px_rgba(0,0,0,0.30)]"
             >
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500 dark:text-neutral-400">
@@ -201,7 +226,7 @@ export function StoreHomepage({
             {collectionItems.map((item) => (
               <Link
                 key={item.name}
-                href={`/tags/${normalizeTag(item.name)}`}
+                href={getStorefrontCollectionHref()}
                 className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-4 py-2 text-sm text-neutral-700 transition hover:-translate-y-0.5 hover:border-neutral-300 hover:bg-white hover:text-neutral-950 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200 dark:hover:border-neutral-600 dark:hover:bg-neutral-900 dark:hover:text-neutral-50"
                 title={`Collection / ${item.name}`}
               >
@@ -224,13 +249,15 @@ export function StoreHomepage({
           <div className="mt-5 space-y-3">
             {historyItems.map((item) => {
               const label = `${months[item.month]}, ${item.year}`;
+              const historyKey = `${item.year}-${item.month}`;
 
               return (
                 <SummaryItem
                   key={`${item.year}-${item.month}`}
                   name={label}
                   count={item.count}
-                  href={`/history/${item.year}/${item.month}`}
+                  isSelected={selectedHistoryKey === historyKey}
+                  onClick={() => onHistorySelect(historyKey)}
                   title={label}
                 />
               );
@@ -256,9 +283,23 @@ export function StoreHomepage({
         </div>
 
         <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-medium text-[color:var(--color-wsu)]">
+              {filterStatusText}
+            </p>
+            {hasHistoryFilter ? (
+              <button
+                type="button"
+                onClick={() => onHistorySelect(selectedHistoryKey!)}
+                className="inline-flex w-fit items-center rounded-full border border-[color:var(--color-wsu)]/20 bg-[color:var(--color-wsu)]/5 px-4 py-2 text-sm font-medium text-[color:var(--color-wsu)] transition hover:border-[color:var(--color-wsu)]/35 hover:bg-[color:var(--color-wsu)]/10"
+              >
+                Clear month filter
+              </button>
+            ) : null}
+          </div>
+
           <p className="text-sm text-neutral-600 dark:text-neutral-300">
-            Showing {filteredPosts.length} of {posts.length} products
-            {hasSearchQuery ? ` for "${searchQuery.trim()}"` : ""}
+            {featuredCountText}
           </p>
 
           {featuredProducts.length === 0 ? (

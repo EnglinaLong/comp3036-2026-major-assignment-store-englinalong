@@ -8,6 +8,7 @@ import {
   hasLikedPost,
   incrementPostViews,
 } from "@/app/posts";
+import { getStorefrontCollectionHref } from "@/functions/storefrontNavigation";
 import { getStorefrontProduct } from "@/functions/storefrontProduct";
 import { normalizeTag } from "@/functions/tags";
 import type { Post } from "@repo/db/data";
@@ -92,7 +93,7 @@ export default async function Page({
     .filter(Boolean)
     .map((tag) => ({
       label: tag,
-      href: `/tags/${normalizeTag(tag)}`,
+      href: getStorefrontCollectionHref(),
     }));
 
   return (
