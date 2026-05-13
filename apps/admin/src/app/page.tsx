@@ -50,9 +50,9 @@ export default async function Home() {
         <section className={styles.dashboard}>
           <div className={styles.topBar}>
             <div className={styles.titleBlock}>
-              <h1 className={styles.pageTitle}>Admin of Full Stack Blog</h1>
+              <h1 className={styles.pageTitle}>Admin of Full Stack Store</h1>
               <p className={styles.pageDescription}>
-                Manage your posts from one simple dashboard.
+                Manage your store products from one simple dashboard.
               </p>
             </div>
             <LogoutButton />
