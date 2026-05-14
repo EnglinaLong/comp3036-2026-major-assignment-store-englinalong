@@ -4,6 +4,9 @@ import { tags } from "@/functions/tags";
 import { HomepageClient } from "@/components/Store/HomepageClient";
 import { getPosts } from "./posts";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function Page() {
   const activePosts = await getPosts({
     active: true,

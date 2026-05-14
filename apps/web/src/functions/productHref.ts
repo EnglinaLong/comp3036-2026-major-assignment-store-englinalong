@@ -1,6 +1,6 @@
 import type { Post } from "@repo/db/data";
 
-function slugifyTitle(text: string) {
+export function slugifyTitle(text: string) {
   return text
     .toLowerCase()
     .trim()
@@ -9,7 +9,5 @@ function slugifyTitle(text: string) {
 }
 
 export function getProductHref(post: Pick<Post, "title" | "urlId">) {
-  return "urlId" in post && post.urlId
-    ? `/product/${post.urlId}`
-    : `/product/${slugifyTitle(post.title)}`;
+  return `/product/${slugifyTitle(post.title)}`;
 }

@@ -52,7 +52,7 @@ function createCartItem(post: Post): CartItem {
     urlId: post.urlId,
     title: post.title,
     category: post.category,
-    price: getProductPrice(post.id),
+    price: getProductPrice(post),
     quantity: 1,
     href: getProductHref(post),
   };

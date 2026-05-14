@@ -4,10 +4,6 @@ import Link from "next/link";
 import type { Post } from "@repo/db/data";
 import { getProductHref } from "@/functions/productHref";
 import { SummaryItem } from "@/components/Menu/SummaryItem";
-import {
-  getStorefrontCategoryHref,
-  getStorefrontCollectionHref,
-} from "@/functions/storefrontNavigation";
 import ProductCard from "./ProductCard";
 
 const months = [
@@ -30,9 +26,16 @@ export function StoreHomepage({
   posts,
   filteredPosts,
   searchQuery,
+  selectedCategory,
+  selectedCategoryLabel,
+  selectedCollection,
+  selectedCollectionLabel,
   selectedHistoryKey,
   selectedHistoryLabel,
+  onCategorySelect,
+  onCollectionSelect,
   onHistorySelect,
+  onClearFilters,
   categoryItems,
   collectionItems,
   historyItems,
@@ -40,31 +43,53 @@ export function StoreHomepage({
   posts: Post[];
   filteredPosts: Post[];
   searchQuery: string;
+  selectedCategory: string | null;
+  selectedCategoryLabel: string | null;
+  selectedCollection: string | null;
+  selectedCollectionLabel: string | null;
   selectedHistoryKey: string | null;
   selectedHistoryLabel: string | null;
+  onCategorySelect: (categoryName: string) => void;
+  onCollectionSelect: (collectionName: string) => void;
   onHistorySelect: (historyKey: string) => void;
+  onClearFilters: () => void;
   categoryItems: { name: string; count: number }[];
   collectionItems: { name: string; count: number }[];
   historyItems: { year: number; month: number; count: number }[];
 }) {
-  const featuredProducts = filteredPosts.slice(0, 6);
+  const featuredProducts = filteredPosts;
   const spotlightItems = posts.slice(0, 3);
   const hasSearchQuery = searchQuery.trim().length > 0;
+  const hasCategoryFilter = Boolean(selectedCategoryLabel);
+  const hasCollectionFilter = Boolean(selectedCollectionLabel);
   const hasHistoryFilter = Boolean(selectedHistoryLabel);
   const visibleProductCount = filteredPosts.length;
 
-  const filterStatusText = hasHistoryFilter
-    ? `Showing products from ${selectedHistoryLabel}`
-    : "Showing all products";
+  const filterStatusText = hasCategoryFilter
+    ? `Showing ${selectedCategoryLabel} products`
+    : hasCollectionFilter
+      ? `Showing products tagged: ${selectedCollectionLabel}`
+      : hasHistoryFilter
+        ? `Showing products from ${selectedHistoryLabel}`
+        : "Showing all products";
 
   const productCountLabel = `${visibleProductCount} ${
     visibleProductCount === 1 ? "product" : "products"
   }`;
-  const featuredCountText = hasHistoryFilter
-    ? `Showing ${productCountLabel} from ${selectedHistoryLabel}${
-        hasSearchQuery ? ` for "${searchQuery.trim()}"` : ""
-      }`
-    : hasSearchQuery
+  const categoryCountText = `Showing ${visibleProductCount} ${
+    selectedCategoryLabel ?? ""
+  } ${visibleProductCount === 1 ? "product" : "products"}`;
+  const collectionCountText = `Showing ${visibleProductCount} ${
+    visibleProductCount === 1 ? "product" : "products"
+  } tagged: ${selectedCollectionLabel ?? ""}`;
+  const historyCountText = `Showing ${productCountLabel} from ${selectedHistoryLabel}`;
+  const featuredCountText = hasCategoryFilter
+    ? `${categoryCountText}${hasSearchQuery ? ` for "${searchQuery.trim()}"` : ""}`
+    : hasCollectionFilter
+      ? `${collectionCountText}${hasSearchQuery ? ` for "${searchQuery.trim()}"` : ""}`
+      : hasHistoryFilter
+      ? `${historyCountText}${hasSearchQuery ? ` for "${searchQuery.trim()}"` : ""}`
+      : hasSearchQuery
       ? `Showing ${productCountLabel} for "${searchQuery.trim()}"`
       : `Showing all ${posts.length} products`;
 
@@ -179,11 +204,20 @@ export function StoreHomepage({
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {categoryItems.map((item) => (
-            <Link
+          {categoryItems.map((item) => {
+            const isSelected =
+              selectedCategory === item.name.trim().toLowerCase();
+
+            return (
+            <button
               key={item.name}
-              href={getStorefrontCategoryHref()}
-              className="hover:border-[color:var(--color-wsu)]/20 group rounded-[24px] border border-black/10 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.10)] dark:border-white/10 dark:bg-neutral-900 dark:shadow-[0_18px_40px_rgba(0,0,0,0.30)]"
+              type="button"
+              onClick={() => onCategorySelect(item.name)}
+              className={`group rounded-[24px] border bg-white p-5 text-left shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.10)] dark:bg-neutral-900 dark:shadow-[0_18px_40px_rgba(0,0,0,0.30)] ${
+                isSelected
+                  ? "border-[color:var(--color-wsu)] bg-[color:var(--color-wsu)]/5 shadow-[0_18px_40px_rgba(152,30,50,0.12)] dark:border-[color:var(--color-wsu)] dark:bg-[color:var(--color-wsu)]/10"
+                  : "border-black/10 hover:border-[color:var(--color-wsu)]/20 dark:border-white/10"
+              }`}
             >
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500 dark:text-neutral-400">
                 Category
@@ -195,10 +229,11 @@ export function StoreHomepage({
                 {item.count} products available
               </p>
               <p className="mt-4 text-sm font-medium text-[color:var(--color-wsu)]">
-                Shop category
+                {isSelected ? "Category selected" : "Shop category"}
               </p>
-            </Link>
-          ))}
+            </button>
+            );
+          })}
         </div>
       </section>
 
@@ -223,19 +258,35 @@ export function StoreHomepage({
           </div>
 
           <div className="flex flex-wrap gap-3">
-            {collectionItems.map((item) => (
-              <Link
+            {collectionItems.map((item) => {
+              const isSelected =
+                selectedCollection === item.name.trim().toLowerCase();
+
+              return (
+              <button
                 key={item.name}
-                href={getStorefrontCollectionHref()}
-                className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-4 py-2 text-sm text-neutral-700 transition hover:-translate-y-0.5 hover:border-neutral-300 hover:bg-white hover:text-neutral-950 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200 dark:hover:border-neutral-600 dark:hover:bg-neutral-900 dark:hover:text-neutral-50"
+                type="button"
+                onClick={() => onCollectionSelect(item.name)}
+                className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition hover:-translate-y-0.5 ${
+                  isSelected
+                    ? "border-[color:var(--color-wsu)] bg-[color:var(--color-wsu)]/10 text-[color:var(--color-wsu)] dark:border-[color:var(--color-wsu)] dark:bg-[color:var(--color-wsu)]/15"
+                    : "border-neutral-200 bg-neutral-50 text-neutral-700 hover:border-neutral-300 hover:bg-white hover:text-neutral-950 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200 dark:hover:border-neutral-600 dark:hover:bg-neutral-900 dark:hover:text-neutral-50"
+                }`}
                 title={`Collection / ${item.name}`}
               >
                 <span>{item.name}</span>
-                <span className="rounded-full bg-white px-2 py-0.5 text-xs text-neutral-500 dark:bg-neutral-800 dark:text-neutral-300">
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs ${
+                    isSelected
+                      ? "bg-white/80 text-[color:var(--color-wsu)] dark:bg-neutral-900 dark:text-neutral-100"
+                      : "bg-white text-neutral-500 dark:bg-neutral-800 dark:text-neutral-300"
+                  }`}
+                >
                   {item.count}
                 </span>
-              </Link>
-            ))}
+              </button>
+              );
+            })}
           </div>
         </div>
 
@@ -287,13 +338,13 @@ export function StoreHomepage({
             <p className="text-sm font-medium text-[color:var(--color-wsu)]">
               {filterStatusText}
             </p>
-            {hasHistoryFilter ? (
+            {hasCategoryFilter || hasCollectionFilter || hasHistoryFilter ? (
               <button
                 type="button"
-                onClick={() => onHistorySelect(selectedHistoryKey!)}
+                onClick={onClearFilters}
                 className="inline-flex w-fit items-center rounded-full border border-[color:var(--color-wsu)]/20 bg-[color:var(--color-wsu)]/5 px-4 py-2 text-sm font-medium text-[color:var(--color-wsu)] transition hover:border-[color:var(--color-wsu)]/35 hover:bg-[color:var(--color-wsu)]/10"
               >
-                Clear month filter
+                Clear filters
               </button>
             ) : null}
           </div>

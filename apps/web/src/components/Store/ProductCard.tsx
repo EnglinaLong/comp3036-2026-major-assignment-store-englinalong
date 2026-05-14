@@ -3,6 +3,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { getProductHref } from "@/functions/productHref";
 import {
+  getProductViewsLabel,
+  getWishlistSavesLabel,
+} from "@/functions/productStats";
+import {
   getStorefrontCategoryHref,
   getStorefrontCollectionHref,
 } from "@/functions/storefrontNavigation";
@@ -62,7 +66,7 @@ export function ProductCard({ post }: { post: Post }) {
           {collectionTags.map((tag) => (
             <Link
               key={tag}
-              href={getStorefrontCollectionHref()}
+              href={getStorefrontCollectionHref(tag)}
               className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-sm text-neutral-600 transition hover:border-neutral-300 hover:bg-white hover:text-neutral-900 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-300 dark:hover:border-neutral-600 dark:hover:bg-neutral-900 dark:hover:text-neutral-50"
             >
               {tag}
@@ -72,8 +76,8 @@ export function ProductCard({ post }: { post: Post }) {
 
         <div className="mt-auto flex flex-col gap-4 border-t border-neutral-100 pt-4 sm:flex-row sm:items-center sm:justify-between dark:border-neutral-800">
           <div className="flex flex-wrap items-center gap-4 text-sm text-neutral-500 dark:text-neutral-400">
-            <span>{post.views} views</span>
-            <span>{post.likes} saved</span>
+            <span>{getProductViewsLabel(post.views)}</span>
+            <span>{getWishlistSavesLabel(post.likes)}</span>
           </div>
 
           <Link

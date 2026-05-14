@@ -4,6 +4,8 @@ import { marked } from "marked";
 import { useId, useRef, useState, type ReactNode } from "react";
 import type { Post } from "@repo/db/data";
 
+const PRODUCT_PRICE_OVERRIDES_COOKIE = "store-product-price-overrides";
+
 type PostEditorProps = {
   postId?: number;
   initialPost: Pick<
@@ -18,6 +20,7 @@ type FormValues = {
   description: string;
   content: string;
   imageUrl: string;
+  price: string;
   tags: string;
 };
 
@@ -27,25 +30,26 @@ function validate(values: FormValues) {
   const errors: FormErrors = {};
 
   if (!values.title.trim()) {
-    errors.title = "Title is required";
+    errors.title = "Product name is required";
   }
 
   if (!values.category.trim()) {
-    errors.category = "Category is required";
+    errors.category = "Product category is required";
   }
 
   if (!values.description.trim()) {
-    errors.description = "Description is required";
+    errors.description = "Product summary is required";
   } else if (values.description.length > 200) {
-    errors.description = "Description is too long. Maximum is 200 characters";
+    errors.description =
+      "Product summary is too long. Maximum is 200 characters";
   }
 
   if (!values.content.trim()) {
-    errors.content = "Content is required";
+    errors.content = "Product details are required";
   }
 
   if (!values.imageUrl.trim()) {
-    errors.imageUrl = "Image URL is required";
+    errors.imageUrl = "Product image URL is required";
   } else {
     try {
       new URL(values.imageUrl);
@@ -54,15 +58,124 @@ function validate(values: FormValues) {
     }
   }
 
+  const parsedPrice = Number.parseFloat(values.price);
+
+  if (!values.price.trim()) {
+    errors.price = "Price is required";
+  } else if (!Number.isFinite(parsedPrice)) {
+    errors.price = "Price must be a valid number";
+  } else if (parsedPrice <= 0) {
+    errors.price = "Price must be greater than 0";
+  }
+
   if (!values.tags.trim()) {
-    errors.tags = "At least one tag is required";
+    errors.tags = "At least one product tag or collection is required";
   }
 
   return errors;
 }
 
+function slugifyTitle(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function getConfiguredPrice(title: string) {
+  const configuredPrices: Record<string, number> = {
+    "boost-your-conversion-rate": 89,
+    "better-front-ends-with-fatboy-slim": 79,
+    "no-front-end-framework-is-the-best": 64,
+    "visual-basic-is-the-future": 49,
+  };
+
+  return configuredPrices[slugifyTitle(title)];
+}
+
+function getFallbackPrice(postId: number | undefined, category: string) {
+  const categoryBasePrice: Record<string, number> = {
+    react: 74,
+    node: 82,
+    "next.js": 94,
+    analytics: 69,
+    optimisation: 59,
+  };
+
+  if (!postId) {
+    return "";
+  }
+
+  const base = categoryBasePrice[category.trim().toLowerCase()] ?? 67;
+  return String(base + ((postId % 3) * 5));
+}
+
+function readStoredPrice(title: string) {
+  if (typeof document === "undefined") {
+    return null;
+  }
+
+  const cookieValue = document.cookie
+    .split("; ")
+    .find((entry) => entry.startsWith(`${PRODUCT_PRICE_OVERRIDES_COOKIE}=`))
+    ?.split("=")[1];
+
+  if (!cookieValue) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(
+      decodeURIComponent(cookieValue),
+    ) as Record<string, number>;
+    const slugKey = slugifyTitle(title);
+    return parsed[slugKey] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function storePriceOverride(price: number, title: string) {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  const cookieValue = document.cookie
+    .split("; ")
+    .find((entry) => entry.startsWith(`${PRODUCT_PRICE_OVERRIDES_COOKIE}=`))
+    ?.split("=")[1];
+
+  let overrides: Record<string, number> = {};
+
+  if (cookieValue) {
+    try {
+      overrides = JSON.parse(decodeURIComponent(cookieValue)) as Record<
+        string,
+        number
+      >;
+    } catch {
+      overrides = {};
+    }
+  }
+
+  const slugKey = slugifyTitle(title);
+  overrides[slugKey] = price;
+
+  document.cookie = `${PRODUCT_PRICE_OVERRIDES_COOKIE}=${encodeURIComponent(
+    JSON.stringify(overrides),
+  )}; path=/; max-age=31536000; SameSite=Lax`;
+}
+
 export function PostEditor({ postId, initialPost }: PostEditorProps) {
-  const [values, setValues] = useState<FormValues>(initialPost);
+  const [values, setValues] = useState<FormValues>({
+    ...initialPost,
+    price: String(
+      readStoredPrice(initialPost.title) ??
+        getConfiguredPrice(initialPost.title) ??
+        getFallbackPrice(postId, initialPost.category),
+    ),
+  });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
@@ -136,8 +249,13 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
       }
     }
 
+    storePriceOverride(Number.parseFloat(values.price), values.title);
     setShowSaveError(false);
-    setSaveMessage("Post updated successfully");
+    setSaveMessage(
+      isCreateMode
+        ? "Product created successfully"
+        : "Product updated successfully",
+    );
   };
 
   const togglePreview = () => {
@@ -187,12 +305,12 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
           color: "#0f172a",
         }}
       >
-        {isCreateMode ? "Create Post" : "Update Post"}
+        {isCreateMode ? "Create Product" : "Update Product"}
       </h1>
 
       {showSaveError ? (
         <p style={{ color: "#b91c1c", marginBottom: "1rem" }}>
-          Please fix the errors before saving
+          Please fix the product details before saving
         </p>
       ) : null}
 
@@ -206,11 +324,12 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
           gap: "1.25rem",
         }}
       >
-        <Field label="Title" error={errors.title}>
+        <Field label="Product Name" htmlFor="title" error={errors.title}>
           <input
             id="title"
             value={values.title}
             onChange={(event) => updateValue("title", event.target.value)}
+            placeholder="React Dashboard UI Kit"
             style={{
               ...inputStyle,
               border: errors.title ? "1px solid #dc2626" : inputStyle.border,
@@ -218,11 +337,16 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
           />
         </Field>
 
-        <Field label="Category" error={errors.category}>
+        <Field
+          label="Product Category"
+          htmlFor="category"
+          error={errors.category}
+        >
           <input
             id="category"
             value={values.category}
             onChange={(event) => updateValue("category", event.target.value)}
+            placeholder="React"
             style={{
               ...inputStyle,
               border: errors.category ? "1px solid #dc2626" : inputStyle.border,
@@ -230,12 +354,17 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
           />
         </Field>
 
-        <Field label="Description" error={errors.description}>
+        <Field
+          label="Product Summary"
+          htmlFor="description"
+          error={errors.description}
+        >
           <textarea
             id="description"
             value={values.description}
             onChange={(event) => updateValue("description", event.target.value)}
             rows={4}
+            placeholder="A responsive dashboard template with reusable React components."
             style={{
               ...textAreaStyle,
               border: errors.description
@@ -265,7 +394,7 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
               color: "#111827",
             }}
           >
-            Content
+            Product Details
           </label>
 
           <button
@@ -289,6 +418,7 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
               value={values.content}
               onChange={(event) => updateValue("content", event.target.value)}
               rows={10}
+              placeholder="Outline the product overview, what is included, setup notes, and ideal use cases for your storefront resource."
               style={{
                 ...textAreaStyle,
                 marginTop: "0.75rem",
@@ -302,11 +432,16 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
           {errors.content ? <p style={errorStyle}>{errors.content}</p> : null}
         </div>
 
-        <Field label="Image URL" error={errors.imageUrl}>
+        <Field
+          label="Product Image URL"
+          htmlFor="image-url"
+          error={errors.imageUrl}
+        >
           <input
             id="image-url"
             value={values.imageUrl}
             onChange={(event) => updateValue("imageUrl", event.target.value)}
+            placeholder="https://images.unsplash.com/example-product-image"
             style={{
               ...inputStyle,
               border: errors.imageUrl
@@ -316,10 +451,27 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
           />
         </Field>
 
+        <Field label="Price" htmlFor="price" error={errors.price}>
+          <input
+            id="price"
+            type="number"
+            min="0.01"
+            step="0.01"
+            inputMode="decimal"
+            value={values.price}
+            onChange={(event) => updateValue("price", event.target.value)}
+            placeholder="72.00"
+            style={{
+              ...inputStyle,
+              border: errors.price ? "1px solid #dc2626" : inputStyle.border,
+            }}
+          />
+        </Field>
+
         {showImagePreview ? (
           <img
             src={values.imageUrl}
-            alt="Post preview"
+            alt="Product preview"
             data-test-id="image-preview"
             style={{
               width: "280px",
@@ -330,11 +482,16 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
           />
         ) : null}
 
-        <Field label="Tags" error={errors.tags}>
+        <Field
+          label="Product Tags / Collections"
+          htmlFor="tags"
+          error={errors.tags}
+        >
           <input
             id="tags"
             value={values.tags}
             onChange={(event) => updateValue("tags", event.target.value)}
+            placeholder="Front-End, UI Design, Storefront"
             style={{
               ...inputStyle,
               border: errors.tags ? "1px solid #dc2626" : inputStyle.border,
@@ -344,7 +501,7 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
 
         <div>
           <button type="button" onClick={handleSave} style={primaryButtonStyle}>
-            Save
+            Save Product
           </button>
         </div>
       </div>
@@ -356,12 +513,14 @@ function Field({
   children,
   error,
   label,
+  htmlFor,
 }: {
   children: ReactNode;
   error?: string;
   label: string;
+  htmlFor?: string;
 }) {
-  const id = label.toLowerCase().replace(/\s+/g, "-");
+  const id = htmlFor ?? label.toLowerCase().replace(/\s+/g, "-");
 
   return (
     <div>

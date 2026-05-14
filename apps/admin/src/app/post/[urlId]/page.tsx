@@ -40,7 +40,7 @@ export default async function UpdatePostPage({
   if (!post) {
     return (
       <main style={{ padding: "2rem" }}>
-        <h1>Post not found</h1>
+        <h1>Product not found</h1>
       </main>
     );
   }

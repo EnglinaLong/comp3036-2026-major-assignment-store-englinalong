@@ -6,7 +6,15 @@ import Link from "next/link";
 import type { Post } from "@repo/db/data";
 import { useCart } from "@/components/Store/CartProvider";
 import { getProductHref } from "@/functions/productHref";
-import { getProductPrice } from "@/functions/productPrice";
+import {
+  getDefaultProductPrice,
+  getProductPrice,
+  getProductPriceSupportingText,
+} from "@/functions/productPrice";
+import {
+  getProductViewsLabel,
+  getWishlistSavesLabel,
+} from "@/functions/productStats";
 
 export default function ProductDetailView({
   post,
@@ -24,8 +32,8 @@ export default function ProductDetailView({
   const [saved, setSaved] = useState(initialSaved);
   const [savedCount, setSavedCount] = useState(post.likes);
   const [cartAdded, setCartAdded] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
   const { addToCart } = useCart();
-  const productHref = getProductHref(post);
 
   function handleSaveToggle() {
     setSaved((current) => {
@@ -45,10 +53,16 @@ export default function ProductDetailView({
     return () => window.clearTimeout(timeoutId);
   }, [cartAdded]);
 
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
   function handleAddToCart() {
     addToCart(post);
     setCartAdded(true);
   }
+
+  const productPrice = hydrated ? getProductPrice(post) : getDefaultProductPrice(post);
 
   return (
     <article
@@ -65,8 +79,8 @@ export default function ProductDetailView({
         </Link>
 
         <div className="flex flex-wrap items-center gap-3 text-sm text-neutral-500 dark:text-neutral-400">
-          <span>{post.views} product views</span>
-          <span>{savedCount} saved</span>
+          <span>{getProductViewsLabel(post.views)}</span>
+          <span>{getWishlistSavesLabel(savedCount)}</span>
         </div>
       </div>
 
@@ -106,13 +120,13 @@ export default function ProductDetailView({
 
           <div className="rounded-[24px] bg-[linear-gradient(135deg,#fff7ed_0%,#ffffff_100%)] p-5 ring-1 ring-black/5 dark:bg-[linear-gradient(135deg,#1f2937_0%,#111827_100%)] dark:ring-white/10">
             <p className="text-sm uppercase tracking-[0.24em] text-neutral-500 dark:text-neutral-400">
-              Store price
+              Price
             </p>
             <p className="mt-2 text-4xl font-semibold text-neutral-950 dark:text-neutral-50">
-              {getProductPrice(post.id)}
+              {productPrice}
             </p>
             <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">
-              Frontend-only demo pricing for Iteration 1.
+              {getProductPriceSupportingText(post)}
             </p>
           </div>
 
@@ -153,13 +167,6 @@ export default function ProductDetailView({
               ))}
             </div>
           </div>
-
-          <Link
-            href={productHref}
-            className="inline-flex w-fit items-center rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition hover:border-neutral-400 hover:text-neutral-950 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200 dark:hover:border-neutral-600 dark:hover:text-neutral-50"
-          >
-            Share Resource
-          </Link>
         </div>
       </div>
 
@@ -195,6 +202,9 @@ export default function ProductDetailView({
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {relatedProducts.map((relatedProduct) => {
               const productHref = getProductHref(relatedProduct);
+              const relatedProductPrice = hydrated
+                ? getProductPrice(relatedProduct)
+                : getDefaultProductPrice(relatedProduct);
 
               return (
                 <article
@@ -239,10 +249,10 @@ export default function ProductDetailView({
                     <div className="mt-auto flex items-center justify-between gap-4 border-t border-neutral-100 pt-4 dark:border-neutral-800">
                       <div>
                         <p className="text-xs uppercase tracking-[0.22em] text-neutral-500 dark:text-neutral-400">
-                          Store price
+                          Price
                         </p>
                         <p className="mt-1 text-lg font-semibold text-neutral-950 dark:text-neutral-50">
-                          {getProductPrice(relatedProduct.id)}
+                          {relatedProductPrice}
                         </p>
                       </div>
 

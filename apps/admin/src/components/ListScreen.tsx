@@ -219,11 +219,11 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
     <div>
       <div className={styles.toolbar}>
         <p className={styles.loginText}>
-          View all posts, including active and inactive items.
+          View all store products, including active and inactive items.
         </p>
         <div className={styles.toolbarActions}>
           <a className={styles.linkButton} href="/posts/create">
-            Create Post
+            Create Product
           </a>
         </div>
       </div>
@@ -231,7 +231,7 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
       <div className={styles.filters}>
         <div className={styles.filterField}>
           <label className={styles.filterLabel} htmlFor="content-filter">
-            Filter by Content:
+            Filter by Product Details:
           </label>
           <input
             className={styles.filterInput}
@@ -239,12 +239,13 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
             type="text"
             value={contentFilter}
             onChange={(e) => setContentFilter(e.target.value)}
+            placeholder="Search product name, summary, or details"
           />
         </div>
 
         <div className={styles.filterField}>
           <label className={styles.filterLabel} htmlFor="tag-filter">
-            Filter by Tag:
+            Filter by Collection:
           </label>
           <input
             className={styles.filterInput}
@@ -252,12 +253,13 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
             type="text"
             value={tagFilter}
             onChange={(e) => setTagFilter(e.target.value)}
+            placeholder="Front-End"
           />
         </div>
 
         <div className={styles.filterField}>
           <label className={styles.filterLabel} htmlFor="date-filter">
-            Filter by Date Created:
+            Filter by Date Added:
           </label>
           <input
             className={styles.filterInput}
@@ -328,7 +330,7 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
                   #{post.tags.split(",").map((tag) => tag.trim()).join(", #")}
                 </span>
                 <span>
-                  Posted on{" "}
+                  Added on{" "}
                   {post.date.toLocaleDateString("en-US", {
                     year: "numeric",
                     month: "short",

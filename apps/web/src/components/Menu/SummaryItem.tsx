@@ -34,8 +34,9 @@ export function SummaryItem({
   const sharedClassName = cx(
     "w-full rounded-lg border text-left transition",
     "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:border-neutral-600 dark:hover:bg-neutral-800",
-    isSelected &&
-      "border-[color:var(--color-wsu)]/40 bg-[color:var(--color-wsu)]/10 text-[color:var(--color-wsu)] shadow-[0_8px_24px_rgba(152,30,50,0.12)] dark:border-[color:var(--color-wsu)]/50 dark:bg-[color:var(--color-wsu)]/15",
+    isSelected
+      ? "border-[color:var(--color-wsu)]/40 bg-[color:var(--color-wsu)]/10 text-[color:var(--color-wsu)] shadow-[0_8px_24px_rgba(152,30,50,0.12)] dark:border-[color:var(--color-wsu)]/50 dark:bg-[color:var(--color-wsu)]/15"
+      : undefined,
   );
 
   if (onClick) {
