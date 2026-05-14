@@ -28,12 +28,21 @@ export default async function UpdatePostPage({
     },
     select: {
       id: true,
+      urlId: true,
       title: true,
       category: true,
       description: true,
       content: true,
       imageUrl: true,
       tags: true,
+      date: true,
+      views: true,
+      active: true,
+      _count: {
+        select: {
+          Likes: true,
+        },
+      },
     },
   });
 
@@ -49,11 +58,16 @@ export default async function UpdatePostPage({
     <PostEditor
       postId={post.id}
       initialPost={{
+        urlId: post.urlId,
         title: post.title,
         category: post.category,
         description: post.description,
         content: post.content,
         imageUrl: post.imageUrl,
+        date: post.date,
+        views: post.views,
+        likes: post._count.Likes,
+        active: post.active,
         tags: post.tags,
       }}
     />

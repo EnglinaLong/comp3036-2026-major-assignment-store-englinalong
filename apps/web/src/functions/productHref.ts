@@ -9,5 +9,7 @@ export function slugifyTitle(text: string) {
 }
 
 export function getProductHref(post: Pick<Post, "title" | "urlId">) {
-  return `/product/${slugifyTitle(post.title)}`;
+  return post.urlId
+    ? `/product/${post.urlId}`
+    : `/product/${slugifyTitle(post.title)}`;
 }

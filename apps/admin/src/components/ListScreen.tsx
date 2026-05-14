@@ -2,12 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { Post } from "@repo/db/data";
+import {
+  mergeLocalProducts,
+  readLocalProductState,
+  upsertCreatedProduct,
+  upsertProductOverride,
+} from "@repo/ui/local-product-state";
 import styles from "./admin-ui.module.css";
 
 type SortOption = "title-asc" | "title-desc" | "date-asc" | "date-desc";
 type VisibilityOption = "all" | "active" | "inactive";
-const POST_OVERRIDES_STORAGE_KEY = "admin-post-overrides";
-const CREATED_POSTS_STORAGE_KEY = "admin-created-posts";
 
 function normalizeFilterValue(value: string) {
   return value.trim().toLowerCase();
@@ -39,45 +43,7 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
   const [savingPostId, setSavingPostId] = useState<number | null>(null);
 
   useEffect(() => {
-    const storedCreatedPosts = window.localStorage.getItem(
-      CREATED_POSTS_STORAGE_KEY,
-    );
-    const storedPostOverrides = window.localStorage.getItem(
-      POST_OVERRIDES_STORAGE_KEY,
-    );
-
-    try {
-      const postOverrides = storedPostOverrides
-        ? (JSON.parse(storedPostOverrides) as Record<string, Partial<Post>>)
-        : {};
-      const createdPosts = storedCreatedPosts
-        ? (JSON.parse(storedCreatedPosts) as Post[]).map(
-            (post) => ({
-              ...post,
-              date: new Date(post.date),
-            }),
-          )
-        : [];
-
-      setPostStates((current) => {
-        const mergedPosts = [
-          ...createdPosts.filter(
-            (createdPost) =>
-              !current.some((post) => post.urlId === createdPost.urlId),
-          ),
-          ...current,
-        ];
-
-        return mergedPosts.map((post) => ({
-          ...post,
-          ...postOverrides[post.urlId],
-          active: post.active,
-        }));
-      });
-    } catch {
-      window.localStorage.removeItem(CREATED_POSTS_STORAGE_KEY);
-      window.localStorage.removeItem(POST_OVERRIDES_STORAGE_KEY);
-    }
+    setPostStates(mergeLocalProducts(initialPosts));
   }, [initialPosts]);
 
   const togglePostStatus = async (postId: number) => {
@@ -101,29 +67,18 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
       });
 
       if (!response.ok) {
-        const storedCreatedPosts = window.localStorage.getItem(
-          CREATED_POSTS_STORAGE_KEY,
-        );
-        const createdPosts = storedCreatedPosts
-          ? (JSON.parse(storedCreatedPosts) as Post[]).map((item) => ({
-              ...item,
-              date: new Date(item.date),
-            }))
-          : [];
+        const { createdPosts } = readLocalProductState();
 
         if (!createdPosts.some((item) => item.id === postId)) {
           return;
         }
 
         const nextActive = !post.active;
-        const nextCreatedPosts = createdPosts.map((item) =>
-          item.id === postId ? { ...item, active: nextActive } : item,
-        );
+        const createdPost = createdPosts.find((item) => item.id === postId);
 
-        window.localStorage.setItem(
-          CREATED_POSTS_STORAGE_KEY,
-          JSON.stringify(nextCreatedPosts),
-        );
+        if (createdPost) {
+          upsertCreatedProduct({ ...createdPost, active: nextActive });
+        }
 
         setPostStates((current) =>
           current.map((item) =>
@@ -145,6 +100,7 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
             : item,
         ),
       );
+      upsertProductOverride(post.urlId, { active: updatedPost.active });
     } finally {
       setSavingPostId(null);
     }

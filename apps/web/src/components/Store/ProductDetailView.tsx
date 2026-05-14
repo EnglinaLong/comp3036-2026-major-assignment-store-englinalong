@@ -15,6 +15,7 @@ import {
   getProductViewsLabel,
   getWishlistSavesLabel,
 } from "@/functions/productStats";
+import { mergeStorefrontPosts } from "@/functions/storefrontPosts";
 
 export default function ProductDetailView({
   post,
@@ -33,6 +34,9 @@ export default function ProductDetailView({
   const [savedCount, setSavedCount] = useState(post.likes);
   const [cartAdded, setCartAdded] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [displayPost, setDisplayPost] = useState(post);
+  const [displayRelatedProducts, setDisplayRelatedProducts] =
+    useState(relatedProducts);
   const { addToCart } = useCart();
 
   function handleSaveToggle() {
@@ -57,17 +61,59 @@ export default function ProductDetailView({
     setHydrated(true);
   }, []);
 
+  useEffect(() => {
+    const mergedProducts = mergeStorefrontPosts([post, ...relatedProducts]);
+    const mergedCurrentPost =
+      mergedProducts.find((item) => item.urlId === post.urlId) ?? post;
+    const mergedRelated = mergedProducts.filter(
+      (item) => item.urlId !== mergedCurrentPost.urlId && item.active,
+    );
+
+    setDisplayPost(mergedCurrentPost);
+    setDisplayRelatedProducts(mergedRelated.slice(0, relatedProducts.length));
+    setSavedCount(mergedCurrentPost.likes);
+  }, [post, relatedProducts]);
+
   function handleAddToCart() {
-    addToCart(post);
+    addToCart(displayPost);
     setCartAdded(true);
   }
 
-  const productPrice = hydrated ? getProductPrice(post) : getDefaultProductPrice(post);
+  const productPrice = hydrated
+    ? getProductPrice(displayPost)
+    : getDefaultProductPrice(displayPost);
+
+  if (!displayPost.active) {
+    return (
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-16 text-center sm:px-6 lg:px-8">
+        <div className="rounded-[32px] border border-dashed border-neutral-300 bg-white px-6 py-14 shadow-sm dark:border-neutral-700 dark:bg-neutral-900 dark:shadow-black/20">
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[color:var(--color-wsu)]">
+            Full Stack Store
+          </p>
+          <h1 className="mt-4 text-3xl font-semibold text-neutral-950 dark:text-neutral-50">
+            This product is currently unavailable.
+          </h1>
+          <p className="mx-auto mt-3 max-w-xl text-neutral-600 dark:text-neutral-300">
+            This product has been hidden from the storefront for now. Browse
+            other available products in the store.
+          </p>
+          <div className="mt-6">
+            <Link
+              href="/#featured-products"
+              className="inline-flex items-center justify-center rounded-full bg-[color:var(--color-wsu)] px-5 py-3 font-medium text-white transition hover:bg-[color:var(--color-wsu-light)]"
+            >
+              Back to Products
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <article
-      data-testid={`blog-post-${post.id}`}
-      data-test-id={`blog-post-${post.id}`}
+      data-testid={`blog-post-${displayPost.id}`}
+      data-test-id={`blog-post-${displayPost.id}`}
       className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -79,7 +125,7 @@ export default function ProductDetailView({
         </Link>
 
         <div className="flex flex-wrap items-center gap-3 text-sm text-neutral-500 dark:text-neutral-400">
-          <span>{getProductViewsLabel(post.views)}</span>
+          <span>{getProductViewsLabel(displayPost.views)}</span>
           <span>{getWishlistSavesLabel(savedCount)}</span>
         </div>
       </div>
@@ -88,8 +134,8 @@ export default function ProductDetailView({
         <div className="overflow-hidden rounded-[32px] border border-black/10 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-neutral-900 dark:shadow-[0_24px_70px_rgba(0,0,0,0.35)]">
           <div className="relative">
             <Image
-              src={post.imageUrl}
-              alt={post.title}
+              src={displayPost.imageUrl}
+              alt={displayPost.title}
               width={1400}
               height={1200}
               className="h-[320px] w-full object-cover sm:h-[420px] lg:h-[540px]"
@@ -102,7 +148,7 @@ export default function ProductDetailView({
         <div className="flex flex-col gap-6 rounded-[32px] border border-black/10 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:p-8 dark:border-white/10 dark:bg-neutral-900 dark:shadow-[0_24px_70px_rgba(0,0,0,0.35)]">
           <div className="flex flex-wrap items-center gap-3">
             <span className="rounded-full bg-neutral-100 px-3 py-1 text-sm font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
-              {post.category}
+              {displayPost.category}
             </span>
             <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-700">
               Available Now
@@ -111,10 +157,10 @@ export default function ProductDetailView({
 
           <div className="space-y-3">
             <h1 className="text-4xl font-semibold tracking-tight text-neutral-950 sm:text-5xl dark:text-neutral-50">
-              {post.title.replace(/!$/, "")}
+              {displayPost.title.replace(/!$/, "")}
             </h1>
             <p className="max-w-2xl text-base leading-8 text-neutral-600 dark:text-neutral-300">
-              {post.description}
+              {displayPost.description}
             </p>
           </div>
 
@@ -126,7 +172,7 @@ export default function ProductDetailView({
               {productPrice}
             </p>
             <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">
-              {getProductPriceSupportingText(post)}
+              {getProductPriceSupportingText(displayPost)}
             </p>
           </div>
 
@@ -188,7 +234,7 @@ export default function ProductDetailView({
         />
       </section>
 
-      {relatedProducts.length > 0 ? (
+      {displayRelatedProducts.length > 0 ? (
         <section className="space-y-6">
           <div className="max-w-3xl">
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[color:var(--color-wsu)]">
@@ -200,7 +246,7 @@ export default function ProductDetailView({
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {relatedProducts.map((relatedProduct) => {
+            {displayRelatedProducts.map((relatedProduct) => {
               const productHref = getProductHref(relatedProduct);
               const relatedProductPrice = hydrated
                 ? getProductPrice(relatedProduct)

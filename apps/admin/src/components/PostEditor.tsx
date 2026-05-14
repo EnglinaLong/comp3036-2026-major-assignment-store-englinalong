@@ -3,6 +3,10 @@
 import { marked } from "marked";
 import { useId, useRef, useState, type ReactNode } from "react";
 import type { Post } from "@repo/db/data";
+import {
+  upsertCreatedProduct,
+  upsertProductOverride,
+} from "@repo/ui/local-product-state";
 
 const PRODUCT_PRICE_OVERRIDES_COOKIE = "store-product-price-overrides";
 
@@ -10,7 +14,17 @@ type PostEditorProps = {
   postId?: number;
   initialPost: Pick<
     Post,
-    "title" | "category" | "description" | "content" | "imageUrl" | "tags"
+    | "title"
+    | "category"
+    | "description"
+    | "content"
+    | "imageUrl"
+    | "tags"
+    | "urlId"
+    | "date"
+    | "views"
+    | "likes"
+    | "active"
   >;
 };
 
@@ -233,6 +247,19 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
         setSaveMessage("");
         return;
       }
+
+      upsertProductOverride(initialPost.urlId, {
+        title: values.title.trim(),
+        category: values.category.trim(),
+        description: values.description.trim(),
+        content: values.content.trim(),
+        imageUrl: values.imageUrl.trim(),
+        tags: values.tags.trim(),
+        date: initialPost.date,
+        views: initialPost.views,
+        likes: initialPost.likes,
+        active: initialPost.active,
+      });
     } else {
       const response = await fetch("/api/posts", {
         method: "POST",
@@ -247,6 +274,22 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
         setSaveMessage("");
         return;
       }
+
+      const result = (await response.json()) as { id: number };
+      upsertCreatedProduct({
+        id: result.id,
+        urlId: slugifyTitle(values.title),
+        title: values.title.trim(),
+        category: values.category.trim(),
+        description: values.description.trim(),
+        content: values.content.trim(),
+        imageUrl: values.imageUrl.trim(),
+        date: new Date(),
+        tags: values.tags.trim(),
+        views: 0,
+        likes: 0,
+        active: true,
+      });
     }
 
     storePriceOverride(Number.parseFloat(values.price), values.title);

@@ -15,11 +15,16 @@ export default async function CreatePostPage() {
   return (
     <PostEditor
       initialPost={{
+        urlId: "",
         title: "",
         category: "",
         description: "",
         content: "",
         imageUrl: "",
+        date: new Date(),
+        views: 0,
+        likes: 0,
+        active: true,
         tags: "",
       }}
     />
