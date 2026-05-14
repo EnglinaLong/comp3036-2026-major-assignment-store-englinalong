@@ -9,6 +9,25 @@ type VisibilityOption = "all" | "active" | "inactive";
 const POST_OVERRIDES_STORAGE_KEY = "admin-post-overrides";
 const CREATED_POSTS_STORAGE_KEY = "admin-created-posts";
 
+function normalizeFilterValue(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function getNormalizedTags(value: string) {
+  return value
+    .split(",")
+    .map((tag) => normalizeFilterValue(tag))
+    .filter(Boolean);
+}
+
+function formatDateAsMmddyyyy(date: Date) {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const year = String(date.getFullYear());
+
+  return `${month}${day}${year}`;
+}
+
 export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
   const [postStates, setPostStates] = useState(initialPosts);
   const [contentFilter, setContentFilter] = useState("");
@@ -134,52 +153,39 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
   const filteredAndSortedPosts = useMemo(() => {
     let filtered = postStates.filter((post) => {
       if (contentFilter) {
-        const searchTerm = contentFilter.toLowerCase();
-        const matchesTitle = post.title.toLowerCase().includes(searchTerm);
-        const matchesDescription = post.description
-          .toLowerCase()
-          .includes(searchTerm);
-        const matchesContent = post.content.toLowerCase().includes(searchTerm);
+        const searchTerm = normalizeFilterValue(contentFilter);
+        const searchText = [
+          post.title,
+          post.description,
+          post.content,
+          post.category,
+          post.tags,
+        ]
+          .join(" ")
+          .toLowerCase();
 
-        if (!matchesTitle && !matchesDescription && !matchesContent) {
+        if (!searchText.includes(searchTerm)) {
           return false;
         }
       }
 
       if (tagFilter) {
-        const searchTerm = tagFilter.toLowerCase();
+        const searchTerm = normalizeFilterValue(tagFilter);
+        const productTags = getNormalizedTags(post.tags);
 
-        if (!post.tags.toLowerCase().includes(searchTerm)) {
+        if (!productTags.some((tag) => tag.includes(searchTerm))) {
           return false;
         }
       }
 
-      // Filter by date (MMDDYYYY format) - match posts on or after this date
       if (dateFilter) {
-        if (dateFilter.length !== 8) {
-          return true;
+        const searchTerm = dateFilter.trim();
+
+        if (!/^\d{8}$/.test(searchTerm)) {
+          return false;
         }
 
-        const month = parseInt(dateFilter.substring(0, 2), 10);
-        const day = parseInt(dateFilter.substring(2, 4), 10);
-        const year = parseInt(dateFilter.substring(4, 8), 10);
-
-        if (
-          Number.isNaN(month) ||
-          Number.isNaN(day) ||
-          Number.isNaN(year)
-        ) {
-          return true;
-        }
-
-        const filterDate = new Date(year, month - 1, day);
-        const postDate = new Date(post.date);
-
-        if (Number.isNaN(filterDate.getTime())) {
-          return true;
-        }
-
-        if (postDate < filterDate) {
+        if (formatDateAsMmddyyyy(new Date(post.date)) !== searchTerm) {
           return false;
         }
       }
