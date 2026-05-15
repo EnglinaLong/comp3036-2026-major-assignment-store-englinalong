@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { Post } from "@repo/db/data";
@@ -15,7 +15,7 @@ import {
   getProductViewsLabel,
   getWishlistSavesLabel,
 } from "@/functions/productStats";
-import { mergeStorefrontPosts } from "@/functions/storefrontPosts";
+import { useMergedStorefrontPosts } from "@/functions/storefrontPosts";
 
 export default function ProductDetailView({
   post,
@@ -34,10 +34,17 @@ export default function ProductDetailView({
   const [savedCount, setSavedCount] = useState(post.likes);
   const [cartAdded, setCartAdded] = useState(false);
   const [hydrated, setHydrated] = useState(false);
-  const [displayPost, setDisplayPost] = useState(post);
-  const [displayRelatedProducts, setDisplayRelatedProducts] =
-    useState(relatedProducts);
   const { addToCart } = useCart();
+  const mergedProducts = useMergedStorefrontPosts([post, ...relatedProducts]);
+  const displayPost = useMemo(
+    () => mergedProducts.find((item) => item.urlId === post.urlId) ?? post,
+    [mergedProducts, post],
+  );
+  const displayRelatedProducts = useMemo(() => {
+    return mergedProducts
+      .filter((item) => item.urlId !== displayPost.urlId && item.active)
+      .slice(0, relatedProducts.length);
+  }, [displayPost.urlId, mergedProducts, relatedProducts.length]);
 
   function handleSaveToggle() {
     setSaved((current) => {
@@ -62,17 +69,8 @@ export default function ProductDetailView({
   }, []);
 
   useEffect(() => {
-    const mergedProducts = mergeStorefrontPosts([post, ...relatedProducts]);
-    const mergedCurrentPost =
-      mergedProducts.find((item) => item.urlId === post.urlId) ?? post;
-    const mergedRelated = mergedProducts.filter(
-      (item) => item.urlId !== mergedCurrentPost.urlId && item.active,
-    );
-
-    setDisplayPost(mergedCurrentPost);
-    setDisplayRelatedProducts(mergedRelated.slice(0, relatedProducts.length));
-    setSavedCount(mergedCurrentPost.likes);
-  }, [post, relatedProducts]);
+    setSavedCount(displayPost.likes);
+  }, [displayPost.likes]);
 
   function handleAddToCart() {
     addToCart(displayPost);
@@ -112,8 +110,8 @@ export default function ProductDetailView({
 
   return (
     <article
-      data-testid={`blog-post-${displayPost.id}`}
-      data-test-id={`blog-post-${displayPost.id}`}
+      data-testid={`product-detail-${displayPost.id}`}
+      data-test-id={`product-detail-${displayPost.id}`}
       className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">

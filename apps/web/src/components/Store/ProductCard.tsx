@@ -21,8 +21,8 @@ export function ProductCard({ post }: { post: Post }) {
   return (
     <article
       className="group flex h-full flex-col overflow-hidden rounded-[28px] border border-black/10 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_70px_rgba(15,23,42,0.14)] dark:border-white/10 dark:bg-neutral-900 dark:shadow-[0_20px_60px_rgba(0,0,0,0.30)]"
-      data-testid={`blog-post-${post.id}`}
-      data-test-id={`blog-post-${post.id}`}
+      data-testid={`product-card-${post.id}`}
+      data-test-id={`product-card-${post.id}`}
     >
       <Link href={productHref} className="block">
         <div className="relative overflow-hidden">

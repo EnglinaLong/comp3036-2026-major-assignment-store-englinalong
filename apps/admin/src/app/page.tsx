@@ -4,7 +4,7 @@ import { ListScreen } from "../components/ListScreen";
 import { LogoutButton } from "../components/LogoutButton";
 import styles from "./page.module.css";
 import { client } from "@repo/db/client";
-import type { Post } from "@repo/db/data";
+import { getSeededPostDate, type Post } from "@repo/db/data";
 
 // Disable caching for this page to ensure auth state is always checked
 export const dynamic = "force-dynamic";
@@ -26,6 +26,7 @@ async function getAdminPosts(): Promise<Post[]> {
 
   return dbPosts.map((post) => ({
     ...post,
+    date: getSeededPostDate(post) ?? post.date,
     likes: post._count.Likes,
   }));
 }

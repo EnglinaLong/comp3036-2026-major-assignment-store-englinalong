@@ -1,4 +1,5 @@
 import { client } from "@repo/db/client";
+import { getSeededPostDate } from "@repo/db/data";
 import { LoginForm } from "../../../components/LoginForm";
 import { PostEditor } from "../../../components/PostEditor";
 import { isLoggedIn } from "../../../utils/auth";
@@ -54,6 +55,8 @@ export default async function UpdatePostPage({
     );
   }
 
+  const seededDate = getSeededPostDate(post);
+
   return (
     <PostEditor
       postId={post.id}
@@ -64,7 +67,7 @@ export default async function UpdatePostPage({
         description: post.description,
         content: post.content,
         imageUrl: post.imageUrl,
-        date: post.date,
+        date: seededDate ?? post.date,
         views: post.views,
         likes: post._count.Likes,
         active: post.active,

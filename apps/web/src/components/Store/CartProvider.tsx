@@ -23,6 +23,8 @@ export type CartItem = {
   href: string;
 };
 
+const CART_STORAGE_KEY = "storefront-cart-items";
+
 type CartContextValue = {
   cartItems: CartItem[];
   cartCount: number;
@@ -58,8 +60,40 @@ function createCartItem(post: Post): CartItem {
   };
 }
 
+function readStoredCartItems() {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  const rawValue = window.localStorage.getItem(CART_STORAGE_KEY);
+
+  if (!rawValue) {
+    return [];
+  }
+
+  try {
+    const parsedValue = JSON.parse(rawValue) as CartItem[];
+
+    return parsedValue.filter(
+      (item) =>
+        typeof item.id === "number" &&
+        typeof item.urlId === "string" &&
+        typeof item.title === "string" &&
+        typeof item.category === "string" &&
+        typeof item.price === "string" &&
+        typeof item.quantity === "number" &&
+        item.quantity > 0 &&
+        typeof item.href === "string",
+    );
+  } catch {
+    window.localStorage.removeItem(CART_STORAGE_KEY);
+    return [];
+  }
+}
+
 export function CartProvider({ children }: PropsWithChildren) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [hasHydrated, setHasHydrated] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   const openCart = useCallback(() => {
@@ -114,6 +148,19 @@ export function CartProvider({ children }: PropsWithChildren) {
       }),
     );
   }, []);
+
+  useEffect(() => {
+    setCartItems(readStoredCartItems());
+    setHasHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !hasHydrated) {
+      return;
+    }
+
+    window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
+  }, [cartItems, hasHydrated]);
 
   useEffect(() => {
     if (!isCartOpen) return;

@@ -58,20 +58,27 @@ export function StoreHomepage({
   historyItems: { year: number; month: number; count: number }[];
 }) {
   const featuredProducts = filteredPosts;
-  const spotlightItems = posts.slice(0, 3);
   const hasSearchQuery = searchQuery.trim().length > 0;
   const hasCategoryFilter = Boolean(selectedCategoryLabel);
   const hasCollectionFilter = Boolean(selectedCollectionLabel);
   const hasHistoryFilter = Boolean(selectedHistoryLabel);
+  const hasActiveHomepageFilter =
+    hasSearchQuery ||
+    hasCategoryFilter ||
+    hasCollectionFilter ||
+    hasHistoryFilter;
   const visibleProductCount = filteredPosts.length;
+  const spotlightItems = posts.slice(0, 3);
 
-  const filterStatusText = hasCategoryFilter
-    ? `Showing ${selectedCategoryLabel} products`
-    : hasCollectionFilter
-      ? `Showing products tagged: ${selectedCollectionLabel}`
-      : hasHistoryFilter
-        ? `Showing products from ${selectedHistoryLabel}`
-        : "Showing all products";
+  const filterStatusText = hasSearchQuery
+    ? `Showing results for: ${searchQuery.trim()}`
+    : hasCategoryFilter
+      ? `Showing ${selectedCategoryLabel} products`
+      : hasCollectionFilter
+        ? `Showing products tagged: ${selectedCollectionLabel}`
+        : hasHistoryFilter
+          ? `Showing products from ${selectedHistoryLabel}`
+          : "Showing all products";
 
   const productCountLabel = `${visibleProductCount} ${
     visibleProductCount === 1 ? "product" : "products"
@@ -162,27 +169,29 @@ export function StoreHomepage({
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-white/70 bg-white/80 p-5 shadow-sm backdrop-blur dark:border-white/10 dark:bg-neutral-900/70">
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[color:var(--color-wsu)]">
-                Store highlights
-              </p>
-              <div className="mt-4 grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-                {spotlightItems.map((item) => (
-                  <Link
-                    key={item.id}
-                    href={getProductHref(item)}
-                    className="rounded-[20px] border border-black/5 bg-white/90 p-4 transition hover:-translate-y-1 hover:shadow-md dark:border-white/10 dark:bg-neutral-950/90"
-                  >
-                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500 dark:text-neutral-400">
-                      {item.category}
-                    </p>
-                    <p className="mt-2 line-clamp-2 text-base font-semibold text-neutral-950 dark:text-neutral-50">
-                      {item.title}
-                    </p>
-                  </Link>
-                ))}
+            {!hasSearchQuery ? (
+              <div className="rounded-[28px] border border-white/70 bg-white/80 p-5 shadow-sm backdrop-blur dark:border-white/10 dark:bg-neutral-900/70">
+                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[color:var(--color-wsu)]">
+                  Store highlights
+                </p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+                  {spotlightItems.map((item) => (
+                    <Link
+                      key={item.id}
+                      href={getProductHref(item)}
+                      className="rounded-[20px] border border-black/5 bg-white/90 p-4 transition hover:-translate-y-1 hover:shadow-md dark:border-white/10 dark:bg-neutral-950/90"
+                    >
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500 dark:text-neutral-400">
+                        {item.category}
+                      </p>
+                      <p className="mt-2 line-clamp-2 text-base font-semibold text-neutral-950 dark:text-neutral-50">
+                        {item.title}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </div>
+            ) : null}
           </div>
         </div>
       </section>
@@ -321,15 +330,16 @@ export function StoreHomepage({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[color:var(--color-wsu)]">
-              Featured selection
+              {hasSearchQuery ? "Search results" : "Featured selection"}
             </p>
             <h2 className="text-3xl font-semibold text-neutral-950 dark:text-neutral-50">
-              Featured Products
+              {hasSearchQuery ? "Search Results" : "Featured Products"}
             </h2>
           </div>
           <p className="max-w-2xl text-sm leading-7 text-neutral-600 dark:text-neutral-300">
-            A polished product grid for your storefront demo, featuring
-            available items customers can explore right now.
+            {hasSearchQuery
+              ? "Matching products appear here as you search by product name, summary, details, category, or collection."
+              : "A polished product grid for your storefront demo, featuring available items customers can explore right now."}
           </p>
         </div>
 
@@ -356,10 +366,10 @@ export function StoreHomepage({
           {featuredProducts.length === 0 ? (
             <div className="rounded-[28px] border border-dashed border-neutral-300 bg-white px-6 py-14 text-center shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
               <p className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">
-                No products found. Try another keyword.
+                No products found
               </p>
               <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">
-                Search by product name, category, collection, or description.
+                Search by product name, summary, details, category, or collection.
               </p>
             </div>
           ) : (

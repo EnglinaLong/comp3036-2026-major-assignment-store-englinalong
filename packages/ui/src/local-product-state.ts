@@ -15,6 +15,7 @@ type ProductRecord = {
 
 export const POST_OVERRIDES_STORAGE_KEY = "admin-post-overrides";
 export const CREATED_POSTS_STORAGE_KEY = "admin-created-posts";
+export const LOCAL_PRODUCT_STATE_EVENT = "local-product-state:change";
 
 function normalizeStoredPost(post: ProductRecord) {
   return {
@@ -27,6 +28,11 @@ type LocalProductState = {
   createdPosts: ProductRecord[];
   postOverrides: Record<string, Partial<ProductRecord>>;
 };
+
+function normalizeStoredOverride(override: Partial<ProductRecord>) {
+  const { date: _date, ...rest } = override;
+  return rest;
+}
 
 function getStorage() {
   if (typeof window === "undefined") {
@@ -46,6 +52,14 @@ function readJson<T>(storage: Storage, key: string, fallback: T) {
   return JSON.parse(rawValue) as T;
 }
 
+function notifyLocalProductStateChanged() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(new Event(LOCAL_PRODUCT_STATE_EVENT));
+}
+
 export function readLocalProductState(): LocalProductState {
   const storage = getStorage();
 
@@ -63,10 +77,16 @@ export function readLocalProductState(): LocalProductState {
       [],
     )
       .map(normalizeStoredPost);
-    const postOverrides = readJson<Record<string, Partial<ProductRecord>>>(
+    const storedOverrides = readJson<Record<string, Partial<ProductRecord>>>(
       storage,
       POST_OVERRIDES_STORAGE_KEY,
       {},
+    );
+    const postOverrides = Object.fromEntries(
+      Object.entries(storedOverrides).map(([urlId, override]) => [
+        urlId,
+        normalizeStoredOverride(override),
+      ]),
     );
 
     return {
@@ -88,20 +108,23 @@ export function mergeLocalProducts(posts: ProductRecord[]) {
   const { createdPosts, postOverrides } = readLocalProductState();
   const mergedPosts = [
     ...createdPosts.filter(
-      (createdPost) => !posts.some((post) => post.urlId === createdPost.urlId),
+      (createdPost) =>
+        !posts.some(
+          (post) =>
+            post.urlId === createdPost.urlId || post.id === createdPost.id,
+        ),
     ),
     ...posts,
   ];
 
   return mergedPosts.map((post) => {
     const override = postOverrides[post.urlId];
-    const overrideDate = override?.date;
 
     return {
       ...post,
       ...override,
       active: override?.active ?? post.active,
-      date: overrideDate ? new Date(overrideDate) : new Date(post.date),
+      date: new Date(post.date),
     };
   });
 }
@@ -120,6 +143,7 @@ export function upsertCreatedProduct(post: ProductRecord) {
   ];
 
   storage.setItem(CREATED_POSTS_STORAGE_KEY, JSON.stringify(nextCreatedPosts));
+  notifyLocalProductStateChanged();
 }
 
 export function upsertProductOverride(
@@ -133,14 +157,42 @@ export function upsertProductOverride(
   }
 
   const { postOverrides } = readLocalProductState();
+  const nextOverride = normalizeStoredOverride(override);
   storage.setItem(
     POST_OVERRIDES_STORAGE_KEY,
     JSON.stringify({
       ...postOverrides,
       [urlId]: {
         ...postOverrides[urlId],
-        ...override,
+        ...nextOverride,
       },
     }),
   );
+  notifyLocalProductStateChanged();
+}
+
+export function subscribeToLocalProductState(callback: () => void) {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+
+  function handleStorage(event: StorageEvent) {
+    if (
+      event.key !== null &&
+      event.key !== CREATED_POSTS_STORAGE_KEY &&
+      event.key !== POST_OVERRIDES_STORAGE_KEY
+    ) {
+      return;
+    }
+
+    callback();
+  }
+
+  window.addEventListener("storage", handleStorage);
+  window.addEventListener(LOCAL_PRODUCT_STATE_EVENT, callback);
+
+  return () => {
+    window.removeEventListener("storage", handleStorage);
+    window.removeEventListener(LOCAL_PRODUCT_STATE_EVENT, callback);
+  };
 }

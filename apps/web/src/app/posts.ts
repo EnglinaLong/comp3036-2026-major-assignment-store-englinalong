@@ -1,4 +1,4 @@
-import type { Post } from "@repo/db/data";
+import { getSeededPostDate, type Post } from "@repo/db/data";
 import { client } from "@repo/db/client";
 import type { Prisma } from "@prisma/client";
 import { slugifyTitle } from "@/functions/productHref";
@@ -14,8 +14,11 @@ function mapPost(
     };
   }>,
 ): Post {
+  const seededDate = getSeededPostDate(post);
+
   return {
     ...post,
+    date: seededDate ?? post.date,
     likes: post._count.Likes,
   };
 }

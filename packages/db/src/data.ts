@@ -100,7 +100,7 @@ export const posts: Post[] = [
 `,
     imageUrl:
       "https://plus.unsplash.com/premium_photo-1661517706036-a48d5fc8f2f5?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-    date: new Date("Dec 16, 2026"),
+    date: new Date("Feb 16, 2026"),
     category: "React",
     tags: "Front-End, Optimisation, Dev Tools",
     views: 76,
@@ -255,7 +255,7 @@ export const posts: Post[] = [
 `,
     imageUrl:
       "https://images.unsplash.com/photo-1510511459019-5dda7724fd87?auto=format&fit=crop&w=1200&q=80",
-    date: new Date("Jun 11, 2026"),
+    date: new Date("Mar 11, 2026"),
     category: "Node",
     tags: "APIs, Security, Back-End",
     views: 119,
@@ -317,7 +317,7 @@ export const posts: Post[] = [
 `,
     imageUrl:
       "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80",
-    date: new Date("Jul 8, 2026"),
+    date: new Date("May 8, 2026"),
     category: "React",
     tags: "Analytics, Ecommerce, Dashboard",
     views: 110,
@@ -348,7 +348,7 @@ export const posts: Post[] = [
 `,
     imageUrl:
       "https://images.unsplash.com/photo-1496171367470-9ed9a91ea931?auto=format&fit=crop&w=1200&q=80",
-    date: new Date("May 21, 2026"),
+    date: new Date("Jan 21, 2026"),
     category: "Responsive Design",
     tags: "Admin, Responsive Design, UI Design",
     views: 72,
@@ -379,7 +379,7 @@ export const posts: Post[] = [
 `,
     imageUrl:
       "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80",
-    date: new Date("Aug 1, 2026"),
+    date: new Date("Apr 1, 2026"),
     category: "React",
     tags: "React, Ecommerce, Components",
     views: 97,
@@ -410,7 +410,7 @@ export const posts: Post[] = [
 `,
     imageUrl:
       "https://images.unsplash.com/photo-1545239351-1141bd82e8a6?auto=format&fit=crop&w=1200&q=80",
-    date: new Date("Sep 9, 2026"),
+    date: new Date("May 9, 2026"),
     category: "UI Design",
     tags: "Design System, UI Design, Front-End",
     views: 84,
@@ -441,7 +441,7 @@ export const posts: Post[] = [
 `,
     imageUrl:
       "https://images.unsplash.com/photo-1555949963-aa79dcee981c?auto=format&fit=crop&w=1200&q=80",
-    date: new Date("Oct 3, 2026"),
+    date: new Date("Oct 3, 2025"),
     category: "Node",
     tags: "Node, APIs, Back-End",
     views: 117,
@@ -477,6 +477,17 @@ export const posts: Post[] = [
     tags: "Mobile, Front-End, UI Design",
     views: 0,
     likes: 0,
-    active: false,
+    active: true,
   },
 ];
+
+const seededPostsById = new Map(posts.map((post) => [post.id, post]));
+const seededPostsByUrlId = new Map(posts.map((post) => [post.urlId, post]));
+
+export function getSeededPost(post: Pick<Post, "id" | "urlId">) {
+  return seededPostsById.get(post.id) ?? seededPostsByUrlId.get(post.urlId);
+}
+
+export function getSeededPostDate(post: Pick<Post, "id" | "urlId">) {
+  return getSeededPost(post)?.date;
+}

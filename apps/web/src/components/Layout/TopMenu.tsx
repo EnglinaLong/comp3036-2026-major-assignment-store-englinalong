@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/components/Store/CartProvider";
 import ThemeSwitch from "../Themes/ThemeSwitcher";
@@ -29,22 +29,27 @@ export function TopMenu({
   const router = useRouter();
   const [search, setSearch] = useState(query ?? "");
   const { cartCount, openCart } = useCart();
+  const isControlled = typeof searchValue === "string";
+  const inputValue = isControlled ? searchValue : search;
 
   useEffect(() => {
-    if (typeof searchValue === "string") {
-      setSearch(searchValue);
-    }
-  }, [searchValue]);
-
-  useEffect(() => {
-    if (typeof searchValue !== "string") {
+    if (!isControlled) {
       setSearch(query ?? "");
     }
-  }, [query, searchValue]);
+  }, [isControlled, query]);
 
-  const handleSearch = debounce((value: string) => {
-    router.push(`/search?q=${encodeURIComponent(value.trim())}`);
-  });
+  const handleSearch = useMemo(
+    () =>
+      debounce((value: string) => {
+        const trimmedValue = value.trim();
+        router.push(
+          trimmedValue
+            ? `/?q=${encodeURIComponent(trimmedValue)}#featured-products`
+            : "/",
+        );
+      }),
+    [router],
+  );
 
   return (
     <header className="sticky top-4 z-20 rounded-[28px] border border-black/10 bg-white/85 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur supports-[backdrop-filter]:bg-white/75 dark:border-white/10 dark:bg-neutral-950/85 dark:shadow-[0_18px_50px_rgba(0,0,0,0.35)] dark:supports-[backdrop-filter]:bg-neutral-950/75">
@@ -103,10 +108,13 @@ export function TopMenu({
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
           <form action="#" method="GET" className="grid flex-1 grid-cols-1">
             <input
-              value={search}
+              value={inputValue}
               onChange={(event) => {
                 const value = event.target.value;
-                setSearch(value);
+                if (!isControlled) {
+                  setSearch(value);
+                }
+
                 if (onSearchChange) {
                   onSearchChange(value);
                 } else {

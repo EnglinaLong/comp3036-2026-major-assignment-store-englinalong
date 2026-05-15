@@ -1,10 +1,21 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { Post } from "@repo/db/data";
 import { TopMenu } from "@/components/Layout/TopMenu";
-import { mergeStorefrontPosts } from "@/functions/storefrontPosts";
+import {
+  matchesProductSearch,
+  normalizeCategoryValue,
+  normalizeSearchValue,
+  splitNormalizedTags,
+} from "@/functions/storefrontSearch";
+import {
+  readStorefrontUrlState,
+  updateStorefrontUrlState,
+  type StorefrontUrlState,
+} from "@/functions/storefrontUrlState";
+import { useMergedStorefrontPosts } from "@/functions/storefrontPosts";
 import StoreHomepage from "./Homepage";
 
 const months = [
@@ -25,59 +36,12 @@ const months = [
 
 type FilterOption = { name: string; count: number };
 
-function normalizeSearchValue(value: string) {
-  return value.trim().toLowerCase();
-}
-
-function normalizeCategoryValue(value: string) {
-  return value.trim().toLowerCase();
-}
-
-function splitNormalizedTags(value: string) {
-  return value
-    .split(",")
-    .map((tag) => tag.trim())
-    .filter(Boolean);
-}
-
-function createProductSearchText(post: Post) {
-  const normalizedTags = post.tags
-    .split(",")
-    .map((tag) => tag.trim().toLowerCase())
-    .filter(Boolean)
-    .join(" ");
-
-  return [
-    post.title,
-    post.category,
-    post.description,
-    post.content,
-    post.tags,
-    normalizedTags,
-  ]
-    .join(" ")
-    .toLowerCase();
-}
-
 function getHistoryKey(year: number, month: number) {
   return `${year}-${month}`;
 }
 
 function getHistoryLabel(year: number, month: number) {
   return `${months[month] ?? "Unknown"} ${year}`;
-}
-
-function replaceCollectionQuery(collectionName: string | null) {
-  const url = new URL(window.location.href);
-
-  if (collectionName) {
-    url.searchParams.set("collection", collectionName);
-    url.hash = "featured-products";
-  } else {
-    url.searchParams.delete("collection");
-  }
-
-  window.history.replaceState({}, "", url.toString());
 }
 
 function buildCategoryItems(posts: Post[]) {
@@ -120,6 +84,19 @@ function buildCollectionItems(posts: Post[]) {
   return Array.from(counts.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
+function readWindowUrlState() {
+  if (typeof window === "undefined") {
+    return {
+      searchQuery: "",
+      selectedCategory: null,
+      selectedCollection: null,
+      selectedHistoryKey: null,
+    } satisfies StorefrontUrlState;
+  }
+
+  return readStorefrontUrlState(new URLSearchParams(window.location.search));
+}
+
 export function HomepageClient({
   posts,
   categoryItems: _categoryItems,
@@ -132,35 +109,56 @@ export function HomepageClient({
   historyItems: { year: number; month: number; count: number }[];
 }) {
   const searchParams = useSearchParams();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const initialUrlState = useMemo(
+    () => readStorefrontUrlState(new URLSearchParams(searchParams.toString())),
+    [searchParams],
+  );
+  const [searchQuery, setSearchQuery] = useState(initialUrlState.searchQuery);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(
+    initialUrlState.selectedCategory,
+  );
   const [selectedCollection, setSelectedCollection] = useState<string | null>(
-    null,
+    initialUrlState.selectedCollection,
   );
   const [selectedHistoryKey, setSelectedHistoryKey] = useState<string | null>(
-    null,
+    initialUrlState.selectedHistoryKey,
   );
-  const [storefrontPosts, setStorefrontPosts] = useState(posts);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(
+    initialUrlState.searchQuery,
+  );
+  const storefrontPosts = useMergedStorefrontPosts(posts);
 
   useEffect(() => {
-    setStorefrontPosts(mergeStorefrontPosts(posts));
-  }, [posts]);
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery.trim());
+    }, 300);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [searchQuery]);
+
+  useEffect(() => {
+    function handlePopState() {
+      const nextUrlState = readWindowUrlState();
+      setSearchQuery(nextUrlState.searchQuery);
+      setDebouncedSearchQuery(nextUrlState.searchQuery);
+      setSelectedCategory(nextUrlState.selectedCategory);
+      setSelectedCollection(nextUrlState.selectedCollection);
+      setSelectedHistoryKey(nextUrlState.selectedHistoryKey);
+    }
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
 
   const activeProducts = useMemo(
     () => storefrontPosts.filter((post) => post.active),
     [storefrontPosts],
   );
-  const normalizedQuery = normalizeSearchValue(searchQuery);
-  const collectionQuery = useMemo(() => {
-    const value = searchParams.get("collection");
-
-    if (!value) {
-      return null;
-    }
-
-    const normalized = normalizeSearchValue(value);
-    return normalized || null;
-  }, [searchParams]);
   const categoryItems = useMemo(
     () => buildCategoryItems(activeProducts),
     [activeProducts],
@@ -190,50 +188,88 @@ export function HomepageClient({
       return b.month - a.month;
     });
   }, [activeProducts]);
-
-  useEffect(() => {
-    setSelectedCollection(collectionQuery);
-
-    if (collectionQuery !== null) {
-      setSelectedCategory(null);
-      setSelectedHistoryKey(null);
+  const deferredSearchQuery = useDeferredValue(searchQuery.trim());
+  const normalizedQuery = normalizeSearchValue(deferredSearchQuery);
+  const sanitizedCategory = useMemo(() => {
+    if (!selectedCategory) {
+      return null;
     }
-  }, [collectionQuery]);
+
+    return categoryItems.some(
+      (item) => normalizeCategoryValue(item.name) === selectedCategory,
+    )
+      ? selectedCategory
+      : null;
+  }, [categoryItems, selectedCategory]);
+  const sanitizedCollection = useMemo(() => {
+    if (!selectedCollection) {
+      return null;
+    }
+
+    return collectionItems.some(
+      (item) => normalizeSearchValue(item.name) === selectedCollection,
+    )
+      ? selectedCollection
+      : null;
+  }, [collectionItems, selectedCollection]);
+  const sanitizedHistoryKey = useMemo(() => {
+    if (!selectedHistoryKey) {
+      return null;
+    }
+
+    return historyItems.some(
+      (item) => getHistoryKey(item.year, item.month) === selectedHistoryKey,
+    )
+      ? selectedHistoryKey
+      : null;
+  }, [historyItems, selectedHistoryKey]);
 
   const selectedCategoryLabel = useMemo(
     () =>
       categoryItems.find(
-        (item) => normalizeCategoryValue(item.name) === selectedCategory,
+        (item) => normalizeCategoryValue(item.name) === sanitizedCategory,
       )?.name ?? null,
-    [categoryItems, selectedCategory],
+    [categoryItems, sanitizedCategory],
   );
-
   const selectedCollectionLabel = useMemo(
     () =>
       collectionItems.find(
-        (item) => normalizeSearchValue(item.name) === selectedCollection,
+        (item) => normalizeSearchValue(item.name) === sanitizedCollection,
       )?.name ?? null,
-    [collectionItems, selectedCollection],
+    [collectionItems, sanitizedCollection],
   );
+  const selectedHistoryLabel = useMemo(() => {
+    if (!sanitizedHistoryKey) {
+      return null;
+    }
+
+    const [year, month] = sanitizedHistoryKey.split("-").map(Number);
+
+    if (year === undefined || month === undefined) {
+      return null;
+    }
+
+    return getHistoryLabel(year, month);
+  }, [sanitizedHistoryKey]);
 
   const filteredPosts = useMemo(() => {
     return activeProducts.filter((post) => {
       const matchesSearch = normalizedQuery
-        ? createProductSearchText(post).includes(normalizedQuery)
+        ? matchesProductSearch(post, normalizedQuery)
         : true;
 
-      const matchesHistory = selectedHistoryKey
+      const matchesHistory = sanitizedHistoryKey
         ? getHistoryKey(post.date.getFullYear(), post.date.getMonth() + 1) ===
-          selectedHistoryKey
+          sanitizedHistoryKey
         : true;
 
-      const matchesCategory = selectedCategory
-        ? normalizeCategoryValue(post.category) === selectedCategory
+      const matchesCategory = sanitizedCategory
+        ? normalizeCategoryValue(post.category) === sanitizedCategory
         : true;
 
-      const matchesCollection = selectedCollection
+      const matchesCollection = sanitizedCollection
         ? splitNormalizedTags(post.tags).some(
-            (tag) => normalizeSearchValue(tag) === selectedCollection,
+            (tag) => normalizeSearchValue(tag) === sanitizedCollection,
           )
         : true;
 
@@ -247,24 +283,36 @@ export function HomepageClient({
   }, [
     activeProducts,
     normalizedQuery,
-    selectedCategory,
-    selectedCollection,
-    selectedHistoryKey,
+    sanitizedCategory,
+    sanitizedCollection,
+    sanitizedHistoryKey,
   ]);
 
-  const selectedHistoryLabel = useMemo(() => {
-    if (!selectedHistoryKey) {
-      return null;
+  useEffect(() => {
+    const nextUrl = updateStorefrontUrlState(
+      window.location.pathname,
+      new URLSearchParams(window.location.search),
+      {
+        searchQuery: debouncedSearchQuery,
+        selectedCategory: sanitizedCategory,
+        selectedCollection: sanitizedCollection,
+        selectedHistoryKey: sanitizedHistoryKey,
+      },
+    );
+
+    const nextRelativeUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+
+    if (nextUrl === nextRelativeUrl) {
+      return;
     }
 
-    const [year, month] = selectedHistoryKey.split("-").map(Number);
-
-    if (year === undefined || month === undefined) {
-      return null;
-    }
-
-    return getHistoryLabel(year, month);
-  }, [selectedHistoryKey]);
+    window.history.replaceState(window.history.state, "", nextUrl);
+  }, [
+    debouncedSearchQuery,
+    sanitizedCategory,
+    sanitizedCollection,
+    sanitizedHistoryKey,
+  ]);
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-4 sm:px-6 lg:px-8">
@@ -275,12 +323,12 @@ export function HomepageClient({
       <StoreHomepage
         posts={activeProducts}
         filteredPosts={filteredPosts}
-        searchQuery={searchQuery}
-        selectedCategory={selectedCategory}
+        searchQuery={deferredSearchQuery}
+        selectedCategory={sanitizedCategory}
         selectedCategoryLabel={selectedCategoryLabel}
-        selectedCollection={selectedCollection}
+        selectedCollection={sanitizedCollection}
         selectedCollectionLabel={selectedCollectionLabel}
-        selectedHistoryKey={selectedHistoryKey}
+        selectedHistoryKey={sanitizedHistoryKey}
         selectedHistoryLabel={selectedHistoryLabel}
         onCategorySelect={(categoryName) => {
           const normalizedCategory = normalizeCategoryValue(categoryName);
@@ -290,33 +338,27 @@ export function HomepageClient({
           );
           setSelectedCollection(null);
           setSelectedHistoryKey(null);
-          replaceCollectionQuery(null);
         }}
         onCollectionSelect={(collectionName) => {
           const normalizedCollection = normalizeSearchValue(collectionName);
-          const nextCollection =
-            selectedCollection === normalizedCollection
-              ? null
-              : normalizedCollection;
 
-          setSelectedCollection(nextCollection);
           setSelectedCategory(null);
+          setSelectedCollection((current) =>
+            current === normalizedCollection ? null : normalizedCollection,
+          );
           setSelectedHistoryKey(null);
-          replaceCollectionQuery(nextCollection);
         }}
         onHistorySelect={(historyKey) => {
+          setSelectedCategory(null);
+          setSelectedCollection(null);
           setSelectedHistoryKey((current) =>
             current === historyKey ? null : historyKey,
           );
-          setSelectedCategory(null);
-          setSelectedCollection(null);
-          replaceCollectionQuery(null);
         }}
         onClearFilters={() => {
           setSelectedCategory(null);
           setSelectedCollection(null);
           setSelectedHistoryKey(null);
-          replaceCollectionQuery(null);
         }}
         categoryItems={categoryItems}
         collectionItems={collectionItems}

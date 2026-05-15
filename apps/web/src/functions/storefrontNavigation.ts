@@ -7,7 +7,9 @@ export function getStorefrontCollectionHref(collectionName?: string) {
     return "/#collections";
   }
 
-  return `/?collection=${encodeURIComponent(collectionName.trim())}#featured-products`;
+  return `/?collection=${encodeURIComponent(
+    collectionName.trim().toLowerCase().replace(/\s+/g, "-"),
+  )}#featured-products`;
 }
 
 export function getStorefrontHistoryHref() {
