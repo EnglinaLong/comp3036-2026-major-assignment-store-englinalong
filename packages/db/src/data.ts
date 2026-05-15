@@ -100,7 +100,7 @@ export const posts: Post[] = [
 `,
     imageUrl:
       "https://plus.unsplash.com/premium_photo-1661517706036-a48d5fc8f2f5?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-    date: new Date("Feb 16, 2026"),
+    date: new Date("May 15, 2026"),
     category: "React",
     tags: "Front-End, Optimisation, Dev Tools",
     views: 76,
@@ -348,7 +348,7 @@ export const posts: Post[] = [
 `,
     imageUrl:
       "https://images.unsplash.com/photo-1496171367470-9ed9a91ea931?auto=format&fit=crop&w=1200&q=80",
-    date: new Date("Jan 21, 2026"),
+    date: new Date("Jan 23, 2026"),
     category: "Responsive Design",
     tags: "Admin, Responsive Design, UI Design",
     views: 72,
@@ -441,7 +441,7 @@ export const posts: Post[] = [
 `,
     imageUrl:
       "https://images.unsplash.com/photo-1555949963-aa79dcee981c?auto=format&fit=crop&w=1200&q=80",
-    date: new Date("Oct 3, 2025"),
+    date: new Date("Jan 24, 2026"),
     category: "Node",
     tags: "Node, APIs, Back-End",
     views: 117,
