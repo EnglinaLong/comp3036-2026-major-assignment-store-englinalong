@@ -1,266 +1,297 @@
-> This project was originally based on code submitted for Assignment 2 and will be significantly extended for the COMP3036 major assignment.
+# COMP3036 Major Assignment — Full Stack Store
 
-# Assignment 2 - Blog - Client App
+This project was originally based on the Assignment 2 blog application and has been extended into a B2C full stack digital product store for the COMP3036 Major Assignment.
 
-The goal of this assignment is to implement all the client side functionality.
+The application focuses on selling digital developer resources such as:
+- Full stack starter templates
+- Tailwind UI component packs
+- Dashboard templates
+- Backend toolkits
+- Developer productivity resources
 
-# Assignment 2 - Blog - Client App
+The project contains:
+- Customer shopping application
+- Admin dashboard
+- Product management system
+- Shopping cart and checkout flow
+- Wishlist functionality
+- Customer authentication
+- Order history system
 
-The goal of this assignment is to implement all the client side functionality.
-Example implementation is in the image below.
+---
 
-## Success Criteria
+# Success Criteria
 
-- ✅ All of the tests must be passing
-- ✅ You must be able to explain any code in the codebase
+- ✅ All tests must pass
+- ✅ Customer and admin applications function correctly
+- ✅ Products sync correctly between admin and customer applications
+- ✅ Customers can complete the shopping experience
 
-## 👾 Requirements - Assignment 2.1 - Client
+---
 
-> 💡Idea! Create a new issue in your repository, where you can track the completion of these items. Just copy paste them into the issue and mark them as complete as you go. Make sure you copy the source from README.md not the preview text.
+# Requirements — Iteration 1 Frontend Implementation
 
-### HOME SCREEN
+Iteration 1 focuses on frontend functionality using local state and frontend-only persistence.
 
-- [ ] User must see only the "active" posts
-- [ ] User must see the list of blog post categories, where each category points to UI showing only posts of that category
-- [ ] User must see the list of blog post tags, where each tag points to UI showing only posts of that category
-- [ ] User must see the history of blog posts, showing month and year, where each moth, year tuple points to UI showing only posts of that category
-- [ ] Tags and history items shown are only considered from active posts
-- [ ] The list shows the following items:
-  - blog title, pointing to detail page
-  - short description
-  - date
-  - image
-  - tags
-  - likes
-  - views
-- [ ] User must be able to switch between dark and light theme with a button
-      The dark theme setting is stored in the "data-theme" attribute on html element
-- [ ] There is a search functionality that filters blogs based on string found in title or description, redirecting to search page
+## Customer Application
 
-### DETAIL SCREEN
+### Home Screen
+- [ ] Display active products only
+- [ ] Display product categories
+- [ ] Display product collections/tags
+- [ ] Display featured products
+- [ ] Support dark/light mode
+- [ ] Search products by title or description
+- [ ] Display:
+  - product title
+  - product image
+  - product description
+  - product price
+  - category
+  - collections/tags
 
-- [ ] Detail page shows the same items as list item, but the short description is replaced by formatted long description
-- [ ] Detail text is stored as Markdown, which needs to be converted to HTML
+### Product Detail Screen
+- [ ] Display full product information
+- [ ] Display large product image
+- [ ] Display pricing information
+- [ ] Add products to cart
+- [ ] Save products to wishlist
+- [ ] Display related products
+- [ ] Display product availability status
 
-### CATEGORY SCREEN
+### Category / Collection / Search Screens
+- [ ] Filter products by category
+- [ ] Filter products by collection/tag
+- [ ] Search products using query strings
+- [ ] Display empty states when no products are found
 
-- [ ] Displays posts from the category from url (e.g. /category/react)
-- [ ] Displays "0 Posts" when search does no posts have that category
+### Customer Account Features
+- [ ] Customer registration
+- [ ] Customer login/logout
+- [ ] Account overview page
+- [ ] Wishlist page
+- [ ] Order history page
 
-### HISTORY SCREEN
+### Shopping Cart and Checkout
+- [ ] Add/remove products from cart
+- [ ] Update product quantities
+- [ ] Display order summary
+- [ ] Frontend-only checkout flow
+- [ ] Prevent checkout for unavailable products
+- [ ] Display unavailable product warnings
+- [ ] Save completed orders locally
 
-- [ ] Displays posts from year and month specified in the url (e.g. /history/2024/12)
-- [ ] Displays "0 Posts" when no posts are from that given month and year
+---
 
-### TAG SCREEN
+# Admin Dashboard
 
-- [ ] Displays posts with the tag url (e.g. /tags/dev-tools)
-- [ ] Displays "0 Posts" when search does no posts have that tag
+## Admin Authentication
+- [ ] Secure admin login
+- [ ] Protected admin pages
+- [ ] Logout functionality
 
-### SEARCH SCREEN
+## Product Management
+- [ ] View all products
+- [ ] Create products
+- [ ] Update products
+- [ ] Activate/deactivate products
+- [ ] Filter products
+- [ ] Sort products
+- [ ] Preview product details
+- [ ] Validate form fields
+- [ ] Sync products with customer application
 
-- [ ] Displays results based on search string stored in the query string (e.g. /search?q=Fat)
-- [ ] Displays "0 Posts" when search does not find anything
+---
 
-## 👾 Requirements - Assignment 2.2 - Admin
+# Requirements — Iteration 2 Backend Integration
 
-> 💡Idea! Create a new issue in your repository, where you can track the completion of these items. Just copy paste them into the issue and mark them as complete as you go. Make sure you copy the source from README.md not the preview text.
+Iteration 2 extends the application using backend APIs and database persistence.
 
-### ADMIN HOME SCREEN
+## Backend / Customer Features
 
-- [ ] Shows Login screen if not logged
-- [ ] Shows List screen if logged
-- [ ] There must be a logout button
-- [ ] Clicking the logout button logs the user out
-- [ ] Authenticate the current client using a hard-coded password
-- [ ] Use a httpOnly cookie and name it "auth_token" to remember the signed-in state.
+### Product Data
+- [ ] Load products from database
+- [ ] Persist product changes across refreshes
+- [ ] Sync customer and admin product data
+- [ ] Perform server-side filtering and searching
 
-### ADMIN LIST SCREEN
+### Shopping Cart
+- [ ] Persist cart items
+- [ ] Prevent checkout for unavailable products
+- [ ] Update cart data using backend APIs
 
-- [ ] Shows both active and inactive posts
-- [ ] Article list is only accessible to logged-in users.
-- [ ] There is a filter screen that allows filtering posts by:
-  - [ ] Title or content
-  - [ ] Tags
-  - [ ] Date
-  - [ ] Visibility
-- [ ] You can combine multiple filters
-- [ ] Users can sort posts by name or creation date, both ascending and descending
-- [ ] The post list displays a list of filtered items with the following information:
-  - [ ] The list post item displays the image, title of the post
-  - [ ] The list post items display metadata such as category, tags, and "active" status.
-  - [ ] The active status is a button that, on click, just displays a message
-- [ ] Clicking on the title takes the user to the MODIFY SCREEN, allowing the user to modify the current post
-- [ ] There is a button to create new posts
-- [ ] Clicking on the "Create Post" button takes the user to the CREATE SCREEN
+### Wishlist
+- [ ] Persist wishlist items to database
+- [ ] Allow customers to view saved products
 
-### ADMIN CREATE and UPDATE screen
+### Orders and Checkout
+- [ ] Store completed orders in database
+- [ ] Display purchase history
+- [ ] Store purchased products and totals
 
-Both create and update screens display the same UI, but the update screen preloads the data into fields.
+### Customer Authentication
+- [ ] JWT-based authentication
+- [ ] Secure customer login/register
+- [ ] Protected customer account routes
 
-- [ ] Page is only accessible to logged in user
-- [ ] There must be the following fields which must be validated for errors:
-  - [ ] Title (`input, string`)
-  - [ ] Description (textarea, string, max 200 characters)
-  - [ ] Content (`textarea, markdown string`)
-  - [ ] Tag List (`input, string`) shows a comma-separated list of tags.
-  - [ ] Image URL (`input, URL`)
-- [ ] Under the Description is a "Preview" button that replaces the text area with a rendered markdown string and changes the title to "Close Preview".
-- [ ] When the preview is closed, the cursor must be in the same position as before opening the preview.
-- [ ] Under the image input is an image preview.
-- [ ] User can click on the "Save" button that displays an error ui if one of the fields is not specified or valid.
+---
 
-## 👾 Requirements: Assignment 2.3
+# Backend / Admin Features
 
-### BACKEND / CLIENT
+## Admin Authentication
+- [ ] Validate admin login on the server
+- [ ] Use secure JWT authentication
+- [ ] Protect admin routes
+- [ ] Support logout functionality
 
-- [ ] Data is loaded from the database backend
-- [ ] Data filtering is done server side and only filtered data is sent to client
-- [ ] Each visit of the page increases the post "views" count by one
-- [ ] User can "like" the post on the detail screen, NOT on the list screen (hint, create the `/api/likes/route.ts` route and implement the needed handlers)
-- [ ] Liking the post increases the like count by one
-- [ ] User can like the post only once (use IP)
-- [ ] User can unlike the post, decreasing the like post by one
+## Product Management
+- [ ] Create products in database
+- [ ] Update products in database
+- [ ] Activate/deactivate products
+- [ ] Persist product changes
+- [ ] Sync updates with customer application
 
-### BACKEND / ADMIN / AUTHORISATION
+## Admin Dashboard
+- [ ] View all database products
+- [ ] Filter and sort products
+- [ ] Manage active/inactive products
+- [ ] View customer purchase records
 
-> For these two requirements we do not have End 2 End tests and will be checked manually.
+---
 
-- [ ] The password is checked on server in the `/api/auth` route
-- [ ] The POST method is used for login
-- [ ] The DELETE method is used for logout
-- [ ] The admin home page checks for the presence of JWT token and verifies it, if the token does not exist or is invalid, displays the login control.
+# Database Integration
 
-### BACKEND / ADMIN / LIST SCREEN
+The backend system will use:
+- Prisma ORM
+- Neon PostgreSQL
+- Next.js API routes
+- JWT authentication
 
-- [ ] Logged in user can activate / deactivate a post clicking on the activate button, automatically saving changes
+The backend will manage:
+- Product persistence
+- Customer accounts
+- Orders and purchase history
+- Wishlist persistence
+- Product availability
+- Authentication and authorization
 
-### BACKEND / ADMIN / UPDATE SCREEN
+---
 
-- [ ] Logged in user can save changes to database, if the form is validated
+# Technology Stack
 
-### BACKEND / ADMIN / CREATE SCREEN
+## Applications
+- `apps/web` — Customer Store
+- `apps/admin` — Admin Dashboard
 
-- [ ] Logged in user can create a new post to the database, if the form is validated
+## Shared Packages
+- `packages/ui` — Shared UI components
+- `packages/utils` — Shared utility functions
+- `packages/db` — Prisma and database utilities
+- `packages/env` — Environment configuration
 
-## Prerequisites
+## Testing
+- `tests/playwright` — End-to-end testing
 
-First, make sure that "pnpm" and "turbo" is installed in your computer. If not, please follow installation instructions for pnpm. If turbo is not installed, please install it using pnpm with the following command:
+---
 
-Then, run the following command to install turborepo.
+# Running the Project
 
+Install dependencies:
+
+```bash
+pnpm install
 ```
-pnpm add -g turbo
-```
 
-## Installing the project
+Run development servers:
 
-Once the pnpm is installed, in the root of the project install the packages
-
-```
-pnpm i
-```
-
-To run end to end tests you need to install headless browsers. Please run the following command in the `tests/playwright-web` directory
-
-```
-pnpx playwright install
-```
-
-## Environment
-
-In all packages `apps/admin` and `packages/db` find `.env.example` files and copy them to `.env`. Set your environment variables accordingly!
-
-## Running the project
-
-To run the project, run the following command in the root directory of your project:
-
-```
+```bash
 turbo dev
 ```
 
-This will run:
+Applications:
+- Customer Store → http://localhost:3001
+- Admin Dashboard → http://localhost:3002
 
-- Client application at [http://localhost:3001](http://localhost:3001)
-- Admin application at [http://localhost:3002](http://localhost:3002)
+---
 
-## Running tests
+# Running Tests
 
-To run the tests please run, you have two options.
+## Customer Store Tests
 
-### Running Tests in Console
+Run customer storefront tests:
 
-If you only wish to visualise the test results in console, please run the following command in the root of your project for the first part of the second assignment (i.e. Assignment 2.1):
-
-```
+```bash
 turbo test-1
 ```
 
-This launches the turbo console UI similar to below, where you can swap between different projects:
+This includes:
+- Product browsing
+- Product detail pages
+- Search and filtering
+- Cart and checkout
+- Customer account features
+- Wishlist functionality
 
-![Turbo UI](https://skillpies.s3.ap-southeast-2.amazonaws.com/courses/full-stack-development/sections/assignment-2-1-blog-client-in-advanced-react/Screenshot%202025-02-05%20at%2014.30.45.png)
+---
 
-> ⚠️⚠️ Make sure that ALL tests pass!
+## Admin Dashboard Tests
 
-If you want to run the tests for second part (i.e. Assignment 2.2) or third part (i.e. Assignment 2.3), run these commands:
+Run admin dashboard tests:
 
+```bash
+turbo test-2
 ```
-turbo test-2 // or
-turbo test-3
-```
 
-If you want to run all tests, please run
+This includes:
+- Admin authentication
+- Product management
+- Product create/update
+- Product filtering/sorting
+- Product activation/deactivation
 
-```
+---
+
+## Full Project Tests
+
+Run all project tests:
+
+```bash
 turbo all:test
 ```
 
-### Running Tests in UIs
+---
 
-The packaged tests framework also have the possibility of visually represent your tests for nicer view of test results. To see the UIs, run this command instead of `turbo test-1`:
+# Build Project
 
+```bash
+turbo build
 ```
-turbo dev:test-1
+
+---
+
+# Project Structure
+
+```text
+apps/
+  admin/
+  web/
+
+packages/
+  db/
+  env/
+  ui/
+  utils/
+
+tests/
+  playwright/
+  storybook/
 ```
 
-This will launch the End to End testing framework Playwright's test UI similar to below, please use the Play buttons to run individual tests:
+---
 
-![Playwright UI](https://skillpies.s3.ap-southeast-2.amazonaws.com/courses/full-stack-development/sections/assignment-2-1-blog-client-in-advanced-react/Screenshot%202025-02-05%20at%2014.40.35.png)
+# Notes
 
-It also launches the unit and integration test framework Vitest's UI, similar to below. Here, you can also use the play buttons to execute individual tests!
-
-![Vitest UI](https://skillpies.s3.ap-southeast-2.amazonaws.com/courses/full-stack-development/sections/assignment-2-1-blog-client-in-advanced-react/Screenshot%202025-02-05%20at%2014.46.31.png)
-
-## Project structure
-
-The project is monorepo with the following packages split into three categories:
-
-**Applications**
-
-Contains the following web applications:
-
-- **apps/admin** - Admin Website
-- **apps/web** - Client website
-
-**Packages**
-
-Contains the following packages with shared code and configurations:
-
-- **packages/ui** - Library of UI elements shared between admin and client
-- **packages/utils** - Library of utility functions shared between other projects
-- **packages/db** - Library handling the database connection
-- **packages/eslint-config**, **packages/tailwind-config** and **packages/typescript-config** contain configuration files for build pipelines for this project
-
-**Tests**
-
-Contains the following test applications:
-
-- **tests/playwright-admin** - End to End tests for the admin application
-- **tests/playwright-web** - End to End tests for the client application
-- **tests/storybook** - Configured storybook instance for development and testing of React components in isolation
-
-## Application Structure
-
-The client application comes with pre-defined router (only one route is missing for your learning).
-The client application also comes with pre defined structure of components and utilities for you to complete.
-Tha admin application is much more bare with most functionality AND structure needed to be completed by you.
+- Iteration 1 currently uses frontend/localStorage persistence
+- Iteration 2 will integrate Neon PostgreSQL with Prisma
+- Customer and admin applications share synchronized product state
+- The project uses a Turborepo monorepo architecture
