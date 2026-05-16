@@ -11,7 +11,8 @@ import {
 } from "react";
 import { getProductHref } from "@/functions/productHref";
 import { getProductPrice } from "@/functions/productPrice";
-import type { Post } from "@repo/db/data";
+import { useMergedStorefrontPosts } from "@/functions/storefrontPosts";
+import { posts, type Post } from "@repo/db/data";
 
 export type CartItem = {
   id: number;
@@ -61,6 +62,25 @@ function createCartItem(post: Post): CartItem {
   };
 }
 
+function resolveCartItem(item: CartItem, products: Post[]) {
+  const latestProduct =
+    products.find((product) => product.id === item.id) ??
+    products.find((product) => product.urlId === item.urlId);
+
+  if (!latestProduct) {
+    return item;
+  }
+
+  return {
+    ...item,
+    urlId: latestProduct.urlId,
+    title: latestProduct.title,
+    category: latestProduct.category,
+    price: getProductPrice(latestProduct),
+    href: getProductHref(latestProduct),
+  };
+}
+
 function readStoredCartItems() {
   if (typeof window === "undefined") {
     return [];
@@ -96,6 +116,7 @@ export function CartProvider({ children }: PropsWithChildren) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [hasHydrated, setHasHydrated] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const mergedProducts = useMergedStorefrontPosts(posts);
 
   const openCart = useCallback(() => {
     setIsCartOpen(true);
@@ -183,20 +204,25 @@ export function CartProvider({ children }: PropsWithChildren) {
     [cartItems],
   );
 
+  const resolvedCartItems = useMemo(
+    () => cartItems.map((item) => resolveCartItem(item, mergedProducts)),
+    [cartItems, mergedProducts],
+  );
+
   const subtotal = useMemo(
     () =>
       formatCurrency(
-        cartItems.reduce(
+        resolvedCartItems.reduce(
           (total, item) => total + priceToNumber(item.price) * item.quantity,
           0,
         ),
       ),
-    [cartItems],
+    [resolvedCartItems],
   );
 
   const value = useMemo<CartContextValue>(
     () => ({
-      cartItems,
+      cartItems: resolvedCartItems,
       cartCount,
       subtotal,
       isCartOpen,
@@ -211,7 +237,6 @@ export function CartProvider({ children }: PropsWithChildren) {
     [
       addToCart,
       cartCount,
-      cartItems,
       clearCart,
       closeCart,
       decreaseQuantity,
@@ -219,6 +244,7 @@ export function CartProvider({ children }: PropsWithChildren) {
       isCartOpen,
       openCart,
       removeFromCart,
+      resolvedCartItems,
       subtotal,
     ],
   );
