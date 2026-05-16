@@ -284,7 +284,6 @@ packages/
 
 tests/
   playwright/
-  storybook/
 ```
 
 ---
