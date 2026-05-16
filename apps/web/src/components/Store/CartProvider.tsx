@@ -12,7 +12,7 @@ import {
 import { getProductHref } from "@/functions/productHref";
 import { getProductPrice } from "@/functions/productPrice";
 import { useMergedStorefrontPosts } from "@/functions/storefrontPosts";
-import { posts, type Post } from "@repo/db/data";
+import type { Post } from "@repo/db/data";
 
 export type CartItem = {
   id: number;
@@ -24,12 +24,19 @@ export type CartItem = {
   href: string;
 };
 
+export type ResolvedCartItem = CartItem & {
+  isAvailable: boolean;
+};
+
 const CART_STORAGE_KEY = "storefront-cart-items";
 
 type CartContextValue = {
-  cartItems: CartItem[];
+  cartItems: ResolvedCartItem[];
+  availableCartItems: ResolvedCartItem[];
   cartCount: number;
+  availableCartCount: number;
   subtotal: string;
+  hasUnavailableItems: boolean;
   isCartOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
@@ -38,6 +45,7 @@ type CartContextValue = {
   increaseQuantity: (postId: number) => void;
   decreaseQuantity: (postId: number) => void;
   clearCart: () => void;
+  clearAvailableItems: () => void;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -62,13 +70,16 @@ function createCartItem(post: Post): CartItem {
   };
 }
 
-function resolveCartItem(item: CartItem, products: Post[]) {
+function resolveCartItem(item: CartItem, products: Post[]): ResolvedCartItem {
   const latestProduct =
     products.find((product) => product.id === item.id) ??
     products.find((product) => product.urlId === item.urlId);
 
   if (!latestProduct) {
-    return item;
+    return {
+      ...item,
+      isAvailable: false,
+    };
   }
 
   return {
@@ -78,6 +89,7 @@ function resolveCartItem(item: CartItem, products: Post[]) {
     category: latestProduct.category,
     price: getProductPrice(latestProduct),
     href: getProductHref(latestProduct),
+    isAvailable: latestProduct.active,
   };
 }
 
@@ -112,11 +124,14 @@ function readStoredCartItems() {
   }
 }
 
-export function CartProvider({ children }: PropsWithChildren) {
+export function CartProvider({
+  children,
+  initialPosts,
+}: PropsWithChildren<{ initialPosts: Post[] }>) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [hasHydrated, setHasHydrated] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const mergedProducts = useMergedStorefrontPosts(posts);
+  const mergedProducts = useMergedStorefrontPosts(initialPosts);
 
   const openCart = useCallback(() => {
     setIsCartOpen(true);
@@ -150,6 +165,18 @@ export function CartProvider({ children }: PropsWithChildren) {
   const clearCart = useCallback(() => {
     setCartItems([]);
   }, []);
+
+  const clearAvailableItems = useCallback(() => {
+    setCartItems((current) =>
+      current.filter((item) => {
+        const latestProduct =
+          mergedProducts.find((product) => product.id === item.id) ??
+          mergedProducts.find((product) => product.urlId === item.urlId);
+
+        return !latestProduct || !latestProduct.active;
+      }),
+    );
+  }, [mergedProducts]);
 
   const increaseQuantity = useCallback((postId: number) => {
     setCartItems((current) =>
@@ -209,37 +236,60 @@ export function CartProvider({ children }: PropsWithChildren) {
     [cartItems, mergedProducts],
   );
 
+  const availableCartItems = useMemo(
+    () => resolvedCartItems.filter((item) => item.isAvailable),
+    [resolvedCartItems],
+  );
+
+  const availableCartCount = useMemo(
+    () => availableCartItems.reduce((total, item) => total + item.quantity, 0),
+    [availableCartItems],
+  );
+
+  const hasUnavailableItems = useMemo(
+    () => resolvedCartItems.some((item) => !item.isAvailable),
+    [resolvedCartItems],
+  );
+
   const subtotal = useMemo(
     () =>
       formatCurrency(
-        resolvedCartItems.reduce(
+        availableCartItems.reduce(
           (total, item) => total + priceToNumber(item.price) * item.quantity,
           0,
         ),
       ),
-    [resolvedCartItems],
+    [availableCartItems],
   );
 
   const value = useMemo<CartContextValue>(
     () => ({
       cartItems: resolvedCartItems,
+      availableCartItems,
       cartCount,
+      availableCartCount,
       subtotal,
+      hasUnavailableItems,
       isCartOpen,
       openCart,
       closeCart,
       addToCart,
       clearCart,
+      clearAvailableItems,
       removeFromCart,
       increaseQuantity,
       decreaseQuantity,
     }),
     [
       addToCart,
+      availableCartCount,
+      availableCartItems,
       cartCount,
       clearCart,
+      clearAvailableItems,
       closeCart,
       decreaseQuantity,
+      hasUnavailableItems,
       increaseQuantity,
       isCartOpen,
       openCart,

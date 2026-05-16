@@ -322,6 +322,7 @@ export function HomepageClient({
 
       <StoreHomepage
         posts={activeProducts}
+        availableProductCount={activeProducts.length}
         filteredPosts={filteredPosts}
         searchQuery={deferredSearchQuery}
         selectedCategory={sanitizedCategory}

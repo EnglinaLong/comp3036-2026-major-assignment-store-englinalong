@@ -24,6 +24,7 @@ const months = [
 
 export function StoreHomepage({
   posts,
+  availableProductCount,
   filteredPosts,
   searchQuery,
   selectedCategory,
@@ -41,6 +42,7 @@ export function StoreHomepage({
   historyItems,
 }: {
   posts: Post[];
+  availableProductCount: number;
   filteredPosts: Post[];
   searchQuery: string;
   selectedCategory: string | null;
@@ -98,7 +100,7 @@ export function StoreHomepage({
       ? `${historyCountText}${hasSearchQuery ? ` for "${searchQuery.trim()}"` : ""}`
       : hasSearchQuery
       ? `Showing ${productCountLabel} for "${searchQuery.trim()}"`
-      : `Showing all ${posts.length} products`;
+      : `Showing all ${availableProductCount} products`;
 
   return (
     <div className="space-y-14 pb-14">
@@ -148,7 +150,7 @@ export function StoreHomepage({
                   Available products
                 </p>
                 <p className="mt-2 text-3xl font-semibold text-neutral-950 dark:text-neutral-50">
-                  {posts.length}
+                  {availableProductCount}
                 </p>
               </div>
               <div className="rounded-[24px] bg-white/85 p-5 shadow-sm ring-1 ring-black/5 dark:bg-neutral-900/80 dark:ring-white/10">

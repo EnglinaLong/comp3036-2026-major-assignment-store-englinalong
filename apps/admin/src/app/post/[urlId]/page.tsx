@@ -1,8 +1,8 @@
 import { client } from "@repo/db/client";
 import { getSeededPostDate } from "@repo/db/data";
 import { LoginForm } from "../../../components/LoginForm";
-import { PostEditor } from "../../../components/PostEditor";
 import { isLoggedIn } from "../../../utils/auth";
+import { AdminProductEditorRouteClient } from "./AdminProductEditorRouteClient";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -23,22 +23,11 @@ export default async function UpdatePostPage({
   }
 
   const { urlId } = await params;
-  const post = await client.db.post.findUnique({
-    where: {
-      urlId,
+  const posts = await client.db.post.findMany({
+    orderBy: {
+      id: "asc",
     },
-    select: {
-      id: true,
-      urlId: true,
-      title: true,
-      category: true,
-      description: true,
-      content: true,
-      imageUrl: true,
-      tags: true,
-      date: true,
-      views: true,
-      active: true,
+    include: {
       _count: {
         select: {
           Likes: true,
@@ -46,33 +35,16 @@ export default async function UpdatePostPage({
       },
     },
   });
-
-  if (!post) {
-    return (
-      <main style={{ padding: "2rem" }}>
-        <h1>Product not found</h1>
-      </main>
-    );
-  }
-
-  const seededDate = getSeededPostDate(post);
+  const initialPosts = posts.map((post) => ({
+    ...post,
+    date: getSeededPostDate(post) ?? post.date,
+    likes: post._count.Likes,
+  }));
 
   return (
-    <PostEditor
-      postId={post.id}
-      initialPost={{
-        urlId: post.urlId,
-        title: post.title,
-        category: post.category,
-        description: post.description,
-        content: post.content,
-        imageUrl: post.imageUrl,
-        date: seededDate ?? post.date,
-        views: post.views,
-        likes: post._count.Likes,
-        active: post.active,
-        tags: post.tags,
-      }}
+    <AdminProductEditorRouteClient
+      urlId={urlId}
+      initialPosts={initialPosts}
     />
   );
 }

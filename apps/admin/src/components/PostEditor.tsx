@@ -13,6 +13,7 @@ const CREATE_PRODUCT_DRAFT_STORAGE_KEY = "admin-create-product-draft";
 
 type PostEditorProps = {
   postId?: number;
+  isLocalOnly?: boolean;
   initialPost: Pick<
     Post,
     | "title"
@@ -235,7 +236,11 @@ function clearCreateDraft() {
   window.sessionStorage.removeItem(CREATE_PRODUCT_DRAFT_STORAGE_KEY);
 }
 
-export function PostEditor({ postId, initialPost }: PostEditorProps) {
+export function PostEditor({
+  postId,
+  isLocalOnly = false,
+  initialPost,
+}: PostEditorProps) {
   const isCreateMode = !initialPost.title.trim();
   const [values, setValues] = useState<FormValues>(() => {
     const baseValues = {
@@ -332,32 +337,49 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
         return;
       }
 
-      const response = await fetch(`/api/posts/${postId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(submissionValues),
-      });
+      if (isLocalOnly) {
+        upsertCreatedProduct({
+          id: postId,
+          urlId: initialPost.urlId,
+          title: submissionValues.title.trim(),
+          category: submissionValues.category.trim(),
+          description: submissionValues.description.trim(),
+          content: submissionValues.content.trim(),
+          imageUrl: submissionValues.imageUrl.trim(),
+          date: initialPost.date,
+          tags: submissionValues.tags.trim(),
+          views: initialPost.views,
+          likes: initialPost.likes,
+          active: initialPost.active,
+        });
+      } else {
+        const response = await fetch(`/api/posts/${postId}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(submissionValues),
+        });
 
-      if (!response.ok) {
-        setShowSaveError(true);
-        setSaveMessage("");
-        return;
+        if (!response.ok) {
+          setShowSaveError(true);
+          setSaveMessage("");
+          return;
+        }
+
+        upsertProductOverride(initialPost.urlId, {
+          title: submissionValues.title.trim(),
+          category: submissionValues.category.trim(),
+          description: submissionValues.description.trim(),
+          content: submissionValues.content.trim(),
+          imageUrl: submissionValues.imageUrl.trim(),
+          tags: submissionValues.tags.trim(),
+          date: initialPost.date,
+          views: initialPost.views,
+          likes: initialPost.likes,
+          active: initialPost.active,
+        });
       }
-
-      upsertProductOverride(initialPost.urlId, {
-        title: submissionValues.title.trim(),
-        category: submissionValues.category.trim(),
-        description: submissionValues.description.trim(),
-        content: submissionValues.content.trim(),
-        imageUrl: submissionValues.imageUrl.trim(),
-        tags: submissionValues.tags.trim(),
-        date: initialPost.date,
-        views: initialPost.views,
-        likes: initialPost.likes,
-        active: initialPost.active,
-      });
     } else {
       const response = await fetch("/api/posts", {
         method: "POST",

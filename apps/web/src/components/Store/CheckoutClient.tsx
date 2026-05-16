@@ -76,7 +76,13 @@ function validateForm(values: CheckoutFormState) {
 
 export function CheckoutClient() {
   const router = useRouter();
-  const { cartItems, cartCount, subtotal, clearCart } = useCart();
+  const {
+    cartItems,
+    availableCartItems,
+    availableCartCount,
+    subtotal,
+    clearAvailableItems,
+  } = useCart();
   const { customer, hasHydrated } = useCustomerAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -113,13 +119,13 @@ export function CheckoutClient() {
 
   const orderSummary = useMemo(
     () =>
-      cartItems.map((item) => ({
+      availableCartItems.map((item) => ({
         ...item,
         lineTotal: `$${(
           Number(item.price.replace(/[^0-9.]/g, "")) * item.quantity
         ).toFixed(2)}`,
       })),
-    [cartItems],
+    [availableCartItems],
   );
 
   function updateField(field: keyof CheckoutFormState, value: string) {
@@ -149,7 +155,7 @@ export function CheckoutClient() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!customer || cartItems.length === 0) {
+    if (!customer || availableCartItems.length === 0) {
       return;
     }
 
@@ -166,13 +172,18 @@ export function CheckoutClient() {
 
     await new Promise((resolve) => window.setTimeout(resolve, 1200));
 
+    const purchasedItems = availableCartItems.map(({ isAvailable, ...item }) => {
+      void isAvailable;
+      return item;
+    });
+
     const order: CustomerOrder = {
       id: createOrderId(),
       date: new Date().toISOString(),
       status: "Paid",
       total: subtotal,
-      itemCount: cartCount,
-      items: cartItems,
+      itemCount: availableCartCount,
+      items: purchasedItems,
       shipping: {
         fullName: formState.fullName.trim(),
         email: formState.email.trim(),
@@ -191,7 +202,7 @@ export function CheckoutClient() {
       orderId: order.id,
       total: order.total,
     });
-    clearCart();
+    clearAvailableItems();
     router.push("/account/orders");
   }
 
@@ -213,6 +224,25 @@ export function CheckoutClient() {
         </h2>
         <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-300">
           Add a few items before continuing to checkout.
+        </p>
+        <Link
+          href="/#featured-products"
+          className="mt-6 inline-flex items-center justify-center rounded-full bg-[color:var(--color-wsu)] px-5 py-3 font-medium text-white transition hover:bg-[color:var(--color-wsu-light)]"
+        >
+          Shop Products
+        </Link>
+      </div>
+    );
+  }
+
+  if (availableCartItems.length === 0) {
+    return (
+      <div className="rounded-[28px] border border-black/10 bg-white p-8 text-center dark:border-white/10 dark:bg-neutral-950">
+        <h2 className="text-2xl font-semibold text-neutral-950 dark:text-neutral-50">
+          No available products to checkout.
+        </h2>
+        <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-300">
+          Remove unavailable items from your cart before continuing.
         </p>
         <Link
           href="/#featured-products"
@@ -346,7 +376,7 @@ export function CheckoutClient() {
           <div className="mt-5 space-y-3 text-sm text-neutral-600 dark:text-neutral-300">
             <div className="flex items-center justify-between">
               <span>Items</span>
-              <span>{cartCount}</span>
+              <span>{availableCartCount}</span>
             </div>
             <div className="flex items-center justify-between border-t border-neutral-200 pt-3 text-base font-semibold text-neutral-950 dark:border-neutral-800 dark:text-neutral-50">
               <span>Total</span>

@@ -16,6 +16,9 @@ type ProductRecord = {
 export const POST_OVERRIDES_STORAGE_KEY = "admin-post-overrides";
 export const CREATED_POSTS_STORAGE_KEY = "admin-created-posts";
 export const LOCAL_PRODUCT_STATE_EVENT = "local-product-state:change";
+const POST_OVERRIDES_COOKIE_KEY = "shared-admin-post-overrides";
+const CREATED_POSTS_COOKIE_KEY = "shared-admin-created-posts";
+const PRODUCT_STATE_SESSION_COOKIE_KEY = "shared-product-state-session";
 
 function normalizeStoredPost(post: ProductRecord) {
   return {
@@ -42,8 +45,104 @@ function getStorage() {
   return window.localStorage;
 }
 
+function getCookieValue(key: string) {
+  if (typeof document === "undefined") {
+    return null;
+  }
+
+  const cookieValue = document.cookie
+    .split("; ")
+    .find((entry) => entry.startsWith(`${key}=`))
+    ?.slice(key.length + 1);
+
+  if (!cookieValue) {
+    return null;
+  }
+
+  try {
+    return decodeURIComponent(cookieValue);
+  } catch {
+    return null;
+  }
+}
+
+function setCookieValue(key: string, value: string) {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  document.cookie = `${key}=${encodeURIComponent(
+    value,
+  )}; path=/; max-age=31536000; SameSite=Lax`;
+}
+
+function setSessionCookieValue(key: string, value: string) {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  document.cookie = `${key}=${encodeURIComponent(value)}; path=/; SameSite=Lax`;
+}
+
+function removeCookieValue(key: string) {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  document.cookie = `${key}=; path=/; max-age=0; SameSite=Lax`;
+}
+
+function getSharedStateValue(
+  storage: Storage,
+  storageKey: string,
+  cookieKey: string,
+) {
+  const cookieValue = getCookieValue(cookieKey);
+
+  if (cookieValue) {
+    setSessionCookieValue(PRODUCT_STATE_SESSION_COOKIE_KEY, "1");
+    storage.setItem(storageKey, cookieValue);
+    return cookieValue;
+  }
+
+  const storageValue = storage.getItem(storageKey);
+
+  if (storageValue) {
+    setSessionCookieValue(PRODUCT_STATE_SESSION_COOKIE_KEY, "1");
+    setCookieValue(cookieKey, storageValue);
+    return storageValue;
+  }
+
+  return null;
+}
+
+function setSharedStateValue(
+  storage: Storage,
+  storageKey: string,
+  cookieKey: string,
+  value: string,
+) {
+  storage.setItem(storageKey, value);
+  setSessionCookieValue(PRODUCT_STATE_SESSION_COOKIE_KEY, "1");
+  setCookieValue(cookieKey, value);
+}
+
+function removeSharedStateValue(
+  storage: Storage,
+  storageKey: string,
+  cookieKey: string,
+) {
+  storage.removeItem(storageKey);
+  removeCookieValue(cookieKey);
+}
+
 function readJson<T>(storage: Storage, key: string, fallback: T) {
-  const rawValue = storage.getItem(key);
+  const rawValue =
+    key === CREATED_POSTS_STORAGE_KEY
+      ? getSharedStateValue(storage, key, CREATED_POSTS_COOKIE_KEY)
+      : key === POST_OVERRIDES_STORAGE_KEY
+        ? getSharedStateValue(storage, key, POST_OVERRIDES_COOKIE_KEY)
+        : storage.getItem(key);
 
   if (!rawValue) {
     return fallback;
@@ -94,8 +193,16 @@ export function readLocalProductState(): LocalProductState {
       postOverrides,
     };
   } catch {
-    storage.removeItem(CREATED_POSTS_STORAGE_KEY);
-    storage.removeItem(POST_OVERRIDES_STORAGE_KEY);
+    removeSharedStateValue(
+      storage,
+      CREATED_POSTS_STORAGE_KEY,
+      CREATED_POSTS_COOKIE_KEY,
+    );
+    removeSharedStateValue(
+      storage,
+      POST_OVERRIDES_STORAGE_KEY,
+      POST_OVERRIDES_COOKIE_KEY,
+    );
 
     return {
       createdPosts: [],
@@ -138,11 +245,18 @@ export function upsertCreatedProduct(post: ProductRecord) {
 
   const { createdPosts } = readLocalProductState();
   const nextCreatedPosts = [
-    ...createdPosts.filter((item) => item.urlId !== post.urlId),
+    ...createdPosts.filter(
+      (item) => item.urlId !== post.urlId && item.id !== post.id,
+    ),
     normalizeStoredPost(post),
   ];
 
-  storage.setItem(CREATED_POSTS_STORAGE_KEY, JSON.stringify(nextCreatedPosts));
+  setSharedStateValue(
+    storage,
+    CREATED_POSTS_STORAGE_KEY,
+    CREATED_POSTS_COOKIE_KEY,
+    JSON.stringify(nextCreatedPosts),
+  );
   notifyLocalProductStateChanged();
 }
 
@@ -158,8 +272,10 @@ export function upsertProductOverride(
 
   const { postOverrides } = readLocalProductState();
   const nextOverride = normalizeStoredOverride(override);
-  storage.setItem(
+  setSharedStateValue(
+    storage,
     POST_OVERRIDES_STORAGE_KEY,
+    POST_OVERRIDES_COOKIE_KEY,
     JSON.stringify({
       ...postOverrides,
       [urlId]: {

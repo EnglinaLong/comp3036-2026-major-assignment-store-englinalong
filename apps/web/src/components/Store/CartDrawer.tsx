@@ -9,8 +9,9 @@ import { useCustomerAuth } from "./CustomerAuthProvider";
 export default function CartDrawer() {
   const {
     cartItems,
-    cartCount,
     subtotal,
+    availableCartCount,
+    hasUnavailableItems,
     isCartOpen,
     closeCart,
     removeFromCart,
@@ -19,6 +20,7 @@ export default function CartDrawer() {
   } = useCart();
   const { customer } = useCustomerAuth();
   const router = useRouter();
+  const hasAvailableItems = availableCartCount > 0;
 
   useEffect(() => {
     if (!isCartOpen) return;
@@ -37,6 +39,10 @@ export default function CartDrawer() {
   }, [closeCart, isCartOpen]);
 
   function handleCheckout() {
+    if (!hasAvailableItems) {
+      return;
+    }
+
     if (!customer) {
       closeCart();
       router.push(
@@ -85,7 +91,8 @@ export default function CartDrawer() {
               Cart
             </p>
             <h2 className="mt-1 text-2xl font-semibold text-neutral-950 dark:text-neutral-50">
-              {cartCount} {cartCount === 1 ? "item" : "items"}
+              {availableCartCount}{" "}
+              {availableCartCount === 1 ? "available item" : "available items"}
             </h2>
           </div>
 
@@ -136,6 +143,11 @@ export default function CartDrawer() {
                       <p className="text-sm text-neutral-500 dark:text-neutral-400">
                         {item.category}
                       </p>
+                      {!item.isAvailable ? (
+                        <p className="text-sm text-amber-600 dark:text-amber-300">
+                          This product is no longer available.
+                        </p>
+                      ) : null}
                     </div>
 
                     <p className="shrink-0 text-sm font-semibold text-neutral-950 dark:text-neutral-50">
@@ -149,7 +161,8 @@ export default function CartDrawer() {
                         type="button"
                         aria-label={`Decrease quantity of ${item.title}`}
                         onClick={() => decreaseQuantity(item.id)}
-                        className="rounded-full px-3 py-1 text-sm font-semibold text-neutral-700 transition hover:bg-white hover:text-neutral-950 dark:text-neutral-200 dark:hover:bg-neutral-900 dark:hover:text-neutral-50"
+                        disabled={!item.isAvailable}
+                        className="rounded-full px-3 py-1 text-sm font-semibold text-neutral-700 transition hover:bg-white hover:text-neutral-950 disabled:cursor-not-allowed disabled:opacity-50 dark:text-neutral-200 dark:hover:bg-neutral-900 dark:hover:text-neutral-50"
                       >
                         -
                       </button>
@@ -160,7 +173,8 @@ export default function CartDrawer() {
                         type="button"
                         aria-label={`Increase quantity of ${item.title}`}
                         onClick={() => increaseQuantity(item.id)}
-                        className="rounded-full px-3 py-1 text-sm font-semibold text-neutral-700 transition hover:bg-white hover:text-neutral-950 dark:text-neutral-200 dark:hover:bg-neutral-900 dark:hover:text-neutral-50"
+                        disabled={!item.isAvailable}
+                        className="rounded-full px-3 py-1 text-sm font-semibold text-neutral-700 transition hover:bg-white hover:text-neutral-950 disabled:cursor-not-allowed disabled:opacity-50 dark:text-neutral-200 dark:hover:bg-neutral-900 dark:hover:text-neutral-50"
                       >
                         +
                       </button>
@@ -186,15 +200,23 @@ export default function CartDrawer() {
                 </span>
               </div>
               <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-                {customer
-                  ? "Secure checkout and instant access after purchase."
-                  : "Please sign in to continue to checkout."}
+                {!hasAvailableItems
+                  ? "No available products to checkout."
+                  : customer
+                    ? "Secure checkout and instant access after purchase."
+                    : "Please sign in to continue to checkout."}
               </p>
+              {hasUnavailableItems && hasAvailableItems ? (
+                <p className="mt-2 text-sm text-amber-600 dark:text-amber-300">
+                  Unavailable products will be excluded from checkout.
+                </p>
+              ) : null}
               <div className="mt-4 flex flex-wrap gap-3">
                 <button
                   type="button"
                   onClick={handleCheckout}
-                  className="inline-flex items-center justify-center rounded-full bg-[color:var(--color-wsu)] px-5 py-3 font-medium text-white transition hover:bg-[color:var(--color-wsu-light)]"
+                  disabled={!hasAvailableItems}
+                  className="inline-flex items-center justify-center rounded-full bg-[color:var(--color-wsu)] px-5 py-3 font-medium text-white transition hover:bg-[color:var(--color-wsu-light)] disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   Proceed to Checkout
                 </button>
