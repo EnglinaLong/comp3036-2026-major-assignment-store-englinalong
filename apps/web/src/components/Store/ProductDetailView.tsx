@@ -16,6 +16,10 @@ import {
   getWishlistSavesLabel,
 } from "@/functions/productStats";
 import { useMergedStorefrontPosts } from "@/functions/storefrontPosts";
+import {
+  isProductWishlisted,
+  setProductWishlisted,
+} from "@/functions/customerWishlist";
 
 export default function ProductDetailView({
   post,
@@ -50,6 +54,7 @@ export default function ProductDetailView({
     setSaved((current) => {
       const next = !current;
       setSavedCount((count) => Math.max(0, count + (next ? 1 : -1)));
+      setProductWishlisted(displayPost.urlId, next);
       return next;
     });
   }
@@ -71,6 +76,14 @@ export default function ProductDetailView({
   useEffect(() => {
     setSavedCount(displayPost.likes);
   }, [displayPost.likes]);
+
+  useEffect(() => {
+    if (!hydrated) {
+      return;
+    }
+
+    setSaved(isProductWishlisted(displayPost.urlId));
+  }, [displayPost.urlId, hydrated]);
 
   function handleAddToCart() {
     addToCart(displayPost);

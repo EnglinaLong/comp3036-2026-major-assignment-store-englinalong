@@ -1,12 +1,26 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useCart } from "./CartProvider";
 import { useCustomerAuth } from "./CustomerAuthProvider";
+import {
+  readCustomerWishlist,
+  subscribeToCustomerWishlist,
+} from "@/functions/customerWishlist";
 
 export function AccountSummary() {
   const { cartCount, openCart } = useCart();
   const { account, customer, logout } = useCustomerAuth();
+  const [wishlistCount, setWishlistCount] = useState(0);
+
+  useEffect(() => {
+    setWishlistCount(readCustomerWishlist().length);
+
+    return subscribeToCustomerWishlist(() => {
+      setWishlistCount(readCustomerWishlist().length);
+    });
+  }, []);
 
   if (!customer) {
     return (
@@ -83,18 +97,28 @@ export function AccountSummary() {
             Account Overview
           </p>
           <div className="mt-4 space-y-3 text-sm text-neutral-600 dark:text-neutral-300">
-            <p>Signed in successfully</p>
+            <p>Member since today</p>
             <p>
               {cartCount} {cartCount === 1 ? "item" : "items"} in your cart
             </p>
-            <p>Member since today</p>
+            <p>
+              {wishlistCount} {wishlistCount === 1 ? "wishlist item" : "wishlist items"}
+            </p>
           </div>
-          <Link
-            href="/account/orders"
-            className="mt-5 inline-flex items-center text-sm font-medium text-[color:var(--color-wsu)] transition hover:text-[color:var(--color-wsu-light)]"
-          >
-            Review order history
-          </Link>
+          <div className="mt-5 flex flex-col gap-3">
+            <Link
+              href="/account/orders"
+              className="inline-flex items-center text-sm font-medium text-[color:var(--color-wsu)] transition hover:text-[color:var(--color-wsu-light)]"
+            >
+              Review order history
+            </Link>
+            <Link
+              href="/account/wishlist"
+              className="inline-flex items-center text-sm font-medium text-[color:var(--color-wsu)] transition hover:text-[color:var(--color-wsu-light)]"
+            >
+              View Wishlist
+            </Link>
+          </div>
         </div>
       ) : null}
     </div>
