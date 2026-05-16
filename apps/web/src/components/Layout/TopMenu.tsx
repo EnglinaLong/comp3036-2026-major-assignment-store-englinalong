@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/components/Store/CartProvider";
+import { useCustomerAuth } from "@/components/Store/CustomerAuthProvider";
 import ThemeSwitch from "../Themes/ThemeSwitcher";
 
 function debounce<T extends (...args: string[]) => void>(fn: T, delay = 300) {
@@ -29,6 +30,7 @@ export function TopMenu({
   const router = useRouter();
   const [search, setSearch] = useState(query ?? "");
   const { cartCount, openCart } = useCart();
+  const { customer, logout } = useCustomerAuth();
   const isControlled = typeof searchValue === "string";
   const inputValue = isControlled ? searchValue : search;
 
@@ -95,6 +97,38 @@ export function TopMenu({
             >
               Collections
             </Link>
+            {customer ? (
+              <>
+                <Link
+                  href="/account"
+                  className="rounded-full px-4 py-2 transition hover:bg-neutral-100 hover:text-neutral-950 dark:hover:bg-neutral-800 dark:hover:text-neutral-50"
+                >
+                  Account
+                </Link>
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="rounded-full px-4 py-2 transition hover:bg-neutral-100 hover:text-neutral-950 dark:hover:bg-neutral-800 dark:hover:text-neutral-50"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/account/login"
+                  className="rounded-full px-4 py-2 transition hover:bg-neutral-100 hover:text-neutral-950 dark:hover:bg-neutral-800 dark:hover:text-neutral-50"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/account/register"
+                  className="rounded-full px-4 py-2 transition hover:bg-neutral-100 hover:text-neutral-950 dark:hover:bg-neutral-800 dark:hover:text-neutral-50"
+                >
+                  Create Account
+                </Link>
+              </>
+            )}
             <button
               type="button"
               onClick={openCart}
@@ -126,6 +160,20 @@ export function TopMenu({
               className="w-full rounded-full border border-neutral-200 bg-neutral-50 px-5 py-3 text-sm text-neutral-900 outline-none transition focus:border-[color:var(--color-wsu)] focus:bg-white dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:placeholder:text-neutral-400 dark:focus:bg-neutral-950"
             />
           </form>
+
+          {customer ? (
+            <Link
+              href="/account"
+              className="rounded-[24px] border border-[color:var(--color-wsu)]/15 bg-[color:var(--color-wsu)]/5 px-4 py-3 text-sm text-neutral-700 transition hover:border-[color:var(--color-wsu)]/30 hover:bg-[color:var(--color-wsu)]/10 dark:text-neutral-200"
+            >
+              <span className="block font-semibold text-neutral-950 dark:text-neutral-50">
+                {customer.name}
+              </span>
+              <span className="block text-xs text-neutral-500 dark:text-neutral-400">
+                {customer.email}
+              </span>
+            </Link>
+          ) : null}
 
           <div className="hidden md:flex md:items-center">
             <ThemeSwitch />

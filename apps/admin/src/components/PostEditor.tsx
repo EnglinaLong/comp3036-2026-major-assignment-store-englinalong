@@ -1,7 +1,7 @@
 "use client";
 
 import { marked } from "marked";
-import { useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type { Post } from "@repo/db/data";
 import {
   upsertCreatedProduct,
@@ -9,6 +9,7 @@ import {
 } from "@repo/ui/local-product-state";
 
 const PRODUCT_PRICE_OVERRIDES_COOKIE = "store-product-price-overrides";
+const CREATE_PRODUCT_DRAFT_STORAGE_KEY = "admin-create-product-draft";
 
 type PostEditorProps = {
   postId?: number;
@@ -181,28 +182,118 @@ function storePriceOverride(price: number, title: string) {
   )}; path=/; max-age=31536000; SameSite=Lax`;
 }
 
+function readCreateDraft() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const rawValue = window.sessionStorage.getItem(CREATE_PRODUCT_DRAFT_STORAGE_KEY);
+
+  if (!rawValue) {
+    return null;
+  }
+
+  try {
+    const parsedValue = JSON.parse(rawValue) as Partial<FormValues>;
+
+    return {
+      title: typeof parsedValue.title === "string" ? parsedValue.title : "",
+      category:
+        typeof parsedValue.category === "string" ? parsedValue.category : "",
+      description:
+        typeof parsedValue.description === "string"
+          ? parsedValue.description
+          : "",
+      content: typeof parsedValue.content === "string" ? parsedValue.content : "",
+      imageUrl:
+        typeof parsedValue.imageUrl === "string" ? parsedValue.imageUrl : "",
+      price: typeof parsedValue.price === "string" ? parsedValue.price : "",
+      tags: typeof parsedValue.tags === "string" ? parsedValue.tags : "",
+    } satisfies FormValues;
+  } catch {
+    window.sessionStorage.removeItem(CREATE_PRODUCT_DRAFT_STORAGE_KEY);
+    return null;
+  }
+}
+
+function writeCreateDraft(values: FormValues) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.sessionStorage.setItem(
+    CREATE_PRODUCT_DRAFT_STORAGE_KEY,
+    JSON.stringify(values),
+  );
+}
+
+function clearCreateDraft() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.sessionStorage.removeItem(CREATE_PRODUCT_DRAFT_STORAGE_KEY);
+}
+
 export function PostEditor({ postId, initialPost }: PostEditorProps) {
-  const [values, setValues] = useState<FormValues>({
-    ...initialPost,
-    price: String(
-      readStoredPrice(initialPost.title) ??
-        getConfiguredPrice(initialPost.title) ??
-        getFallbackPrice(postId, initialPost.category),
-    ),
+  const isCreateMode = !initialPost.title.trim();
+  const [values, setValues] = useState<FormValues>(() => {
+    const baseValues = {
+      ...initialPost,
+      price: String(
+        readStoredPrice(initialPost.title) ??
+          getConfiguredPrice(initialPost.title) ??
+          getFallbackPrice(postId, initialPost.category),
+      ),
+    };
+
+    if (!isCreateMode) {
+      return baseValues;
+    }
+
+    return readCreateDraft() ?? baseValues;
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [showSaveError, setShowSaveError] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   const contentId = useId();
+  const formRef = useRef<HTMLFormElement | null>(null);
   const contentRef = useRef<HTMLTextAreaElement | null>(null);
   const savedSelectionRef = useRef<{ start: number; end: number } | null>(null);
 
-  const isCreateMode = !initialPost.title.trim();
+  const getSubmissionValues = (): FormValues => {
+    const formElement = formRef.current;
+
+    if (!formElement) {
+      return values;
+    }
+
+    const formData = new FormData(formElement);
+
+    return {
+      title: String(formData.get("title") ?? values.title),
+      category: String(formData.get("category") ?? values.category),
+      description: String(formData.get("description") ?? values.description),
+      content: String(formData.get("content") ?? values.content),
+      imageUrl: String(formData.get("imageUrl") ?? values.imageUrl),
+      price: String(formData.get("price") ?? values.price),
+      tags: String(formData.get("tags") ?? values.tags),
+    };
+  };
 
   const updateValue = (field: keyof FormValues, value: string) => {
-    setValues((current) => ({ ...current, [field]: value }));
+    setValues((current) => {
+      const nextValues = { ...current, [field]: value };
+
+      if (isCreateMode) {
+        writeCreateDraft(nextValues);
+      }
+
+      return nextValues;
+    });
     setSaveMessage("");
     setShowSaveError(false);
 
@@ -217,8 +308,13 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
     });
   };
 
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
   const handleSave = async () => {
-    const nextErrors = validate(values);
+    const submissionValues = getSubmissionValues();
+    const nextErrors = validate(submissionValues);
     setErrors(nextErrors);
 
     if (Object.keys(nextErrors).length > 0) {
@@ -226,6 +322,8 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
       setSaveMessage("");
       return;
     }
+
+    setValues(submissionValues);
 
     if (!isCreateMode) {
       if (!postId) {
@@ -239,7 +337,7 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify(submissionValues),
       });
 
       if (!response.ok) {
@@ -249,12 +347,12 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
       }
 
       upsertProductOverride(initialPost.urlId, {
-        title: values.title.trim(),
-        category: values.category.trim(),
-        description: values.description.trim(),
-        content: values.content.trim(),
-        imageUrl: values.imageUrl.trim(),
-        tags: values.tags.trim(),
+        title: submissionValues.title.trim(),
+        category: submissionValues.category.trim(),
+        description: submissionValues.description.trim(),
+        content: submissionValues.content.trim(),
+        imageUrl: submissionValues.imageUrl.trim(),
+        tags: submissionValues.tags.trim(),
         date: initialPost.date,
         views: initialPost.views,
         likes: initialPost.likes,
@@ -266,7 +364,7 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify(submissionValues),
       });
 
       if (!response.ok) {
@@ -278,21 +376,25 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
       const result = (await response.json()) as { id: number };
       upsertCreatedProduct({
         id: result.id,
-        urlId: slugifyTitle(values.title),
-        title: values.title.trim(),
-        category: values.category.trim(),
-        description: values.description.trim(),
-        content: values.content.trim(),
-        imageUrl: values.imageUrl.trim(),
+        urlId: slugifyTitle(submissionValues.title),
+        title: submissionValues.title.trim(),
+        category: submissionValues.category.trim(),
+        description: submissionValues.description.trim(),
+        content: submissionValues.content.trim(),
+        imageUrl: submissionValues.imageUrl.trim(),
         date: new Date(),
-        tags: values.tags.trim(),
+        tags: submissionValues.tags.trim(),
         views: 0,
         likes: 0,
         active: true,
       });
+      clearCreateDraft();
     }
 
-    storePriceOverride(Number.parseFloat(values.price), values.title);
+    storePriceOverride(
+      Number.parseFloat(submissionValues.price),
+      submissionValues.title,
+    );
     setShowSaveError(false);
     setSaveMessage(
       isCreateMode
@@ -331,6 +433,31 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
 
   const showImagePreview = values.imageUrl.trim() !== "";
 
+  if (!isHydrated) {
+    return (
+      <main
+        style={{
+          maxWidth: "900px",
+          margin: "0 auto",
+          padding: "2.5rem 2rem",
+          backgroundColor: "#ffffff",
+        }}
+      >
+        <h1
+          style={{
+            marginBottom: "1.5rem",
+            fontSize: "1.5rem",
+            fontWeight: 700,
+            color: "#0f172a",
+          }}
+        >
+          {isCreateMode ? "Create Product" : "Update Product"}
+        </h1>
+        <p style={{ color: "#4b5563" }}>Loading editor...</p>
+      </main>
+    );
+  }
+
   return (
     <main
       style={{
@@ -361,7 +488,12 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
         <p style={{ color: "#15803d", marginBottom: "1rem" }}>{saveMessage}</p>
       ) : null}
 
-      <div
+      <form
+        ref={formRef}
+        onSubmit={(event) => {
+          event.preventDefault();
+          void handleSave();
+        }}
         style={{
           display: "grid",
           gap: "1.25rem",
@@ -370,6 +502,7 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
         <Field label="Product Name" htmlFor="title" error={errors.title}>
           <input
             id="title"
+            name="title"
             value={values.title}
             onChange={(event) => updateValue("title", event.target.value)}
             placeholder="React Dashboard UI Kit"
@@ -387,6 +520,7 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
         >
           <input
             id="category"
+            name="category"
             value={values.category}
             onChange={(event) => updateValue("category", event.target.value)}
             placeholder="React"
@@ -404,6 +538,7 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
         >
           <textarea
             id="description"
+            name="description"
             value={values.description}
             onChange={(event) => updateValue("description", event.target.value)}
             rows={4}
@@ -457,6 +592,7 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
           ) : (
             <textarea
               id={contentId}
+              name="content"
               ref={contentRef}
               value={values.content}
               onChange={(event) => updateValue("content", event.target.value)}
@@ -482,6 +618,7 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
         >
           <input
             id="image-url"
+            name="imageUrl"
             value={values.imageUrl}
             onChange={(event) => updateValue("imageUrl", event.target.value)}
             placeholder="https://images.unsplash.com/example-product-image"
@@ -497,6 +634,7 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
         <Field label="Price" htmlFor="price" error={errors.price}>
           <input
             id="price"
+            name="price"
             type="number"
             min="0.01"
             step="0.01"
@@ -532,6 +670,7 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
         >
           <input
             id="tags"
+            name="tags"
             value={values.tags}
             onChange={(event) => updateValue("tags", event.target.value)}
             placeholder="Front-End, UI Design, Storefront"
@@ -543,11 +682,11 @@ export function PostEditor({ postId, initialPost }: PostEditorProps) {
         </Field>
 
         <div>
-          <button type="button" onClick={handleSave} style={primaryButtonStyle}>
+          <button type="submit" style={primaryButtonStyle}>
             Save Product
           </button>
         </div>
-      </div>
+      </form>
     </main>
   );
 }

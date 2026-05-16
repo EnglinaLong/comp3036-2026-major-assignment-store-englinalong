@@ -1,0 +1,139 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { AuthBrandCard } from "./AuthBrandCard";
+import { useCustomerAuth } from "./CustomerAuthProvider";
+
+export function LoginForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { account, customer, hasHydrated, login } = useCustomerAuth();
+  const [email, setEmail] = useState(account?.email ?? "");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const returnTo = searchParams.get("returnTo") || "/";
+  const intent = searchParams.get("intent");
+  const needsCheckout = intent === "checkout";
+
+  useEffect(() => {
+    if (!account?.email) {
+      return;
+    }
+
+    setEmail(account.email);
+  }, [account?.email]);
+
+  if (hasHydrated && customer) {
+    return (
+      <div className="rounded-[24px] border border-[color:var(--color-wsu)]/15 bg-[color:var(--color-wsu)]/5 p-5">
+        <p className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">
+          You&apos;re already signed in as {customer.name}.
+        </p>
+        <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">
+          Visit your account or continue back to the storefront.
+        </p>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <Link
+            href="/account"
+            className="inline-flex items-center justify-center rounded-full bg-[color:var(--color-wsu)] px-5 py-3 font-medium text-white transition hover:bg-[color:var(--color-wsu-light)]"
+          >
+            View Account
+          </Link>
+          <Link
+            href={returnTo}
+            className="inline-flex items-center justify-center rounded-full border border-neutral-300 bg-white px-5 py-3 text-sm font-medium text-neutral-700 transition hover:border-neutral-400 hover:text-neutral-950 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:border-neutral-600 dark:hover:text-neutral-50"
+          >
+            Continue Shopping
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_16.5rem] lg:items-stretch">
+      <form
+        className="space-y-5"
+        onSubmit={(event) => {
+          event.preventDefault();
+
+          const result = login({
+            email,
+            password,
+          });
+
+          if (!result.ok) {
+            setError(result.error);
+            return;
+          }
+
+          setError(null);
+          router.push(needsCheckout ? returnTo : "/account");
+        }}
+      >
+        {needsCheckout ? (
+          <p className="rounded-[20px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+            Please log in before continuing to checkout.
+          </p>
+        ) : null}
+
+        <div className="grid gap-2">
+          <label
+            htmlFor="login-email"
+            className="text-sm font-medium text-neutral-700 dark:text-neutral-200"
+          >
+            Email
+          </label>
+          <input
+            id="login-email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            className="w-full rounded-[20px] border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-[color:var(--color-wsu)] focus:bg-white dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:bg-neutral-950"
+          />
+        </div>
+
+        <div className="grid gap-2">
+          <label
+            htmlFor="login-password"
+            className="text-sm font-medium text-neutral-700 dark:text-neutral-200"
+          >
+            Password
+          </label>
+          <input
+            id="login-password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            className="w-full rounded-[20px] border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-[color:var(--color-wsu)] focus:bg-white dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:bg-neutral-950"
+          />
+        </div>
+
+        {error ? (
+          <p className="rounded-[20px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
+            {error}
+          </p>
+        ) : null}
+
+        <button
+          type="submit"
+          className="inline-flex items-center justify-center rounded-full bg-[color:var(--color-wsu)] px-5 py-3 font-medium text-white transition hover:bg-[color:var(--color-wsu-light)]"
+        >
+          Login
+        </button>
+      </form>
+
+      <AuthBrandCard
+        alternateHref={`/account/register${needsCheckout ? `?intent=checkout&returnTo=${encodeURIComponent(returnTo)}` : ""}`}
+        alternateLabel="Need an account? Create one"
+      />
+    </div>
+  );
+}

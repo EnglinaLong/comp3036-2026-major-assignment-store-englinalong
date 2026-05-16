@@ -36,6 +36,7 @@ type CartContextValue = {
   removeFromCart: (postId: number) => void;
   increaseQuantity: (postId: number) => void;
   decreaseQuantity: (postId: number) => void;
+  clearCart: () => void;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -125,6 +126,10 @@ export function CartProvider({ children }: PropsWithChildren) {
     setCartItems((current) => current.filter((item) => item.id !== postId));
   }, []);
 
+  const clearCart = useCallback(() => {
+    setCartItems([]);
+  }, []);
+
   const increaseQuantity = useCallback((postId: number) => {
     setCartItems((current) =>
       current.map((item) =>
@@ -198,6 +203,7 @@ export function CartProvider({ children }: PropsWithChildren) {
       openCart,
       closeCart,
       addToCart,
+      clearCart,
       removeFromCart,
       increaseQuantity,
       decreaseQuantity,
@@ -206,6 +212,7 @@ export function CartProvider({ children }: PropsWithChildren) {
       addToCart,
       cartCount,
       cartItems,
+      clearCart,
       closeCart,
       decreaseQuantity,
       increaseQuantity,

@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useCart } from "./CartProvider";
+import { useCustomerAuth } from "./CustomerAuthProvider";
 
 export default function CartDrawer() {
   const {
@@ -15,6 +17,8 @@ export default function CartDrawer() {
     increaseQuantity,
     decreaseQuantity,
   } = useCart();
+  const { customer } = useCustomerAuth();
+  const router = useRouter();
 
   useEffect(() => {
     if (!isCartOpen) return;
@@ -31,6 +35,21 @@ export default function CartDrawer() {
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [closeCart, isCartOpen]);
+
+  function handleCheckout() {
+    if (!customer) {
+      closeCart();
+      router.push(
+        `/account/login?intent=checkout&returnTo=${encodeURIComponent(
+          "/checkout",
+        )}`,
+      );
+      return;
+    }
+
+    closeCart();
+    router.push("/checkout");
+  }
 
   if (!isCartOpen && cartItems.length === 0) {
     return null;
@@ -167,8 +186,28 @@ export default function CartDrawer() {
                 </span>
               </div>
               <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-                Frontend-only cart for Iteration 1. Checkout is not enabled.
+                {customer
+                  ? "Secure checkout and instant access after purchase."
+                  : "Please sign in to continue to checkout."}
               </p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={handleCheckout}
+                  className="inline-flex items-center justify-center rounded-full bg-[color:var(--color-wsu)] px-5 py-3 font-medium text-white transition hover:bg-[color:var(--color-wsu-light)]"
+                >
+                  Proceed to Checkout
+                </button>
+                {!customer ? (
+                  <Link
+                    href="/account/login"
+                    onClick={closeCart}
+                    className="inline-flex items-center justify-center rounded-full border border-neutral-300 bg-white px-5 py-3 text-sm font-medium text-neutral-700 transition hover:border-neutral-400 hover:text-neutral-950 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:border-neutral-600 dark:hover:text-neutral-50"
+                  >
+                    Login First
+                  </Link>
+                ) : null}
+              </div>
             </div>
           </>
         )}
