@@ -9,10 +9,22 @@ import {
   subscribeToCustomerWishlist,
 } from "@/functions/customerWishlist";
 
+function formatMemberSinceLabel(value: string | undefined) {
+  const parsedDate = new Date(value ?? "");
+  const safeDate = Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+
+  return new Intl.DateTimeFormat("en-AU", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(safeDate);
+}
+
 export function AccountSummary() {
   const { cartCount, openCart } = useCart();
   const { account, customer, logout } = useCustomerAuth();
   const [wishlistCount, setWishlistCount] = useState(0);
+  const memberSinceLabel = formatMemberSinceLabel(account?.createdAt);
 
   useEffect(() => {
     setWishlistCount(readCustomerWishlist().length);
@@ -75,12 +87,6 @@ export function AccountSummary() {
           >
             Shop Products
           </Link>
-          <Link
-            href="/account/orders"
-            className="inline-flex items-center justify-center rounded-full border border-neutral-300 bg-white px-5 py-3 text-sm font-medium text-neutral-700 transition hover:border-neutral-400 hover:text-neutral-950 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:border-neutral-600 dark:hover:text-neutral-50"
-          >
-            View Orders
-          </Link>
           <button
             type="button"
             onClick={logout}
@@ -97,7 +103,7 @@ export function AccountSummary() {
             Account Overview
           </p>
           <div className="mt-4 space-y-3 text-sm text-neutral-600 dark:text-neutral-300">
-            <p>Member since today</p>
+            <p>Member since {memberSinceLabel}</p>
             <p>
               {cartCount} {cartCount === 1 ? "item" : "items"} in your cart
             </p>

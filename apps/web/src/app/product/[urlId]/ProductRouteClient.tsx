@@ -67,7 +67,7 @@ function ProductUnavailableState({
         </h1>
         <p className="mx-auto mt-3 max-w-xl text-neutral-600 dark:text-neutral-300">
           {unavailable
-            ? "This product has been hidden from the storefront for now. Browse other available products in the store."
+            ? "Please browse other available products."
             : "This product is unavailable right now or no longer exists."}
         </p>
         <div className="mt-6">

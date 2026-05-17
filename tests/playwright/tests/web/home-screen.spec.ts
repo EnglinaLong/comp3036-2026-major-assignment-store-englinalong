@@ -17,7 +17,7 @@ test.describe("FULL STACK STORE HOME", () => {
       await expect(page.getByText("Full Stack Store").first()).toBeVisible();
       await expect(
         page.getByRole("heading", {
-          name: "Discover products built for your next big idea",
+          name: "Build your next project faster",
         }),
       ).toBeVisible();
 

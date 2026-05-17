@@ -22,6 +22,12 @@ test.describe("FULL STACK STORE CUSTOMER AUTH", () => {
       await expect(page).toHaveURL(/\/account$/);
       await expect(page.getByText("Taylor Shopper").first()).toBeVisible();
       await expect(page.getByText("taylor@example.com").first()).toBeVisible();
+      await expect(page.getByText(/^Member since [A-Za-z]+ \d{4}$/)).toBeVisible();
+
+      const storedAccount = await page.evaluate(() =>
+        window.localStorage.getItem("storefront-customer-account"),
+      );
+      expect(storedAccount).toContain('"createdAt"');
 
       await page.getByRole("button", { name: "Logout" }).first().click();
       await expect(page.getByText("You're not logged in.")).toBeVisible();

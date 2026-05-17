@@ -119,11 +119,11 @@ export function StoreHomepage({
 
             <div className="space-y-4">
               <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-neutral-950 sm:text-5xl lg:text-6xl dark:text-neutral-50">
-                Discover products built for your next big idea
+                Build your next project faster
               </h1>
               <p className="max-w-2xl text-base leading-8 text-neutral-700 sm:text-lg dark:text-neutral-300">
-                Shop curated products, browse by collection, and explore the
-                latest arrivals in one polished storefront.
+                Explore curated full stack resources, UI kits, templates, and
+                developer tools in one modern storefront.
               </p>
             </div>
 

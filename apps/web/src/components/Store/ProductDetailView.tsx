@@ -105,8 +105,7 @@ export default function ProductDetailView({
             This product is currently unavailable.
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-neutral-600 dark:text-neutral-300">
-            This product has been hidden from the storefront for now. Browse
-            other available products in the store.
+            Please browse other available products.
           </p>
           <div className="mt-6">
             <Link

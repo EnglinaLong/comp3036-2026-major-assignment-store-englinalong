@@ -17,11 +17,13 @@ type StoredCustomerAccount = {
   name: string;
   email: string;
   password: string;
+  createdAt: string;
 };
 
 export type CustomerProfile = {
   name: string;
   email: string;
+  createdAt: string;
 };
 
 type AuthResult =
@@ -47,10 +49,29 @@ function normalizeEmail(value: string) {
   return value.trim().toLowerCase();
 }
 
+function getFallbackCreatedAt() {
+  return new Date().toISOString();
+}
+
+function normalizeCreatedAt(value: unknown) {
+  if (typeof value !== "string") {
+    return getFallbackCreatedAt();
+  }
+
+  const parsedDate = new Date(value);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return getFallbackCreatedAt();
+  }
+
+  return parsedDate.toISOString();
+}
+
 function toCustomerProfile(account: StoredCustomerAccount): CustomerProfile {
   return {
     name: account.name,
     email: account.email,
+    createdAt: account.createdAt,
   };
 }
 
@@ -94,6 +115,9 @@ function readStoredAccount() {
       ...parsedValue,
       name: parsedValue.name.trim(),
       email: normalizeEmail(parsedValue.email),
+      createdAt: normalizeCreatedAt(
+        (parsedValue as { createdAt?: unknown }).createdAt,
+      ),
     };
   } catch {
     window.localStorage.removeItem(CUSTOMER_ACCOUNT_STORAGE_KEY);
@@ -197,6 +221,7 @@ export function CustomerAuthProvider({ children }: PropsWithChildren) {
       name: trimmedName,
       email: normalizedEmail,
       password,
+      createdAt: getFallbackCreatedAt(),
     };
     const nextCustomer = toCustomerProfile(nextAccount);
 
