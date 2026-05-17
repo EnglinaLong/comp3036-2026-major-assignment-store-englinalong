@@ -6,7 +6,8 @@
   "exports": {
     "./styles.css": "./dist/index.css",
     "./button": "./src/button.tsx",
-    "./data": "./src/data.ts"
+    "./data": "./src/data.ts",
+    "./local-product-state": "./src/local-product-state.ts"
   },
   "scripts": {
     "build": "tailwindcss -i ./src/styles.css -o ./dist/index.css",

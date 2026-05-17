@@ -2,12 +2,35 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { Post } from "@repo/db/data";
+import {
+  mergeLocalProducts,
+  readLocalProductState,
+  upsertCreatedProduct,
+  upsertProductOverride,
+} from "@repo/ui/local-product-state";
 import styles from "./admin-ui.module.css";
 
 type SortOption = "title-asc" | "title-desc" | "date-asc" | "date-desc";
 type VisibilityOption = "all" | "active" | "inactive";
-const POST_OVERRIDES_STORAGE_KEY = "admin-post-overrides";
-const CREATED_POSTS_STORAGE_KEY = "admin-created-posts";
+
+function normalizeFilterValue(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function getNormalizedTags(value: string) {
+  return value
+    .split(",")
+    .map((tag) => normalizeFilterValue(tag))
+    .filter(Boolean);
+}
+
+function formatDateAsMmddyyyy(date: Date) {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const year = String(date.getFullYear());
+
+  return `${month}${day}${year}`;
+}
 
 export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
   const [postStates, setPostStates] = useState(initialPosts);
@@ -20,45 +43,7 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
   const [savingPostId, setSavingPostId] = useState<number | null>(null);
 
   useEffect(() => {
-    const storedCreatedPosts = window.localStorage.getItem(
-      CREATED_POSTS_STORAGE_KEY,
-    );
-    const storedPostOverrides = window.localStorage.getItem(
-      POST_OVERRIDES_STORAGE_KEY,
-    );
-
-    try {
-      const postOverrides = storedPostOverrides
-        ? (JSON.parse(storedPostOverrides) as Record<string, Partial<Post>>)
-        : {};
-      const createdPosts = storedCreatedPosts
-        ? (JSON.parse(storedCreatedPosts) as Post[]).map(
-            (post) => ({
-              ...post,
-              date: new Date(post.date),
-            }),
-          )
-        : [];
-
-      setPostStates((current) => {
-        const mergedPosts = [
-          ...createdPosts.filter(
-            (createdPost) =>
-              !current.some((post) => post.urlId === createdPost.urlId),
-          ),
-          ...current,
-        ];
-
-        return mergedPosts.map((post) => ({
-          ...post,
-          ...postOverrides[post.urlId],
-          active: post.active,
-        }));
-      });
-    } catch {
-      window.localStorage.removeItem(CREATED_POSTS_STORAGE_KEY);
-      window.localStorage.removeItem(POST_OVERRIDES_STORAGE_KEY);
-    }
+    setPostStates(mergeLocalProducts(initialPosts));
   }, [initialPosts]);
 
   const togglePostStatus = async (postId: number) => {
@@ -82,29 +67,18 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
       });
 
       if (!response.ok) {
-        const storedCreatedPosts = window.localStorage.getItem(
-          CREATED_POSTS_STORAGE_KEY,
-        );
-        const createdPosts = storedCreatedPosts
-          ? (JSON.parse(storedCreatedPosts) as Post[]).map((item) => ({
-              ...item,
-              date: new Date(item.date),
-            }))
-          : [];
+        const { createdPosts } = readLocalProductState();
 
         if (!createdPosts.some((item) => item.id === postId)) {
           return;
         }
 
         const nextActive = !post.active;
-        const nextCreatedPosts = createdPosts.map((item) =>
-          item.id === postId ? { ...item, active: nextActive } : item,
-        );
+        const createdPost = createdPosts.find((item) => item.id === postId);
 
-        window.localStorage.setItem(
-          CREATED_POSTS_STORAGE_KEY,
-          JSON.stringify(nextCreatedPosts),
-        );
+        if (createdPost) {
+          upsertCreatedProduct({ ...createdPost, active: nextActive });
+        }
 
         setPostStates((current) =>
           current.map((item) =>
@@ -126,6 +100,7 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
             : item,
         ),
       );
+      upsertProductOverride(post.urlId, { active: updatedPost.active });
     } finally {
       setSavingPostId(null);
     }
@@ -134,52 +109,39 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
   const filteredAndSortedPosts = useMemo(() => {
     let filtered = postStates.filter((post) => {
       if (contentFilter) {
-        const searchTerm = contentFilter.toLowerCase();
-        const matchesTitle = post.title.toLowerCase().includes(searchTerm);
-        const matchesDescription = post.description
-          .toLowerCase()
-          .includes(searchTerm);
-        const matchesContent = post.content.toLowerCase().includes(searchTerm);
+        const searchTerm = normalizeFilterValue(contentFilter);
+        const searchText = [
+          post.title,
+          post.description,
+          post.content,
+          post.category,
+          post.tags,
+        ]
+          .join(" ")
+          .toLowerCase();
 
-        if (!matchesTitle && !matchesDescription && !matchesContent) {
+        if (!searchText.includes(searchTerm)) {
           return false;
         }
       }
 
       if (tagFilter) {
-        const searchTerm = tagFilter.toLowerCase();
+        const searchTerm = normalizeFilterValue(tagFilter);
+        const productTags = getNormalizedTags(post.tags);
 
-        if (!post.tags.toLowerCase().includes(searchTerm)) {
+        if (!productTags.some((tag) => tag.includes(searchTerm))) {
           return false;
         }
       }
 
-      // Filter by date (MMDDYYYY format) - match posts on or after this date
       if (dateFilter) {
-        if (dateFilter.length !== 8) {
-          return true;
+        const searchTerm = dateFilter.trim();
+
+        if (!/^\d{8}$/.test(searchTerm)) {
+          return false;
         }
 
-        const month = parseInt(dateFilter.substring(0, 2), 10);
-        const day = parseInt(dateFilter.substring(2, 4), 10);
-        const year = parseInt(dateFilter.substring(4, 8), 10);
-
-        if (
-          Number.isNaN(month) ||
-          Number.isNaN(day) ||
-          Number.isNaN(year)
-        ) {
-          return true;
-        }
-
-        const filterDate = new Date(year, month - 1, day);
-        const postDate = new Date(post.date);
-
-        if (Number.isNaN(filterDate.getTime())) {
-          return true;
-        }
-
-        if (postDate < filterDate) {
+        if (formatDateAsMmddyyyy(new Date(post.date)) !== searchTerm) {
           return false;
         }
       }
@@ -219,11 +181,11 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
     <div>
       <div className={styles.toolbar}>
         <p className={styles.loginText}>
-          View all posts, including active and inactive items.
+          View all store products, including active and inactive items.
         </p>
         <div className={styles.toolbarActions}>
           <a className={styles.linkButton} href="/posts/create">
-            Create Post
+            Create Product
           </a>
         </div>
       </div>
@@ -231,7 +193,7 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
       <div className={styles.filters}>
         <div className={styles.filterField}>
           <label className={styles.filterLabel} htmlFor="content-filter">
-            Filter by Content:
+            Filter by Product Details:
           </label>
           <input
             className={styles.filterInput}
@@ -239,12 +201,13 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
             type="text"
             value={contentFilter}
             onChange={(e) => setContentFilter(e.target.value)}
+            placeholder="Search product name, summary, or details"
           />
         </div>
 
         <div className={styles.filterField}>
           <label className={styles.filterLabel} htmlFor="tag-filter">
-            Filter by Tag:
+            Filter by Collection:
           </label>
           <input
             className={styles.filterInput}
@@ -252,12 +215,13 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
             type="text"
             value={tagFilter}
             onChange={(e) => setTagFilter(e.target.value)}
+            placeholder="Front-End"
           />
         </div>
 
         <div className={styles.filterField}>
           <label className={styles.filterLabel} htmlFor="date-filter">
-            Filter by Date Created:
+            Filter by Date Added:
           </label>
           <input
             className={styles.filterInput}
@@ -328,7 +292,7 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
                   #{post.tags.split(",").map((tag) => tag.trim()).join(", #")}
                 </span>
                 <span>
-                  Posted on{" "}
+                  Added on{" "}
                   {post.date.toLocaleDateString("en-US", {
                     year: "numeric",
                     month: "short",

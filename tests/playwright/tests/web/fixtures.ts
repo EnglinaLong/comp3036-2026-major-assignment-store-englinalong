@@ -1,9 +1,9 @@
 import "dotenv/config";
 
 import { type BrowserContext } from "@playwright/test";
-// TODO: Implement seed
+// Placeholder for future storefront-specific browser options.
 export async function seedData(...options: any[]) {
-  /* After assignment two, move the hard coded data to the seed */
+  void options;
 }
 
 type AppOptions = {};

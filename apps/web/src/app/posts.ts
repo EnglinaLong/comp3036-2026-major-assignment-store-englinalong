@@ -1,6 +1,7 @@
-import type { Post } from "@repo/db/data";
+import { getSeededPostDate, type Post } from "@repo/db/data";
 import { client } from "@repo/db/client";
 import type { Prisma } from "@prisma/client";
+import { slugifyTitle } from "@/functions/productHref";
 
 function mapPost(
   post: Prisma.PostGetPayload<{
@@ -13,8 +14,11 @@ function mapPost(
     };
   }>,
 ): Post {
+  const seededDate = getSeededPostDate(post);
+
   return {
     ...post,
+    date: seededDate ?? post.date,
     likes: post._count.Likes,
   };
 }
@@ -58,13 +62,33 @@ export async function incrementPostViews(urlId: string) {
     },
   });
 
-  if (!existingPost) {
-    return null;
+  let targetPostId = existingPost?.id ?? null;
+
+  if (!targetPostId) {
+    const activePosts = await client.db.post.findMany({
+      where: {
+        active: true,
+      },
+      select: {
+        id: true,
+        title: true,
+        urlId: true,
+      },
+    });
+
+    const fallbackPost = activePosts.find(
+      (post) => post.urlId === urlId || slugifyTitle(post.title) === urlId,
+    );
+
+    if (!fallbackPost) {
+      return null;
+    }
+    targetPostId = fallbackPost.id;
   }
 
   const updatedPost = await client.db.post.update({
     where: {
-      id: existingPost.id,
+      id: targetPostId,
     },
     data: {
       views: {

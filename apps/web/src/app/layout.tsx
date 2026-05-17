@@ -2,6 +2,8 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { cookies } from "next/headers";
+import StorefrontProviders from "@/components/Store/StorefrontProviders";
+import { getPosts } from "./posts";
 import "./globals.css";
 
 const geistSans = localFont({
@@ -14,8 +16,8 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Full-Stack Blog",
-  description: "Blog about full stack development",
+  title: "Full-Stack Store",
+  description: "Modern storefront for developer products and toolkits",
 };
 
 export default async function RootLayout({
@@ -25,11 +27,14 @@ export default async function RootLayout({
 }>) {
   const serverCookies = await cookies();
   const theme = serverCookies.get("theme")?.value || "light";
+  const initialPosts = await getPosts();
 
   return (
     <html lang="en" data-theme={theme}>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        {children}
+        <StorefrontProviders initialPosts={initialPosts}>
+          {children}
+        </StorefrontProviders>
       </body>
     </html>
   );

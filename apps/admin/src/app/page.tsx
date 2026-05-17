@@ -4,7 +4,7 @@ import { ListScreen } from "../components/ListScreen";
 import { LogoutButton } from "../components/LogoutButton";
 import styles from "./page.module.css";
 import { client } from "@repo/db/client";
-import type { Post } from "@repo/db/data";
+import { getSeededPostDate, type Post } from "@repo/db/data";
 
 // Disable caching for this page to ensure auth state is always checked
 export const dynamic = "force-dynamic";
@@ -26,6 +26,7 @@ async function getAdminPosts(): Promise<Post[]> {
 
   return dbPosts.map((post) => ({
     ...post,
+    date: getSeededPostDate(post) ?? post.date,
     likes: post._count.Likes,
   }));
 }
@@ -50,9 +51,9 @@ export default async function Home() {
         <section className={styles.dashboard}>
           <div className={styles.topBar}>
             <div className={styles.titleBlock}>
-              <h1 className={styles.pageTitle}>Admin of Full Stack Blog</h1>
+              <h1 className={styles.pageTitle}>Admin of Full Stack Store</h1>
               <p className={styles.pageDescription}>
-                Manage your posts from one simple dashboard.
+                Manage your store products from one simple dashboard.
               </p>
             </div>
             <LogoutButton />

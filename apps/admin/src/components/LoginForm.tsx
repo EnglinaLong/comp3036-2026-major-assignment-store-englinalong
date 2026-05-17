@@ -36,8 +36,10 @@ export function LoginForm() {
   return (
     <section className={styles.loginCard}>
       <div className={styles.loginHeader}>
+        <p className={styles.kicker}>Store Management Portal</p>
         <h1 className={styles.loginTitle}>Admin Access</h1>
         <p className={styles.loginText}>Sign in to your account</p>
+        <p className={styles.loginText}>Authorized staff access</p>
       </div>
 
       <form className={styles.form} onSubmit={handleSubmit}>

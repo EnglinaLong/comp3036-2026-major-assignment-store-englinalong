@@ -13,8 +13,8 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Full stack Blog Admin",
-  description: "Administration of Full Stack Blog",
+  title: "Full Stack Store Admin",
+  description: "Administration dashboard for the Full Stack Store",
 };
 
 export default function RootLayout({

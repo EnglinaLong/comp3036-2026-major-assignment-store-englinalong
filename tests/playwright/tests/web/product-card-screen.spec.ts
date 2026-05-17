@@ -1,0 +1,34 @@
+import { seed } from "@repo/db/seed";
+import { expect, test } from "./fixtures";
+import { productCard } from "./helpers";
+
+test.describe("FULL STACK STORE PRODUCT CARDS", () => {
+  test.beforeEach(async () => {
+    await seed();
+  });
+
+  test(
+    "Featured product cards render store content and open product detail",
+    {
+      tag: "@a1",
+    },
+    async ({ page }) => {
+      await page.goto("/");
+
+      const firstCard = productCard(page, 1);
+      await expect(firstCard).toBeVisible();
+      await expect(firstCard.locator("img")).toBeVisible();
+      await expect(firstCard.getByText("Backend Starter Toolkit")).toBeVisible();
+      await expect(
+        firstCard.getByRole("link", { name: "Node", exact: true }),
+      ).toBeVisible();
+      await expect(firstCard.getByText("Available now")).toBeVisible();
+      await expect(firstCard.getByText("Back-End")).toBeVisible();
+      await expect(firstCard.getByText("product views")).toBeVisible();
+      await expect(firstCard.getByText("wishlist saves")).toBeVisible();
+
+      await firstCard.getByRole("link", { name: "View Product" }).click();
+      await expect(page).toHaveURL(/\/product\/backend-starter-toolkit$/);
+    },
+  );
+});

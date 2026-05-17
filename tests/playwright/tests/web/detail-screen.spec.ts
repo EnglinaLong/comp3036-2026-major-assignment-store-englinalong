@@ -1,75 +1,73 @@
 import { seed } from "@repo/db/seed";
 import { expect, test } from "./fixtures";
+import { productDetail } from "./helpers";
 
-test.describe("DETAIL SCREEN", () => {
+test.describe("FULL STACK STORE PRODUCT DETAILS", () => {
   test.beforeEach(async () => {
     await seed();
   });
 
   test(
-    "Detail view",
+    "Product detail page shows store content, pricing, collections, and related products",
     {
       tag: "@a1",
     },
     async ({ page }) => {
-      await page.goto("/post/boost-your-conversion-rate");
+      await page.goto("/product/backend-starter-toolkit");
 
-      // DETAIL SCREEN > Detail page shows the same items as list item, but the short description is replaced by formatted long description
-
-      const item = await page.getByTestId("blog-post-1");
-      await expect(item).toBeVisible();
-
-      await expect(item.getByText("Boost your conversion rate")).toBeVisible();
       await expect(
-        item.getByText("Boost your conversion rate"),
-      ).toHaveAttribute("href", "/post/boost-your-conversion-rate");
-
-      await expect(item.getByText("Node")).toBeVisible();
-      await expect(item.getByText("#Back-End")).toBeVisible();
-      await expect(item.getByText("#Databases")).toBeVisible();
-      await expect(item.getByText("18 Apr 2022")).toBeVisible();
-      await expect(item.getByText("321 views")).toBeVisible();
-      await expect(item.getByText("3 likes")).toBeVisible();
-
-      // DETAIL SCREEN > Detail text is stored as Markdown, which needs to be converted to HTML
+        page.getByRole("heading", { name: "Backend Starter Toolkit" }).first(),
+      ).toBeVisible();
+      await expect(page.getByRole("img", { name: "Backend Starter Toolkit" })).toBeVisible();
+      await expect(page.getByText("Node", { exact: true }).first()).toBeVisible();
+      await expect(page.getByText("Price").first()).toBeVisible();
+      await expect(page.getByText(/^\$\d+\.\d{2}$/).first()).toBeVisible();
       await expect(
-        await page.getByTestId("content-markdown").innerHTML(),
-      ).toContain("<strong>sint voluptas</strong>");
+        page.getByText("A backend-focused starter toolkit", { exact: false }),
+      ).toBeVisible();
+      await expect(page.getByRole("button", { name: "Add to Cart" })).toBeVisible();
+
+      await expect(productDetail(page, 1).getByText("Collections")).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "You may also like" }),
+      ).toBeVisible();
+
+      const currentUrl = page.url();
+      await page
+        .locator("section")
+        .filter({ has: page.getByRole("heading", { name: "You may also like" }) })
+        .getByRole("link", { name: "View Product" })
+        .first()
+        .click();
+      await expect(page).not.toHaveURL(currentUrl);
+      await expect(page).toHaveURL(/\/product\//);
+
+      await page.getByRole("link", { name: "Back to Products" }).click();
+      await expect(page).toHaveURL(/#featured-products$/);
     },
   );
 
   test(
-    "Views increase on each view",
+    "Mobile responsive products stay visible in the storefront and product detail pages",
     {
-      tag: "@a3",
+      tag: "@a1",
     },
     async ({ page }) => {
-      // BACKEND / CLIENT > Each visit of the page increases the post "views" count by one
+      await page.goto("/");
+      await expect(page.getByText("Mobile Responsive Design Pack")).toBeVisible();
 
-      await page.goto("/post/boost-your-conversion-rate");
-      await expect(page.getByText("321 views")).toBeVisible();
-      await page.goto("/post/boost-your-conversion-rate");
-      await expect(page.getByText("322 views")).toBeVisible();
-    },
-  );
+      const searchInput = page.getByPlaceholder("Search products");
+      await searchInput.fill("Mobile Responsive");
+      await expect(page.getByTestId("product-card-15")).toBeVisible();
 
-  test(
-    "Like posts",
-    {
-      tag: "@a3",
-    },
-    async ({ page }) => {
-      // BACKEND / CLIENT > User can "like" the post on the detail screen, NOT on the list
-
-      await page.goto("/post/boost-your-conversion-rate");
-      await expect(page.getByText("3 likes")).toBeVisible();
-      await page.getByTestId("like-button").click();
-      await expect(page.getByText("4 likes")).toBeVisible();
-
-      await page.goto("/post/boost-your-conversion-rate");
-      await expect(page.getByText("4 likes")).toBeVisible();
-      await page.getByTestId("like-button").click();
-      await expect(page.getByText("3 likes")).toBeVisible();
+      await page.goto("/product/mobile-responsive-design-pack");
+      await expect(
+        page.getByRole("heading", {
+          name: "Mobile Responsive Design Pack",
+        }).first(),
+      ).toBeVisible();
+      await expect(page.getByRole("link", { name: "Back to Products" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Add to Cart" })).toBeVisible();
     },
   );
 });

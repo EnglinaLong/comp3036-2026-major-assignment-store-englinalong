@@ -1,0 +1,446 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useCart } from "./CartProvider";
+import { useCustomerAuth } from "./CustomerAuthProvider";
+import {
+  saveCustomerOrder,
+  setPaymentSuccessState,
+  type CustomerOrder,
+} from "@/functions/customerOrders";
+
+type CheckoutFormState = {
+  fullName: string;
+  email: string;
+  address: string;
+  city: string;
+  postalCode: string;
+  cardholderName: string;
+  cardNumber: string;
+  expiryDate: string;
+  cvv: string;
+};
+
+type CheckoutErrors = Partial<Record<keyof CheckoutFormState, string>>;
+
+function createOrderId() {
+  return `ORD-${Date.now().toString(36).toUpperCase()}`;
+}
+
+function onlyDigits(value: string) {
+  return value.replace(/\D/g, "");
+}
+
+function formatCardNumber(value: string) {
+  return onlyDigits(value)
+    .slice(0, 16)
+    .replace(/(\d{4})(?=\d)/g, "$1 ")
+    .trim();
+}
+
+function formatExpiryDate(value: string) {
+  const digits = onlyDigits(value).slice(0, 4);
+
+  if (digits.length <= 2) {
+    return digits;
+  }
+
+  return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+}
+
+function validateForm(values: CheckoutFormState) {
+  const errors: CheckoutErrors = {};
+
+  if (!values.fullName.trim()) errors.fullName = "Enter your full name.";
+  if (!values.email.trim()) errors.email = "Enter your email.";
+  if (!values.address.trim()) errors.address = "Enter your address.";
+  if (!values.city.trim()) errors.city = "Enter your city.";
+  if (!values.postalCode.trim()) errors.postalCode = "Enter your postal code.";
+  if (!values.cardholderName.trim()) {
+    errors.cardholderName = "Enter the cardholder name.";
+  }
+  if (onlyDigits(values.cardNumber).length !== 16) {
+    errors.cardNumber = "Enter a valid card number.";
+  }
+  if (!/^\d{2}\/\d{2}$/.test(values.expiryDate)) {
+    errors.expiryDate = "Enter a valid expiry date.";
+  }
+  if (onlyDigits(values.cvv).length < 3) {
+    errors.cvv = "Enter a valid security code.";
+  }
+
+  return errors;
+}
+
+export function CheckoutClient() {
+  const router = useRouter();
+  const {
+    cartItems,
+    availableCartItems,
+    availableCartCount,
+    subtotal,
+    clearAvailableItems,
+  } = useCart();
+  const { customer, hasHydrated } = useCustomerAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<CheckoutErrors>({});
+  const [formState, setFormState] = useState<CheckoutFormState>({
+    fullName: "",
+    email: "",
+    address: "",
+    city: "",
+    postalCode: "",
+    cardholderName: "",
+    cardNumber: "",
+    expiryDate: "",
+    cvv: "",
+  });
+
+  useEffect(() => {
+    if (!hasHydrated) {
+      return;
+    }
+
+    if (!customer) {
+      router.replace("/account/login?intent=checkout&returnTo=%2Fcheckout");
+      return;
+    }
+
+    setFormState((current) => ({
+      ...current,
+      fullName: current.fullName || customer.name,
+      email: current.email || customer.email,
+      cardholderName: current.cardholderName || customer.name,
+    }));
+  }, [customer, hasHydrated, router]);
+
+  const orderSummary = useMemo(
+    () =>
+      availableCartItems.map((item) => ({
+        ...item,
+        lineTotal: `$${(
+          Number(item.price.replace(/[^0-9.]/g, "")) * item.quantity
+        ).toFixed(2)}`,
+      })),
+    [availableCartItems],
+  );
+
+  function updateField(field: keyof CheckoutFormState, value: string) {
+    setFormState((current) => ({
+      ...current,
+      [field]:
+        field === "cardNumber"
+          ? formatCardNumber(value)
+          : field === "expiryDate"
+            ? formatExpiryDate(value)
+            : field === "cvv"
+              ? onlyDigits(value).slice(0, 4)
+              : value,
+    }));
+
+    setErrors((current) => {
+      if (!current[field]) {
+        return current;
+      }
+
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!customer || availableCartItems.length === 0) {
+      return;
+    }
+
+    const nextErrors = validateForm(formState);
+    setErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
+      setFormError("Please review your checkout details and try again.");
+      return;
+    }
+
+    setFormError(null);
+    setIsSubmitting(true);
+
+    await new Promise((resolve) => window.setTimeout(resolve, 1200));
+
+    const purchasedItems = availableCartItems.map(({ isAvailable, ...item }) => {
+      void isAvailable;
+      return item;
+    });
+
+    const order: CustomerOrder = {
+      id: createOrderId(),
+      date: new Date().toISOString(),
+      status: "Paid",
+      total: subtotal,
+      itemCount: availableCartCount,
+      items: purchasedItems,
+      shipping: {
+        fullName: formState.fullName.trim(),
+        email: formState.email.trim(),
+        address: formState.address.trim(),
+        city: formState.city.trim(),
+        postalCode: formState.postalCode.trim(),
+      },
+      payment: {
+        cardholderName: formState.cardholderName.trim(),
+        last4: onlyDigits(formState.cardNumber).slice(-4),
+      },
+    };
+
+    saveCustomerOrder(order);
+    setPaymentSuccessState({
+      orderId: order.id,
+      total: order.total,
+    });
+    clearAvailableItems();
+    router.push("/account/orders");
+  }
+
+  if (!hasHydrated || !customer) {
+    return (
+      <div className="rounded-[28px] border border-black/10 bg-white p-8 text-center dark:border-white/10 dark:bg-neutral-950">
+        <p className="text-sm text-neutral-600 dark:text-neutral-300">
+          Preparing checkout...
+        </p>
+      </div>
+    );
+  }
+
+  if (cartItems.length === 0) {
+    return (
+      <div className="rounded-[28px] border border-black/10 bg-white p-8 text-center dark:border-white/10 dark:bg-neutral-950">
+        <h2 className="text-2xl font-semibold text-neutral-950 dark:text-neutral-50">
+          Your cart is empty.
+        </h2>
+        <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-300">
+          Add a few items before continuing to checkout.
+        </p>
+        <Link
+          href="/#featured-products"
+          className="mt-6 inline-flex items-center justify-center rounded-full bg-[color:var(--color-wsu)] px-5 py-3 font-medium text-white transition hover:bg-[color:var(--color-wsu-light)]"
+        >
+          Shop Products
+        </Link>
+      </div>
+    );
+  }
+
+  if (availableCartItems.length === 0) {
+    return (
+      <div className="rounded-[28px] border border-black/10 bg-white p-8 text-center dark:border-white/10 dark:bg-neutral-950">
+        <h2 className="text-2xl font-semibold text-neutral-950 dark:text-neutral-50">
+          No available products to checkout.
+        </h2>
+        <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-300">
+          Remove unavailable items from your cart before continuing.
+        </p>
+        <Link
+          href="/#featured-products"
+          className="mt-6 inline-flex items-center justify-center rounded-full bg-[color:var(--color-wsu)] px-5 py-3 font-medium text-white transition hover:bg-[color:var(--color-wsu-light)]"
+        >
+          Shop Products
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_23rem]">
+      <div className="space-y-6">
+        <section className="rounded-[28px] border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-neutral-950 sm:p-7">
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[color:var(--color-wsu)]">
+            Shipping Information
+          </p>
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <Field
+              id="checkout-full-name"
+              label="Full Name"
+              value={formState.fullName}
+              error={errors.fullName}
+              onChange={(value) => updateField("fullName", value)}
+            />
+            <Field
+              id="checkout-email"
+              label="Email"
+              type="email"
+              value={formState.email}
+              error={errors.email}
+              onChange={(value) => updateField("email", value)}
+            />
+            <Field
+              id="checkout-address"
+              label="Address"
+              value={formState.address}
+              error={errors.address}
+              className="md:col-span-2"
+              onChange={(value) => updateField("address", value)}
+            />
+            <Field
+              id="checkout-city"
+              label="City"
+              value={formState.city}
+              error={errors.city}
+              onChange={(value) => updateField("city", value)}
+            />
+            <Field
+              id="checkout-postal-code"
+              label="Postal Code"
+              value={formState.postalCode}
+              error={errors.postalCode}
+              onChange={(value) => updateField("postalCode", value)}
+            />
+          </div>
+        </section>
+
+        <section className="rounded-[28px] border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-neutral-950 sm:p-7">
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[color:var(--color-wsu)]">
+            Payment Details
+          </p>
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <Field
+              id="checkout-cardholder-name"
+              label="Cardholder Name"
+              value={formState.cardholderName}
+              error={errors.cardholderName}
+              className="md:col-span-2"
+              onChange={(value) => updateField("cardholderName", value)}
+            />
+            <Field
+              id="checkout-card-number"
+              label="Card Number"
+              value={formState.cardNumber}
+              error={errors.cardNumber}
+              className="md:col-span-2"
+              onChange={(value) => updateField("cardNumber", value)}
+            />
+            <Field
+              id="checkout-expiry-date"
+              label="Expiry Date"
+              placeholder="MM/YY"
+              value={formState.expiryDate}
+              error={errors.expiryDate}
+              onChange={(value) => updateField("expiryDate", value)}
+            />
+            <Field
+              id="checkout-cvv"
+              label="CVV"
+              value={formState.cvv}
+              error={errors.cvv}
+              onChange={(value) => updateField("cvv", value)}
+            />
+          </div>
+        </section>
+      </div>
+
+      <div className="space-y-6">
+        <section className="rounded-[28px] border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-neutral-950 sm:p-7">
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[color:var(--color-wsu)]">
+            Order Summary
+          </p>
+          <div className="mt-5 space-y-4">
+            {orderSummary.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-start justify-between gap-4 rounded-[22px] border border-neutral-100 bg-neutral-50 px-4 py-4 dark:border-neutral-800 dark:bg-neutral-900"
+              >
+                <div>
+                  <p className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+                    {item.title}
+                  </p>
+                  <p className="mt-1 text-xs uppercase tracking-[0.18em] text-neutral-400 dark:text-neutral-500">
+                    {item.category} · Qty {item.quantity}
+                  </p>
+                </div>
+                <p className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+                  {item.lineTotal}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-[28px] border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-neutral-950 sm:p-7">
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[color:var(--color-wsu)]">
+            Order Total
+          </p>
+          <div className="mt-5 space-y-3 text-sm text-neutral-600 dark:text-neutral-300">
+            <div className="flex items-center justify-between">
+              <span>Items</span>
+              <span>{availableCartCount}</span>
+            </div>
+            <div className="flex items-center justify-between border-t border-neutral-200 pt-3 text-base font-semibold text-neutral-950 dark:border-neutral-800 dark:text-neutral-50">
+              <span>Total</span>
+              <span>{subtotal}</span>
+            </div>
+          </div>
+
+          {formError ? (
+            <p className="mt-5 rounded-[18px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
+              {formError}
+            </p>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-[color:var(--color-wsu)] px-5 py-3 font-medium text-white transition hover:bg-[color:var(--color-wsu-light)] disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {isSubmitting ? "Processing Payment..." : "Complete Purchase"}
+          </button>
+        </section>
+      </div>
+    </form>
+  );
+}
+
+function Field({
+  id,
+  label,
+  value,
+  onChange,
+  error,
+  type = "text",
+  placeholder,
+  className,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+  type?: string;
+  placeholder?: string;
+  className?: string;
+}) {
+  return (
+    <div className={className}>
+      <label
+        htmlFor={id}
+        className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-200"
+      >
+        {label}
+      </label>
+      <input
+        id={id}
+        type={type}
+        value={value}
+        placeholder={placeholder}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full rounded-[20px] border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-[color:var(--color-wsu)] focus:bg-white dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:bg-neutral-950"
+      />
+      {error ? (
+        <p className="mt-2 text-sm text-red-600 dark:text-red-300">{error}</p>
+      ) : null}
+    </div>
+  );
+}

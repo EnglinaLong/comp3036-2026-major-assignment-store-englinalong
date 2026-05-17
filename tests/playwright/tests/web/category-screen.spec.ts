@@ -1,50 +1,62 @@
 import { seed } from "@repo/db/seed";
 import { expect, test } from "./fixtures";
+import { featuredProductsSection } from "./helpers";
 
-test.describe("CATEGORY SCREEN", () => {
-  test.beforeAll(async () => {
+test.describe("FULL STACK STORE CATEGORIES", () => {
+  test.beforeEach(async () => {
     await seed();
   });
 
   test(
-    "Existing Category",
+    "Storefront category filter shows matching category products and resets",
     {
       tag: "@a1",
     },
     async ({ page }) => {
-      await page.goto("/category/react");
+      await page.goto("/");
+      const featuredProducts = featuredProductsSection(page);
 
-      // CATEGORY SCREEN > Displays results based on category from url (e.g. /category/react)
-
-      const articles = await page.locator('[data-test-id^="blog-post-"]');
-      await expect(articles).toHaveCount(2);
-
-      await expect(page.getByTestId("blog-post-2")).toBeVisible();
+      await page
+        .locator("#shop-by-category")
+        .getByRole("button", { name: /React/ })
+        .click();
+      await expect(page).toHaveURL(/\/\?category=react#featured-products$/);
+      await expect(page.getByText("Showing React products")).toBeVisible();
+      await expect(featuredProducts.getByTestId("product-card-2")).toBeVisible();
       await expect(
-        page.getByText("Better front ends with Fatboy Slim"),
-      ).toBeVisible();
+        featuredProducts.getByTestId("product-card-4"),
+      ).not.toBeVisible();
 
-      await expect(page.getByTestId("blog-post-3")).toBeVisible();
+      await page.reload();
+      await expect(page).toHaveURL(/\/\?category=react#featured-products$/);
+      await expect(page.getByText("Showing React products")).toBeVisible();
+
+      await page.getByRole("button", { name: "Clear filters" }).click();
+      await expect(page).toHaveURL("http://localhost:3001/");
+      await expect(page.getByText("Showing all products")).toBeVisible();
+
+      await page
+        .locator("#shop-by-category")
+        .getByRole("button", { name: /DevOps/ })
+        .click();
+      await expect(page).toHaveURL(/\/\?category=devops#featured-products$/);
+      await expect(page.getByText("Showing DevOps products")).toBeVisible();
+      await expect(featuredProducts.getByTestId("product-card-4")).toBeVisible();
       await expect(
-        page.getByText("No front end framework is the best"),
+        featuredProducts.getByTestId("product-card-2"),
+      ).not.toBeVisible();
+
+      await page.getByRole("button", { name: "Clear filters" }).click();
+      await expect(page.getByText("Showing all products")).toBeVisible();
+
+      await page
+        .locator("#shop-by-category")
+        .getByRole("button", { name: /Responsive Design/ })
+        .click();
+      await expect(
+        page.getByText("Showing Responsive Design products"),
       ).toBeVisible();
-    },
-  );
-
-  test(
-    "Invalid Category",
-    {
-      tag: "@a1",
-    },
-    async ({ page }) => {
-      await page.goto("/category/abc");
-
-      // CATEGORY SCREEN > Displays "0 Posts" when search does not find anything
-
-      const articles = await page.locator('[data-test-id^="blog-post-"]');
-      await expect(articles).toHaveCount(0);
-
-      await expect(page.getByText("0 Posts")).toBeVisible();
+      await expect(featuredProducts.getByTestId("product-card-15")).toBeVisible();
     },
   );
 });

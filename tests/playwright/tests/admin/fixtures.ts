@@ -3,6 +3,15 @@ import "dotenv/config";
 import { test as base, type BrowserContext, type Page } from "@playwright/test";
 
 export const e2epassword = "superpassword";
+const sharedProductStateKeys = [
+  "admin-created-posts",
+  "admin-post-overrides",
+];
+const sharedProductStateCookieKeys = [
+  "shared-admin-created-posts",
+  "shared-admin-post-overrides",
+  "shared-product-state-session",
+];
 
 // TODO: Implement seed
 export async function seedData(...options: any[]) {}
@@ -47,6 +56,35 @@ export const test = base.extend<MyFixtures>({
       storageState: ".auth/user.json",
     });
     const userPage = await context.newPage(); //  new UserPage(await context.newPage());
+    await userPage.goto("/");
+    await userPage.evaluate(
+      ({ storageKeys, cookieKeys }) => {
+        for (const key of storageKeys) {
+          window.localStorage.removeItem(key);
+        }
+
+        for (const key of cookieKeys) {
+          document.cookie = `${key}=; path=/; max-age=0; SameSite=Lax`;
+        }
+      },
+      {
+        storageKeys: sharedProductStateKeys,
+        cookieKeys: sharedProductStateCookieKeys,
+      },
+    );
+    const storefrontPage = await context.newPage();
+    await storefrontPage.goto("http://localhost:3001/");
+    await storefrontPage.evaluate(
+      ({ storageKeys }) => {
+        for (const key of storageKeys) {
+          window.localStorage.removeItem(key);
+        }
+      },
+      {
+        storageKeys: sharedProductStateKeys,
+      },
+    );
+    await storefrontPage.close();
     await use(userPage);
     await context.close();
   },
