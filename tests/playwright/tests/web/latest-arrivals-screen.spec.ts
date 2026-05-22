@@ -1,10 +1,10 @@
-import { seed } from "@repo/db/seed";
+import { seedTestData } from "../dbSeed";
 import { expect, test } from "./fixtures";
 import { featuredProductsSection } from "./helpers";
 
 test.describe("FULL STACK STORE LATEST ARRIVALS", () => {
   test.beforeEach(async () => {
-    await seed();
+    await seedTestData();
   });
 
   test(

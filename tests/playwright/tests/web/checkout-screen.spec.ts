@@ -1,4 +1,4 @@
-import { seed } from "@repo/db/seed";
+import { seedTestData } from "../dbSeed";
 import { expect, test } from "./fixtures";
 
 const CUSTOMER_ACCOUNT_STORAGE_KEY = "storefront-customer-account";
@@ -9,7 +9,7 @@ const CART_STORAGE_KEY = "storefront-cart-items";
 
 test.describe("FULL STACK STORE CHECKOUT", () => {
   test.beforeEach(async ({ page }) => {
-    await seed();
+    await seedTestData();
 
     await page.goto("/");
     await page.evaluate(

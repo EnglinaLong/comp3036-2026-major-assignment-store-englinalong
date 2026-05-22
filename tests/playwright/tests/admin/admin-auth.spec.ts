@@ -1,9 +1,9 @@
-import { seed } from "@repo/db/seed";
+import { seedTestData } from "../dbSeed";
 import { expect, test } from "./fixtures";
 
 test.describe("FULL STACK STORE ADMIN AUTH", () => {
   test.beforeEach(async () => {
-    await seed();
+    await seedTestData();
   });
 
   test(
