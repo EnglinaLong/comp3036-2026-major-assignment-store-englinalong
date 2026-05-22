@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 async function getAdminPosts(): Promise<Post[]> {
-  const dbPosts = await client.db.post.findMany({
+  const dbPosts = await client.db.product.findMany({
     orderBy: {
       id: "asc",
     },
