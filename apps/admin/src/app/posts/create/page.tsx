@@ -25,6 +25,7 @@ export default async function CreatePostPage() {
         views: 0,
         likes: 0,
         active: true,
+        price: 0,
         tags: "",
       }}
     />
