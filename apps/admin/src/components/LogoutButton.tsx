@@ -1,10 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "./admin-ui.module.css";
 
 export function LogoutButton() {
+  const [isReady, setIsReady] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    setIsReady(true);
+  }, []);
+
+  if (!isReady) {
+    return null;
+  }
 
   return (
     <button
@@ -15,11 +24,14 @@ export function LogoutButton() {
         setIsSubmitting(true);
 
         try {
-          await fetch("/api/auth", {
+          const response = await fetch("/api/auth", {
             method: "DELETE",
           });
+
+          await response.json().catch(() => null);
+          await new Promise((resolve) => window.setTimeout(resolve, 100));
         } finally {
-          window.location.reload();
+          window.location.assign("/");
         }
       }}
     >

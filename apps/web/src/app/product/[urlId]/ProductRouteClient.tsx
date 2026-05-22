@@ -1,6 +1,4 @@
 "use client";
-
-import Link from "next/link";
 import { useMemo } from "react";
 import { marked } from "marked";
 import type { Post } from "@repo/db/data";
@@ -71,12 +69,12 @@ function ProductUnavailableState({
             : "This product is unavailable right now or no longer exists."}
         </p>
         <div className="mt-6">
-          <Link
+          <a
             href="/#featured-products"
             className="inline-flex items-center justify-center rounded-full bg-[color:var(--color-wsu)] px-5 py-3 font-medium text-white transition hover:bg-[color:var(--color-wsu-light)]"
           >
             Back to Products
-          </Link>
+          </a>
         </div>
       </div>
     </div>
@@ -96,9 +94,24 @@ export function ProductRouteClient({
 }) {
   const mergedProducts = useMergedStorefrontPosts(initialProducts);
 
-  const matchedProduct = useMemo(
-    () => mergedProducts.find((product) => matchesProductRoute(product, urlId)) ?? null,
-    [mergedProducts, urlId],
+  const matchedProduct = useMemo(() => {
+    const activeMatch =
+      mergedProducts.find((product) => matchesProductRoute(product, urlId)) ?? null;
+
+    if (activeMatch) {
+      return activeMatch;
+    }
+
+    if (initialPost && matchesProductRoute(initialPost, urlId)) {
+      return initialPost;
+    }
+
+    return null;
+  }, [initialPost, mergedProducts, urlId]);
+
+  const activeProducts = useMemo(
+    () => mergedProducts.filter((product) => product.active),
+    [mergedProducts],
   );
 
   if (!matchedProduct) {
@@ -109,7 +122,6 @@ export function ProductRouteClient({
     return <ProductUnavailableState unavailable />;
   }
 
-  const activeProducts = mergedProducts.filter((product) => product.active);
   const relatedProducts = getRelatedProducts(activeProducts, matchedProduct);
   const contentHtml = marked.parse(matchedProduct.content) as string;
   const tags = matchedProduct.tags

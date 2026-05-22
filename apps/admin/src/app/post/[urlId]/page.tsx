@@ -23,7 +23,7 @@ export default async function UpdatePostPage({
   }
 
   const { urlId } = await params;
-  const posts = await client.db.post.findMany({
+  const posts = await client.db.product.findMany({
     orderBy: {
       id: "asc",
     },

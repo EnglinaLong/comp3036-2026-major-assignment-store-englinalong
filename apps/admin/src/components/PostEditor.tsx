@@ -3,17 +3,13 @@
 import { marked } from "marked";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type { Post } from "@repo/db/data";
-import {
-  upsertCreatedProduct,
-  upsertProductOverride,
-} from "@repo/ui/local-product-state";
+import { upsertCreatedProduct } from "@repo/ui/local-product-state";
 
 const PRODUCT_PRICE_OVERRIDES_COOKIE = "store-product-price-overrides";
 const CREATE_PRODUCT_DRAFT_STORAGE_KEY = "admin-create-product-draft";
 
 type PostEditorProps = {
   postId?: number;
-  isLocalOnly?: boolean;
   initialPost: Pick<
     Post,
     | "title"
@@ -27,6 +23,7 @@ type PostEditorProps = {
     | "views"
     | "likes"
     | "active"
+    | "price"
   >;
 };
 
@@ -238,7 +235,6 @@ function clearCreateDraft() {
 
 export function PostEditor({
   postId,
-  isLocalOnly = false,
   initialPost,
 }: PostEditorProps) {
   const isCreateMode = !initialPost.title.trim();
@@ -246,7 +242,7 @@ export function PostEditor({
     const baseValues = {
       ...initialPost,
       price: String(
-        readStoredPrice(initialPost.title) ??
+        (initialPost.price || readStoredPrice(initialPost.title)) ??
           getConfiguredPrice(initialPost.title) ??
           getFallbackPrice(postId, initialPost.category),
       ),
@@ -337,48 +333,18 @@ export function PostEditor({
         return;
       }
 
-      if (isLocalOnly) {
-        upsertCreatedProduct({
-          id: postId,
-          urlId: initialPost.urlId,
-          title: submissionValues.title.trim(),
-          category: submissionValues.category.trim(),
-          description: submissionValues.description.trim(),
-          content: submissionValues.content.trim(),
-          imageUrl: submissionValues.imageUrl.trim(),
-          date: initialPost.date,
-          tags: submissionValues.tags.trim(),
-          views: initialPost.views,
-          likes: initialPost.likes,
-          active: initialPost.active,
-        });
-      } else {
-        const response = await fetch(`/api/posts/${postId}`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(submissionValues),
-        });
+      const response = await fetch(`/api/posts/${postId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(submissionValues),
+      });
 
-        if (!response.ok) {
-          setShowSaveError(true);
-          setSaveMessage("");
-          return;
-        }
-
-        upsertProductOverride(initialPost.urlId, {
-          title: submissionValues.title.trim(),
-          category: submissionValues.category.trim(),
-          description: submissionValues.description.trim(),
-          content: submissionValues.content.trim(),
-          imageUrl: submissionValues.imageUrl.trim(),
-          tags: submissionValues.tags.trim(),
-          date: initialPost.date,
-          views: initialPost.views,
-          likes: initialPost.likes,
-          active: initialPost.active,
-        });
+      if (!response.ok) {
+        setShowSaveError(true);
+        setSaveMessage("");
+        return;
       }
     } else {
       const response = await fetch("/api/posts", {

@@ -2,12 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { Post } from "@repo/db/data";
-import {
-  mergeLocalProducts,
-  readLocalProductState,
-  upsertCreatedProduct,
-  upsertProductOverride,
-} from "@repo/ui/local-product-state";
 import styles from "./admin-ui.module.css";
 
 type SortOption = "title-asc" | "title-desc" | "date-asc" | "date-desc";
@@ -43,7 +37,7 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
   const [savingPostId, setSavingPostId] = useState<number | null>(null);
 
   useEffect(() => {
-    setPostStates(mergeLocalProducts(initialPosts));
+    setPostStates(initialPosts);
   }, [initialPosts]);
 
   const togglePostStatus = async (postId: number) => {
@@ -67,24 +61,6 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
       });
 
       if (!response.ok) {
-        const { createdPosts } = readLocalProductState();
-
-        if (!createdPosts.some((item) => item.id === postId)) {
-          return;
-        }
-
-        const nextActive = !post.active;
-        const createdPost = createdPosts.find((item) => item.id === postId);
-
-        if (createdPost) {
-          upsertCreatedProduct({ ...createdPost, active: nextActive });
-        }
-
-        setPostStates((current) =>
-          current.map((item) =>
-            item.id === postId ? { ...item, active: nextActive } : item,
-          ),
-        );
         return;
       }
 
@@ -100,7 +76,6 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
             : item,
         ),
       );
-      upsertProductOverride(post.urlId, { active: updatedPost.active });
     } finally {
       setSavingPostId(null);
     }

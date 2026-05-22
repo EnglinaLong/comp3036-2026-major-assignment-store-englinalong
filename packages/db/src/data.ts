@@ -1,4 +1,4 @@
-export type Post = {
+export type Product = {
   id: number;
   urlId: string;
   title: string;
@@ -11,30 +11,35 @@ export type Post = {
   likes: number;
   tags: string;
   active: boolean;
+  price: number;
+  supportingText: string;
 };
 
-export const posts: Post[] = [
+// Temporary compatibility alias while the rest of the app still imports `Post`.
+export type Post = Product;
+
+export const products: Product[] = [
   {
     id: 1,
     title: "Backend Starter Toolkit",
     urlId: "backend-starter-toolkit",
     description:
-      "A backend-focused starter toolkit for shipping scalable Node.js services faster with auth patterns, reusable API structure, and production-ready setup guidance.",
+      "A backend-focused starter toolkit with API structure, auth patterns, database wiring, and deployment notes for modern full-stack teams.",
     content: `
-  # Backend Starter Toolkit
+# Backend Starter Toolkit
 
-  Launch full-stack products faster with a backend starter designed for modern Node.js applications.
+Ship backend features faster with a store-ready toolkit designed for practical Node.js delivery.
 
-  ## What's Included
+## What You Get
 
-  - Authentication and session architecture guidance
-  - Reusable service and route structure
-  - Database-ready project organization patterns
-  - Deployment and environment configuration notes
+- Authentication and session architecture guidance
+- Reusable service, route, and validation patterns
+- Database-ready project structure for growing apps
+- Environment, deployment, and release notes
 
-  ## Best For Developers
+## Ideal For
 
-  Teams building APIs, dashboards, and internal tools who want a practical backend foundation without starting from scratch.
+Developers building customer apps, internal tools, and admin systems who want a reliable backend foundation.
 `,
     imageUrl:
       "https://images.unsplash.com/photo-1496128858413-b36217c2ce36?ixlib=rb-4.0.3&auto=format&fit=crop&w=3603&q=80",
@@ -44,28 +49,31 @@ export const posts: Post[] = [
     views: 128,
     likes: 18,
     active: true,
+    price: 87,
+    supportingText:
+      "Includes starter architecture notes, setup guidance, and reusable backend patterns.",
   },
   {
     id: 2,
     title: "React Storefront UI Kit",
     urlId: "react-storefront-ui-kit",
     description:
-      "A polished React UI kit with reusable storefront sections, responsive layouts, and production-style components for modern ecommerce and product experiences.",
+      "A polished React storefront kit with reusable product sections, responsive merchandising layouts, and customer-focused UI building blocks.",
     content: `
-  # React Storefront UI Kit
+# React Storefront UI Kit
 
-  Build cleaner product pages and storefront landing sections with a reusable React-first component set.
+Build cleaner product pages and storefront layouts with a reusable React-first component pack.
 
-  ## What's Included
+## What You Get
 
-  - Responsive hero, feature, and product grid sections
-  - Reusable CTA and badge patterns
-  - Store-ready component spacing and hierarchy
-  - Frontend structure notes for scaling product pages
+- Responsive hero, feature, and product grid sections
+- Reusable CTA, badge, and promo block patterns
+- Store-ready spacing, layout, and merchandising guidance
+- Frontend structure notes for scaling product pages
 
-  ## Best For Developers
+## Ideal For
 
-  Frontend teams who want a faster path to polished shopping and showcase interfaces using React.
+Frontend teams who want a faster path to polished shopping and showcase experiences.
 `,
     imageUrl:
       "https://plus.unsplash.com/premium_photo-1661342428515-5ca8cee4385a?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.0.3",
@@ -75,28 +83,31 @@ export const posts: Post[] = [
     views: 94,
     likes: 12,
     active: true,
+    price: 84,
+    supportingText:
+      "Designed for storefront landing pages, product grids, and responsive product detail flows.",
   },
   {
     id: 3,
     title: "Frontend Performance Toolkit",
     urlId: "frontend-performance-toolkit",
     description:
-      "A lightweight performance resource focused on fast-loading frontends, scalable component architecture, and practical optimization patterns for modern web apps.",
+      "A performance-focused frontend resource with practical optimization checklists, rendering advice, and scalable UI architecture patterns.",
     content: `
-  # Frontend Performance Toolkit
+# Frontend Performance Toolkit
 
-  Improve perceived speed and maintainable frontend architecture with a toolkit built around practical optimization wins.
+Improve perceived speed and maintainable frontend architecture with a toolkit built around practical performance wins.
 
-  ## What's Included
+## What You Get
 
-  - Performance review checklist for UI-heavy projects
-  - Asset, image, and rendering optimization notes
-  - Component structure patterns for scaling interfaces
-  - Guidance for balancing flexibility and bundle size
+- Performance review checklist for UI-heavy projects
+- Asset, image, and rendering optimization notes
+- Component structure patterns for scaling interfaces
+- Guidance for balancing flexibility and bundle size
 
-  ## Best For Developers
+## Ideal For
 
-  Product teams improving storefront performance, discoverability, and rendering efficiency.
+Product teams improving storefront performance, discoverability, and rendering efficiency.
 `,
     imageUrl:
       "https://plus.unsplash.com/premium_photo-1661517706036-a48d5fc8f2f5?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
@@ -106,28 +117,31 @@ export const posts: Post[] = [
     views: 76,
     likes: 9,
     active: true,
+    price: 74,
+    supportingText:
+      "Built to help product teams ship faster pages without sacrificing maintainability.",
   },
   {
     id: 4,
     title: "Docker Deployment Toolkit",
     urlId: "docker-deployment-toolkit",
     description:
-      "A deployment toolkit for containerised full-stack projects, including Docker workflow guidance, environment setup patterns, and release-ready delivery notes.",
+      "A deployment toolkit for containerised full-stack apps with Docker workflows, environment setup patterns, and release-ready delivery notes.",
     content: `
-  # Docker Deployment Toolkit
+# Docker Deployment Toolkit
 
-  Move from local development to reliable deployments with a toolkit built for container-first workflows.
+Move from local development to reliable deployments with a toolkit built for container-first workflows.
 
-  ## What's Included
+## What You Get
 
-  - Docker compose workflow guidance
-  - Environment configuration patterns
-  - Deployment checklist for staging and production
-  - Practical notes for full-stack app release readiness
+- Docker Compose workflow guidance
+- Environment configuration patterns
+- Deployment checklist for staging and production
+- Practical notes for full-stack app release readiness
 
-  ## Best For Developers
+## Ideal For
 
-  Engineers packaging Node.js, React, and database-backed projects for smoother handoff and deployment.
+Engineers packaging Node.js, React, and database-backed projects for smoother handoff and deployment.
 `,
     imageUrl:
       "https://images.unsplash.com/photo-1605745341112-85968b19335b?auto=format&fit=crop&w=1200&q=80",
@@ -137,28 +151,31 @@ export const posts: Post[] = [
     views: 61,
     likes: 7,
     active: true,
+    price: 72,
+    supportingText:
+      "Includes release checklists, environment patterns, and container workflow notes.",
   },
   {
     id: 5,
     title: "Next.js Ecommerce Starter",
     urlId: "nextjs-ecommerce-starter",
     description:
-      "A full-stack Next.js starter built for ecommerce demos, with storefront structure, product-detail patterns, and scalable app routing ready for extension.",
+      "A full-stack Next.js starter built for ecommerce demos, with product routes, scalable app structure, and conversion-focused page patterns.",
     content: `
-  # Next.js Ecommerce Starter
+# Next.js Ecommerce Starter
 
-  Kick off ecommerce builds with a modern Next.js structure tailored for product catalogs and conversion-focused flows.
+Kick off ecommerce builds with a modern Next.js structure tailored for product catalogs and customer journeys.
 
-  ## What's Included
+## What You Get
 
-  - Product listing and detail page patterns
-  - App Router-ready folder structure
-  - SEO-friendly content layout ideas
-  - Reusable storefront section guidance
+- Product listing and detail page patterns
+- App Router-ready folder structure
+- SEO-friendly content layout ideas
+- Reusable storefront section guidance
 
-  ## Best For Developers
+## Ideal For
 
-  Teams building product-led demos, ecommerce MVPs, and scalable storefront prototypes with Next.js.
+Teams building product-led demos, ecommerce MVPs, and scalable storefront prototypes with Next.js.
 `,
     imageUrl:
       "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80",
@@ -168,28 +185,31 @@ export const posts: Post[] = [
     views: 143,
     likes: 24,
     active: true,
+    price: 104,
+    supportingText:
+      "A strong base for product catalogs, landing pages, and conversion-focused storefront routes.",
   },
   {
     id: 6,
     title: "UI Component Library Pro",
     urlId: "ui-component-library-pro",
     description:
-      "A curated UI component library for product teams that need reusable cards, pricing sections, navigation patterns, and clean interface building blocks.",
+      "A reusable UI component library for product teams needing polished cards, pricing sections, navigation patterns, and clean interface building blocks.",
     content: `
-  # UI Component Library Pro
+# UI Component Library Pro
 
-  Speed up interface work with a reusable component collection built for real product screens.
+Speed up interface work with a reusable component collection built for real product screens.
 
-  ## What's Included
+## What You Get
 
-  - Pricing, feature, and testimonial patterns
-  - Navigation and content layout building blocks
-  - Reusable badges, cards, and CTA styles
-  - Design consistency notes for scalable teams
+- Pricing, feature, and testimonial patterns
+- Navigation and content layout building blocks
+- Reusable badges, cards, and CTA styles
+- Design consistency notes for scalable teams
 
-  ## Best For Developers
+## Ideal For
 
-  Frontend teams standardising shared UI across customer dashboards and storefronts.
+Frontend teams standardising shared UI across customer dashboards and storefronts.
 `,
     imageUrl:
       "https://images.unsplash.com/photo-1559028012-481c04fa702d?auto=format&fit=crop&w=1200&q=80",
@@ -199,28 +219,31 @@ export const posts: Post[] = [
     views: 102,
     likes: 14,
     active: true,
+    price: 67,
+    supportingText:
+      "A reusable kit for teams building consistent customer and admin interfaces.",
   },
   {
     id: 7,
     title: "Cloud Deployment Starter Pack",
     urlId: "cloud-deployment-starter-pack",
     description:
-      "A deployment-ready DevOps resource pack covering cloud environments, release checklists, environment variables, and practical team handoff notes.",
+      "A deployment-ready cloud resource pack covering hosting environments, release checklists, environment variables, and practical handoff notes.",
     content: `
-  # Cloud Deployment Starter Pack
+# Cloud Deployment Starter Pack
 
-  Simplify cloud delivery with practical deployment checklists and environment planning notes.
+Simplify cloud delivery with practical deployment checklists and environment planning notes.
 
-  ## What's Included
+## What You Get
 
-  - Release checklist for staging and production
-  - Environment variable and config planning guidance
-  - Team handoff notes for deployment ownership
-  - Cloud hosting workflow references
+- Release checklist for staging and production
+- Environment variable and config planning guidance
+- Team handoff notes for deployment ownership
+- Cloud hosting workflow references
 
-  ## Best For Developers
+## Ideal For
 
-  Small teams preparing full-stack apps for dependable cloud launches.
+Small teams preparing full-stack apps for dependable cloud launches.
 `,
     imageUrl:
       "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80",
@@ -230,28 +253,31 @@ export const posts: Post[] = [
     views: 88,
     likes: 11,
     active: true,
+    price: 72,
+    supportingText:
+      "Practical for staging, production, and infrastructure handoff workflows.",
   },
   {
     id: 8,
     title: "API Security Toolkit",
     urlId: "api-security-toolkit",
     description:
-      "A practical security toolkit for backend developers covering authentication flows, request validation patterns, API hardening checklists, and safer release habits.",
+      "A practical security toolkit for backend developers covering authentication flows, request validation, hardening checklists, and safer release habits.",
     content: `
-  # API Security Toolkit
+# API Security Toolkit
 
-  Strengthen backend foundations with a practical resource focused on safer API delivery.
+Strengthen backend foundations with a practical resource focused on safer API delivery.
 
-  ## What's Included
+## What You Get
 
-  - Authentication and authorization planning notes
-  - Request validation patterns
-  - API hardening checklist
-  - Common release-time security checks
+- Authentication and authorization planning notes
+- Request validation patterns
+- API hardening checklist
+- Common release-time security checks
 
-  ## Best For Developers
+## Ideal For
 
-  Backend teams improving baseline API security for customer-facing products.
+Backend teams improving baseline API security for customer-facing products.
 `,
     imageUrl:
       "https://images.unsplash.com/photo-1510511459019-5dda7724fd87?auto=format&fit=crop&w=1200&q=80",
@@ -261,28 +287,31 @@ export const posts: Post[] = [
     views: 119,
     likes: 19,
     active: true,
+    price: 92,
+    supportingText:
+      "Focused on secure defaults, safer request handling, and release-time checks.",
   },
   {
     id: 9,
     title: "SaaS Dashboard Kit",
     urlId: "saas-dashboard-kit",
     description:
-      "A dashboard kit for SaaS products featuring account views, metrics cards, settings layouts, and reusable UI patterns for fast internal or customer tools.",
+      "A dashboard kit for SaaS products with account views, metrics cards, settings layouts, and reusable interface patterns for internal or customer tools.",
     content: `
-  # SaaS Dashboard Kit
+# SaaS Dashboard Kit
 
-  Build polished SaaS dashboards with reusable layouts focused on clarity and product metrics.
+Build polished SaaS dashboards with reusable layouts focused on clarity and product metrics.
 
-  ## What's Included
+## What You Get
 
-  - Metrics cards and overview layouts
-  - Account, settings, and usage page patterns
-  - Reusable dashboard UI building blocks
-  - Responsive structure guidance for web apps
+- Metrics cards and overview layouts
+- Account, settings, and usage page patterns
+- Reusable dashboard UI building blocks
+- Responsive structure guidance for web apps
 
-  ## Best For Developers
+## Ideal For
 
-  Teams building customer dashboards, admin portals, and internal product tools.
+Teams building customer dashboards, admin portals, and internal product tools.
 `,
     imageUrl:
       "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80",
@@ -292,59 +321,65 @@ export const posts: Post[] = [
     views: 131,
     likes: 27,
     active: true,
+    price: 74,
+    supportingText:
+      "Useful for account screens, metrics views, and scalable product dashboards.",
   },
   {
     id: 10,
     title: "Ecommerce Analytics Dashboard",
     urlId: "ecommerce-analytics-dashboard",
     description:
-      "A storefront analytics dashboard resource with product-metrics views, revenue summary layouts, and modern reporting UI patterns for ecommerce teams.",
+      "A storefront analytics dashboard resource with product metrics, revenue summaries, and reporting UI patterns for ecommerce teams.",
     content: `
-  # Ecommerce Analytics Dashboard
+# Ecommerce Analytics Dashboard
 
-  Turn storefront metrics into cleaner reporting experiences with a dashboard built for product and commerce teams.
+Turn storefront metrics into cleaner reporting experiences with a dashboard built for product and commerce teams.
 
-  ## What's Included
+## What You Get
 
-  - Revenue and conversion summary sections
-  - Product performance dashboard layouts
-  - Analytics-focused UI patterns
-  - Clear information hierarchy for reporting screens
+- Revenue and conversion summary sections
+- Product performance dashboard layouts
+- Analytics-focused UI patterns
+- Clear information hierarchy for reporting screens
 
-  ## Best For Developers
+## Ideal For
 
-  Teams shipping internal commerce analytics tools or client-ready reporting interfaces.
+Teams shipping internal commerce analytics tools or client-ready reporting interfaces.
 `,
     imageUrl:
       "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80",
     date: new Date("May 8, 2026"),
-    category: "React",
+    category: "Analytics",
     tags: "Analytics, Ecommerce, Dashboard",
     views: 110,
     likes: 16,
     active: true,
+    price: 74,
+    supportingText:
+      "Built for teams who need clearer product, conversion, and revenue reporting screens.",
   },
   {
     id: 11,
     title: "Responsive Admin Template",
     urlId: "responsive-admin-template",
     description:
-      "A responsive admin template with management screens, navigation layouts, table patterns, and mobile-friendly interface structure for operations teams.",
+      "A responsive admin template with management screens, navigation layouts, table patterns, and mobile-friendly structure for operations teams.",
     content: `
-  # Responsive Admin Template
+# Responsive Admin Template
 
-  Create cleaner operations screens with an admin template designed for flexibility across desktop and mobile.
+Create cleaner operations screens with an admin template designed for flexibility across desktop and mobile.
 
-  ## What's Included
+## What You Get
 
-  - Table and management screen layouts
-  - Responsive sidebar and header patterns
-  - Admin form and filter UI ideas
-  - Mobile-friendly layout guidance
+- Table and management screen layouts
+- Responsive sidebar and header patterns
+- Admin form and filter UI ideas
+- Mobile-friendly layout guidance
 
-  ## Best For Developers
+## Ideal For
 
-  Teams building internal tools, product operations panels, and admin prototypes.
+Teams building internal tools, product operations panels, and admin prototypes.
 `,
     imageUrl:
       "https://images.unsplash.com/photo-1496171367470-9ed9a91ea931?auto=format&fit=crop&w=1200&q=80",
@@ -354,6 +389,9 @@ export const posts: Post[] = [
     views: 72,
     likes: 8,
     active: true,
+    price: 77,
+    supportingText:
+      "Includes patterns for dashboards, management screens, and mobile-friendly admin workflows.",
   },
   {
     id: 12,
@@ -362,20 +400,20 @@ export const posts: Post[] = [
     description:
       "A focused pack of ecommerce-ready React components including product cards, collection filters, CTA sections, and detail-page content blocks.",
     content: `
-  # React Ecommerce Components
+# React Ecommerce Components
 
-  Assemble product experiences faster with a focused React component pack made for ecommerce layouts.
+Assemble product experiences faster with a focused React component pack made for ecommerce layouts.
 
-  ## What's Included
+## What You Get
 
-  - Product card and collection filter patterns
-  - Detail page content sections
-  - CTA and merchandising components
-  - Reusable storefront interaction patterns
+- Product card and collection filter patterns
+- Detail page content sections
+- CTA and merchandising components
+- Reusable storefront interaction patterns
 
-  ## Best For Developers
+## Ideal For
 
-  Frontend teams shipping customer-facing product grids and detail pages with React.
+Frontend teams shipping customer-facing product grids and detail pages with React.
 `,
     imageUrl:
       "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80",
@@ -385,59 +423,65 @@ export const posts: Post[] = [
     views: 97,
     likes: 13,
     active: true,
+    price: 74,
+    supportingText:
+      "Made for teams building reusable product cards, filters, and merchandising sections.",
   },
   {
     id: 13,
-    title: "Modern UI Design System",
-    urlId: "modern-ui-design-system",
+    title: "Tailwind UI Component Pack",
+    urlId: "tailwind-ui-component-pack",
     description:
-      "A modern design system resource for digital products with typography rules, color decisions, reusable component structure, and scalable interface guidance.",
+      "A Tailwind-first component pack with storefront sections, dashboard blocks, and reusable interface patterns for product teams.",
     content: `
-  # Modern UI Design System
+# Tailwind UI Component Pack
 
-  Build stronger visual consistency with a design system focused on reusable product UI.
+Design and ship product interfaces faster with a component pack built around practical Tailwind patterns.
 
-  ## What's Included
+## What You Get
 
-  - Typography and spacing guidance
-  - Reusable color and component decisions
-  - Scalable interface planning notes
-  - Practical system-building references
+- Storefront hero, pricing, and feature sections
+- Dashboard cards and layout building blocks
+- Reusable utility-first component patterns
+- Guidance for keeping product UIs consistent at scale
 
-  ## Best For Developers
+## Ideal For
 
-  Product teams aligning developers and designers around a shared interface language.
+Teams building customer storefronts, admin dashboards, and internal product experiences with Tailwind CSS.
 `,
     imageUrl:
       "https://images.unsplash.com/photo-1545239351-1141bd82e8a6?auto=format&fit=crop&w=1200&q=80",
     date: new Date("May 9, 2026"),
     category: "UI Design",
-    tags: "Design System, UI Design, Front-End",
+    tags: "Tailwind, Components, Front-End",
     views: 84,
     likes: 10,
     active: true,
+    price: 72,
+    supportingText:
+      "Useful for product teams standardising utility-first UI across storefront and admin work.",
   },
   {
     id: 14,
     title: "Node API Builder Pack",
     urlId: "node-api-builder-pack",
     description:
-      "A Node.js resource pack for structuring services, requests, validation, and backend module patterns in a way that scales beyond quick prototypes.",
+      "A Node.js resource pack for structuring services, requests, validation, and backend modules in a way that scales beyond quick prototypes.",
     content: `
-  # Node API Builder Pack
+# Node API Builder Pack
 
-  Build backend services with more confidence using a pack focused on practical Node API structure.
+Build backend services with more confidence using a pack focused on practical Node API structure.
 
-  ## What's Included
+## What You Get
 
-  - Service and module organization patterns
-  - Validation and error-handling guidance
-  - Request lifecycle structure ideas
-  - Clean backend scaling notes
+- Service and module organization patterns
+- Validation and error-handling guidance
+- Request lifecycle structure ideas
+- Clean backend scaling notes
 
-  ## Best For Developers
+## Ideal For
 
-  Engineers growing APIs from prototypes into maintainable full-stack products.
+Engineers growing APIs from prototypes into maintainable full-stack products.
 `,
     imageUrl:
       "https://images.unsplash.com/photo-1555949963-aa79dcee981c?auto=format&fit=crop&w=1200&q=80",
@@ -447,28 +491,31 @@ export const posts: Post[] = [
     views: 117,
     likes: 20,
     active: true,
+    price: 92,
+    supportingText:
+      "A practical fit for backend teams scaling service structure, validation, and request flows.",
   },
   {
     id: 15,
     title: "Mobile Responsive Design Pack",
     urlId: "mobile-responsive-design-pack",
     description:
-      "A responsive design resource pack with mobile-first layout guidance, reusable interface patterns, and practical UI references for modern product teams.",
+      "A responsive design pack with mobile-first layout guidance, reusable interface patterns, and practical UI references for modern product teams.",
     content: `
-  # Mobile Responsive Design Pack
+# Mobile Responsive Design Pack
 
-  Create more reliable mobile shopping and product experiences with a design pack focused on clarity, flexibility, and responsive structure.
+Create more reliable mobile shopping and product experiences with a design pack focused on clarity, flexibility, and responsive structure.
 
-  ## What's Included
+## What You Get
 
-  - Mobile-first layout references
-  - Responsive spacing and card pattern ideas
-  - Practical UI guidance for smaller screens
-  - Storefront-friendly interaction notes
+- Mobile-first layout references
+- Responsive spacing and card pattern ideas
+- Practical UI guidance for smaller screens
+- Storefront-friendly interaction notes
 
-  ## Best For Developers
+## Ideal For
 
-  Teams polishing responsive customer journeys across landing pages, product grids, and detail screens.
+Teams polishing responsive customer journeys across landing pages, product grids, and detail screens.
 `,
     imageUrl:
       "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=1200&q=80",
@@ -478,16 +525,36 @@ export const posts: Post[] = [
     views: 0,
     likes: 0,
     active: true,
+    price: 67,
+    supportingText:
+      "Helpful for teams refining mobile-first product pages and responsive customer flows.",
   },
 ];
 
-const seededPostsById = new Map(posts.map((post) => [post.id, post]));
-const seededPostsByUrlId = new Map(posts.map((post) => [post.urlId, post]));
+// Temporary compatibility alias while older code still refers to `posts`.
+export const posts = products;
 
+const seededProductsById = new Map(products.map((product) => [product.id, product]));
+const seededProductsByUrlId = new Map(
+  products.map((product) => [product.urlId, product]),
+);
+
+export function getSeededProduct(product: Pick<Product, "id" | "urlId">) {
+  return (
+    seededProductsById.get(product.id) ??
+    seededProductsByUrlId.get(product.urlId)
+  );
+}
+
+export function getSeededProductDate(product: Pick<Product, "id" | "urlId">) {
+  return getSeededProduct(product)?.date;
+}
+
+// Temporary compatibility exports while the app still uses legacy helper names.
 export function getSeededPost(post: Pick<Post, "id" | "urlId">) {
-  return seededPostsById.get(post.id) ?? seededPostsByUrlId.get(post.urlId);
+  return getSeededProduct(post);
 }
 
 export function getSeededPostDate(post: Pick<Post, "id" | "urlId">) {
-  return getSeededPost(post)?.date;
+  return getSeededProductDate(post);
 }

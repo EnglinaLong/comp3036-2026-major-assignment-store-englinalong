@@ -10,26 +10,64 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Post {
-  id     Int      @id @default(autoincrement())
-  urlId  String   @unique
-  title  String
-  content     String  @default("")
-  category    String  @default("")
-  description String  @default("")
-  imageUrl    String  @default("")
-  tags        String  @default("")
-  date   DateTime @default(now())
-  views  Int      @default(0)
-  active Boolean  @default(true)
-  Likes  Like[]
-  // Incomplete
+model Product {
+  id             Int         @id @default(autoincrement())
+  urlId          String      @unique
+  title          String
+  content        String      @default("")
+  category       String      @default("")
+  description    String      @default("")
+  imageUrl       String      @default("")
+  tags           String      @default("")
+  date           DateTime    @default(now())
+  views          Int         @default(0)
+  active         Boolean     @default(true)
+  price          Int         @default(0)
+  supportingText String      @default("")
+  updatedAt      DateTime    @default(now()) @updatedAt
+  Likes          Like[]
+  orderItems     OrderItem[]
+
+  @@map("Post")
 }
 
 model Like {
-  postId Int
-  userIP String
-  Post   Post   @relation(fields: [postId], references: [id])
+  postId  Int
+  userIP  String
+  Product Product @relation(fields: [postId], references: [id])
 
   @@id([postId, userIP])
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String?
+  email        String   @unique
+  passwordHash String
+  role         String   @default("customer")
+  createdAt    DateTime @default(now())
+  orders       Order[]
+}
+
+model Order {
+  id                      Int         @id @default(autoincrement())
+  userId                  Int?
+  email                   String
+  total                   Int
+  status                  String      @default("pending")
+  stripeCheckoutSessionId String?
+  stripePaymentIntentId   String?
+  createdAt               DateTime    @default(now())
+  user                    User?       @relation(fields: [userId], references: [id])
+  items                   OrderItem[]
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  productId Int
+  quantity  Int
+  price     Int
+  order     Order   @relation(fields: [orderId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
 }
