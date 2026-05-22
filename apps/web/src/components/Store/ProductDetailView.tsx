@@ -108,12 +108,12 @@ export default function ProductDetailView({
             Please browse other available products.
           </p>
           <div className="mt-6">
-            <Link
+            <a
               href="/#featured-products"
               className="inline-flex items-center justify-center rounded-full bg-[color:var(--color-wsu)] px-5 py-3 font-medium text-white transition hover:bg-[color:var(--color-wsu-light)]"
             >
               Back to Products
-            </Link>
+            </a>
           </div>
         </div>
       </div>
@@ -127,12 +127,12 @@ export default function ProductDetailView({
       className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link
+        <a
           href="/#featured-products"
           className="inline-flex items-center rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition hover:border-neutral-400 hover:text-neutral-950 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:border-neutral-600 dark:hover:text-neutral-50"
         >
           Back to Products
-        </Link>
+        </a>
 
         <div className="flex flex-wrap items-center gap-3 text-sm text-neutral-500 dark:text-neutral-400">
           <span>{getProductViewsLabel(displayPost.views)}</span>

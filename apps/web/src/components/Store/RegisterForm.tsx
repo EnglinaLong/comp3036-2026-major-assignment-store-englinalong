@@ -18,7 +18,21 @@ export function RegisterForm() {
   const returnTo = searchParams.get("returnTo") || "/account";
   const intent = searchParams.get("intent");
 
-  if (hasHydrated && customer) {
+  function navigateTo(target: string) {
+    router.replace(target);
+    router.refresh();
+    window.location.assign(target);
+  }
+
+  if (!hasHydrated) {
+    return (
+      <div className="rounded-[24px] border border-black/10 bg-neutral-50 p-5 text-sm text-neutral-600 dark:border-white/10 dark:bg-neutral-900 dark:text-neutral-300">
+        Loading account tools...
+      </div>
+    );
+  }
+
+  if (customer) {
     return (
       <div className="rounded-[24px] border border-[color:var(--color-wsu)]/15 bg-[color:var(--color-wsu)]/5 p-5">
         <p className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">
@@ -49,10 +63,10 @@ export function RegisterForm() {
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_16.5rem] lg:items-stretch">
       <form
         className="space-y-5"
-        onSubmit={(event) => {
+        onSubmit={async (event) => {
           event.preventDefault();
 
-          const result = register({
+          const result = await register({
             name,
             email,
             password,
@@ -64,7 +78,7 @@ export function RegisterForm() {
           }
 
           setError(null);
-          router.push(intent === "checkout" ? returnTo : "/account");
+          navigateTo(intent === "checkout" ? returnTo : "/account");
         }}
       >
         <div className="grid gap-2">

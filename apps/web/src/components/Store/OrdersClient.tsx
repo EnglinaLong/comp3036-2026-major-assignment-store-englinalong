@@ -8,8 +8,8 @@ import {
   clearPaymentSuccessState,
   readCustomerOrders,
   readPaymentSuccessState,
-  type CustomerOrder,
 } from "@/functions/customerOrders";
+import type { CustomerOrder } from "@/lib/orders";
 
 function formatOrderDate(value: string) {
   return new Date(value).toLocaleDateString("en-AU", {
@@ -38,8 +38,48 @@ export function OrdersClient() {
       return;
     }
 
-    setOrders(readCustomerOrders());
+    const storedOrders = readCustomerOrders();
+    setOrders(storedOrders);
     setSuccessState(readPaymentSuccessState());
+
+    void (async () => {
+      try {
+        const response = await fetch("/api/orders", {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const payload = (await response.json()) as {
+          orders?: CustomerOrder[];
+        };
+
+        if (!Array.isArray(payload.orders)) {
+          return;
+        }
+
+        setOrders((currentOrders) => {
+          if (currentOrders.length === 0) {
+            return payload.orders ?? [];
+          }
+
+          const storedById = new Map(
+            currentOrders.map((order) => [order.id, order]),
+          );
+
+          return (payload.orders ?? []).map((order) => ({
+            ...order,
+            shipping: storedById.get(order.id)?.shipping ?? order.shipping,
+            payment: storedById.get(order.id)?.payment ?? order.payment,
+          }));
+        });
+      } catch {
+        // Keep the local fallback if the API is temporarily unavailable.
+      }
+    })();
   }, [customer, hasHydrated, router]);
 
   if (!hasHydrated || !customer) {

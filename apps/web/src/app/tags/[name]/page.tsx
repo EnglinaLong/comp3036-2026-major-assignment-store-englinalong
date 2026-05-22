@@ -1,5 +1,5 @@
 import Main from "@/components/Main";
-import { getPosts } from "@/app/posts";
+import { getProducts } from "@/app/posts";
 
 export default async function Page({
   params,
@@ -8,16 +8,16 @@ export default async function Page({
 }) {
   const { name } = await params;
   const tagName = decodeURIComponent(name).trim().toLowerCase();
-  const filteredPosts = (await getPosts({
+  const filteredProducts = (await getProducts({
     active: true,
-  })).filter((post) => {
+  })).filter((product) => {
 
-    const postTags = post.tags
+    const productTags = product.tags
       .split(",")
       .map((tag) => tag.trim().toLowerCase().replace(/\s+/g, "-"));
 
-    return postTags.includes(tagName);
+    return productTags.includes(tagName);
   });
 
-  return <Main posts={filteredPosts} />;
+  return <Main posts={filteredProducts} />;
 }

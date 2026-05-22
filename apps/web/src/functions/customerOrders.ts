@@ -1,29 +1,9 @@
 "use client";
 
-import type { CartItem } from "@/components/Store/CartProvider";
+import type { CustomerOrder } from "@/lib/orders";
 
 export const CUSTOMER_ORDERS_STORAGE_KEY = "storefront-customer-orders";
 export const PAYMENT_SUCCESS_STORAGE_KEY = "storefront-payment-success";
-
-export type CustomerOrder = {
-  id: string;
-  date: string;
-  status: "Paid";
-  total: string;
-  itemCount: number;
-  items: CartItem[];
-  shipping: {
-    fullName: string;
-    email: string;
-    address: string;
-    city: string;
-    postalCode: string;
-  };
-  payment: {
-    cardholderName: string;
-    last4: string;
-  };
-};
 
 type PaymentSuccessState = {
   orderId: string;
@@ -61,7 +41,11 @@ export function readCustomerOrders() {
         order.status === "Paid" &&
         typeof order.total === "string" &&
         typeof order.itemCount === "number" &&
-        Array.isArray(order.items),
+        Array.isArray(order.items) &&
+        order.shipping !== null &&
+        typeof order.shipping === "object" &&
+        order.payment !== null &&
+        typeof order.payment === "object",
     );
   } catch {
     storage.removeItem(CUSTOMER_ORDERS_STORAGE_KEY);

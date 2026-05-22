@@ -18,6 +18,12 @@ export function LoginForm() {
   const intent = searchParams.get("intent");
   const needsCheckout = intent === "checkout";
 
+  function navigateTo(target: string) {
+    router.replace(target);
+    router.refresh();
+    window.location.assign(target);
+  }
+
   useEffect(() => {
     if (!account?.email) {
       return;
@@ -26,7 +32,15 @@ export function LoginForm() {
     setEmail(account.email);
   }, [account?.email]);
 
-  if (hasHydrated && customer) {
+  if (!hasHydrated) {
+    return (
+      <div className="rounded-[24px] border border-black/10 bg-neutral-50 p-5 text-sm text-neutral-600 dark:border-white/10 dark:bg-neutral-900 dark:text-neutral-300">
+        Loading account tools...
+      </div>
+    );
+  }
+
+  if (customer) {
     return (
       <div className="rounded-[24px] border border-[color:var(--color-wsu)]/15 bg-[color:var(--color-wsu)]/5 p-5">
         <p className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">
@@ -57,10 +71,10 @@ export function LoginForm() {
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_16.5rem] lg:items-stretch">
       <form
         className="space-y-5"
-        onSubmit={(event) => {
+        onSubmit={async (event) => {
           event.preventDefault();
 
-          const result = login({
+          const result = await login({
             email,
             password,
           });
@@ -71,7 +85,7 @@ export function LoginForm() {
           }
 
           setError(null);
-          router.push(needsCheckout ? returnTo : "/account");
+          navigateTo(needsCheckout ? returnTo : "/account");
         }}
       >
         {needsCheckout ? (

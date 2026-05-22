@@ -1,6 +1,7 @@
 "use client";
 
 import type { Post } from "@repo/db/data";
+import { SessionProvider } from "next-auth/react";
 import type { PropsWithChildren } from "react";
 import CartDrawer from "./CartDrawer";
 import { CartProvider } from "./CartProvider";
@@ -11,11 +12,13 @@ export default function StorefrontProviders({
   initialPosts,
 }: PropsWithChildren<{ initialPosts: Post[] }>) {
   return (
-    <CustomerAuthProvider>
-      <CartProvider initialPosts={initialPosts}>
-        {children}
-        <CartDrawer />
-      </CartProvider>
-    </CustomerAuthProvider>
+    <SessionProvider refetchOnWindowFocus={false}>
+      <CustomerAuthProvider>
+        <CartProvider initialPosts={initialPosts}>
+          {children}
+          <CartDrawer />
+        </CartProvider>
+      </CustomerAuthProvider>
+    </SessionProvider>
   );
 }

@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { cookies } from "next/headers";
 import StorefrontProviders from "@/components/Store/StorefrontProviders";
-import { getPosts } from "./posts";
+import { getProducts } from "./posts";
 import "./globals.css";
 
 const geistSans = localFont({
@@ -27,12 +27,14 @@ export default async function RootLayout({
 }>) {
   const serverCookies = await cookies();
   const theme = serverCookies.get("theme")?.value || "light";
-  const initialPosts = await getPosts();
+  const initialProducts = await getProducts({
+    active: true,
+  });
 
   return (
     <html lang="en" data-theme={theme}>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <StorefrontProviders initialPosts={initialPosts}>
+        <StorefrontProviders initialPosts={initialProducts}>
           {children}
         </StorefrontProviders>
       </body>

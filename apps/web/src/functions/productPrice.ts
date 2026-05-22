@@ -68,18 +68,24 @@ function readPriceOverridesFromCookie() {
   }
 }
 
-function getConfiguredPrice(post: Pick<Post, "id" | "urlId" | "category">) {
+function getConfiguredPrice(
+  post: Pick<Post, "id" | "urlId" | "category" | "price">,
+) {
+  if (post.price > 0) {
+    return post.price;
+  }
+
   return productPricing[post.urlId]?.amount ?? fallbackPrice(post);
 }
 
 export function getDefaultProductPrice(
-  post: Pick<Post, "id" | "urlId" | "category">,
+  post: Pick<Post, "id" | "urlId" | "category" | "price">,
 ) {
   return formatCurrency(getConfiguredPrice(post));
 }
 
 export function getProductPrice(
-  post: Pick<Post, "id" | "urlId" | "category" | "title">,
+  post: Pick<Post, "id" | "urlId" | "category" | "title" | "price">,
 ) {
   const priceOverrides = readPriceOverridesFromCookie();
   const slugKey = slugifyTitle(post.title);
@@ -90,8 +96,12 @@ export function getProductPrice(
 }
 
 export function getProductPriceSupportingText(
-  post: Pick<Post, "urlId" | "category">,
+  post: Pick<Post, "urlId" | "category" | "supportingText">,
 ) {
+  if (post.supportingText.trim()) {
+    return post.supportingText;
+  }
+
   const configuredText = productPricing[post.urlId]?.supportingText;
 
   if (configuredText) {

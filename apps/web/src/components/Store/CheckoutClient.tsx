@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getSession } from "next-auth/react";
 import { useEffect, useMemo, useState } from "react";
 import { useCart } from "./CartProvider";
 import { useCustomerAuth } from "./CustomerAuthProvider";
 import {
   saveCustomerOrder,
   setPaymentSuccessState,
-  type CustomerOrder,
 } from "@/functions/customerOrders";
+import type { CustomerOrder } from "@/lib/orders";
 
 type CheckoutFormState = {
   fullName: string;
@@ -24,10 +25,6 @@ type CheckoutFormState = {
 };
 
 type CheckoutErrors = Partial<Record<keyof CheckoutFormState, string>>;
-
-function createOrderId() {
-  return `ORD-${Date.now().toString(36).toUpperCase()}`;
-}
 
 function onlyDigits(value: string) {
   return value.replace(/\D/g, "");
@@ -72,6 +69,20 @@ function validateForm(values: CheckoutFormState) {
   }
 
   return errors;
+}
+
+async function waitForAuthenticatedSession() {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const session = await getSession();
+
+    if (session?.user?.id && session.user.email) {
+      return session;
+    }
+
+    await new Promise((resolve) => window.setTimeout(resolve, 150));
+  }
+
+  return null;
 }
 
 export function CheckoutClient() {
@@ -170,40 +181,72 @@ export function CheckoutClient() {
     setFormError(null);
     setIsSubmitting(true);
 
-    await new Promise((resolve) => window.setTimeout(resolve, 1200));
+    try {
+      await new Promise((resolve) => window.setTimeout(resolve, 1200));
+      const session = await waitForAuthenticatedSession();
 
-    const purchasedItems = availableCartItems.map(({ isAvailable, ...item }) => {
-      void isAvailable;
-      return item;
-    });
+      if (!session?.user) {
+        setFormError("Please log in before continuing to checkout.");
+        router.replace("/account/login?intent=checkout&returnTo=%2Fcheckout");
+        return;
+      }
 
-    const order: CustomerOrder = {
-      id: createOrderId(),
-      date: new Date().toISOString(),
-      status: "Paid",
-      total: subtotal,
-      itemCount: availableCartCount,
-      items: purchasedItems,
-      shipping: {
-        fullName: formState.fullName.trim(),
-        email: formState.email.trim(),
-        address: formState.address.trim(),
-        city: formState.city.trim(),
-        postalCode: formState.postalCode.trim(),
-      },
-      payment: {
-        cardholderName: formState.cardholderName.trim(),
-        last4: onlyDigits(formState.cardNumber).slice(-4),
-      },
-    };
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          items: availableCartItems.map((item) => ({
+            productId: item.id,
+            quantity: item.quantity,
+          })),
+        }),
+      });
 
-    saveCustomerOrder(order);
-    setPaymentSuccessState({
-      orderId: order.id,
-      total: order.total,
-    });
-    clearAvailableItems();
-    router.push("/account/orders");
+      const payload = (await response.json().catch(() => null)) as
+        | { error?: string; order?: CustomerOrder }
+        | null;
+
+      if (response.status === 401) {
+        setFormError("Please log in before continuing to checkout.");
+        router.replace("/account/login?intent=checkout&returnTo=%2Fcheckout");
+        return;
+      }
+
+      if (!response.ok || !payload?.order) {
+        setFormError(
+          payload?.error ||
+            "Please review your checkout details and try again.",
+        );
+        return;
+      }
+
+      const order: CustomerOrder = {
+        ...payload.order,
+        shipping: {
+          fullName: formState.fullName.trim(),
+          email: formState.email.trim(),
+          address: formState.address.trim(),
+          city: formState.city.trim(),
+          postalCode: formState.postalCode.trim(),
+        },
+        payment: {
+          cardholderName: formState.cardholderName.trim(),
+          last4: onlyDigits(formState.cardNumber).slice(-4),
+        },
+      };
+
+      saveCustomerOrder(order);
+      setPaymentSuccessState({
+        orderId: order.id,
+        total: order.total,
+      });
+      clearAvailableItems();
+      router.push("/account/orders");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   if (!hasHydrated || !customer) {
