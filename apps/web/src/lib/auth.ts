@@ -28,9 +28,12 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const user = await client.db.user.findUnique({
+        const user = await client.db.user.findFirst({
           where: {
-            email,
+            email: {
+              equals: email,
+              mode: "insensitive",
+            },
           },
         });
 

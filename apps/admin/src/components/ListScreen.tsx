@@ -247,7 +247,7 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
 
       <div className={styles.list}>
         {filteredAndSortedPosts.map((post) => (
-          <article className={styles.postCard} key={post.id}>
+          <article className={styles.postCard} key={`admin-product-${post.urlId}`}>
             <img
               className={styles.postImage}
               src={post.imageUrl}

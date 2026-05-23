@@ -1,5 +1,6 @@
 import { hash } from "bcryptjs";
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { client } from "@repo/db/client";
 import {
   isValidCustomerEmail,
@@ -46,9 +47,12 @@ export async function POST(request: Request) {
     const email = normalizeCustomerEmail(body.email!);
     const passwordHash = await hash(body.password!, 10);
 
-    const existingUser = await client.db.user.findUnique({
+    const existingUser = await client.db.user.findFirst({
       where: {
-        email,
+        email: {
+          equals: email,
+          mode: "insensitive",
+        },
       },
       select: {
         id: true,
@@ -79,7 +83,17 @@ export async function POST(request: Request) {
         createdAt: user.createdAt.toISOString(),
       }),
     });
-  } catch {
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      return NextResponse.json(
+        { error: "Account already exists. Please log in." },
+        { status: 409 },
+      );
+    }
+
     return NextResponse.json(
       { error: "Unable to create customer account." },
       { status: 400 },

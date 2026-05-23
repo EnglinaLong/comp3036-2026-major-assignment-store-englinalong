@@ -7,13 +7,13 @@ const productWithLikes = {
   include: {
     _count: {
       select: {
-        Likes: true,
+        likes: true,
       },
     },
   },
 } satisfies Prisma.ProductDefaultArgs;
 
-function mapPost(
+function mapProduct(
   product: Prisma.ProductGetPayload<typeof productWithLikes>,
 ): Post {
   const seededDate = getSeededPostDate(product);
@@ -21,7 +21,7 @@ function mapPost(
   return {
     ...product,
     date: seededDate ?? product.date,
-    likes: product._count.Likes,
+    likes: product._count.likes,
   };
 }
 
@@ -44,7 +44,7 @@ export async function getProducts(where?: Prisma.ProductWhereInput) {
     ...productWithLikes,
   });
 
-  return products.map(mapPost);
+  return products.map(mapProduct);
 }
 
 export async function getPosts(where?: Prisma.ProductWhereInput) {
@@ -64,7 +64,7 @@ export async function getProductByUrlId(
   });
 
   if (directMatch) {
-    return mapPost(directMatch);
+    return mapProduct(directMatch);
   }
 
   const candidateProducts = await client.db.product.findMany({
@@ -76,7 +76,7 @@ export async function getProductByUrlId(
     (product) => slugifyTitle(product.title) === urlId,
   );
 
-  return slugMatch ? mapPost(slugMatch) : null;
+  return slugMatch ? mapProduct(slugMatch) : null;
 }
 
 export async function getPostByUrlId(
@@ -134,7 +134,7 @@ export async function incrementProductViews(urlId: string) {
     ...productWithLikes,
   });
 
-  return mapPost(updatedProduct);
+  return mapProduct(updatedProduct);
 }
 
 export async function incrementPostViews(urlId: string) {
@@ -144,8 +144,8 @@ export async function incrementPostViews(urlId: string) {
 export async function hasLikedProduct(productId: number, userIP: string) {
   const like = await client.db.like.findUnique({
     where: {
-      postId_userIP: {
-        postId: productId,
+      productId_userIP: {
+        productId,
         userIP,
       },
     },
@@ -179,8 +179,8 @@ export async function setProductLike(
 
     const existingLike = await tx.like.findUnique({
       where: {
-        postId_userIP: {
-          postId: productId,
+        productId_userIP: {
+          productId,
           userIP,
         },
       },
@@ -189,7 +189,7 @@ export async function setProductLike(
     if (liked && !existingLike) {
       await tx.like.create({
         data: {
-          postId: productId,
+          productId,
           userIP,
         },
       });
@@ -198,8 +198,8 @@ export async function setProductLike(
     if (!liked && existingLike) {
       await tx.like.delete({
         where: {
-          postId_userIP: {
-            postId: productId,
+          productId_userIP: {
+            productId,
             userIP,
           },
         },
@@ -209,7 +209,7 @@ export async function setProductLike(
 
   const likes = await client.db.like.count({
     where: {
-      postId: productId,
+      productId,
     },
   });
 

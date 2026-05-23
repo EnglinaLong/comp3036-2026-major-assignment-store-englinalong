@@ -30,7 +30,7 @@ export default async function UpdatePostPage({
     include: {
       _count: {
         select: {
-          Likes: true,
+          likes: true,
         },
       },
     },
@@ -38,7 +38,7 @@ export default async function UpdatePostPage({
   const initialPosts = posts.map((post) => ({
     ...post,
     date: getSeededPostDate(post) ?? post.date,
-    likes: post._count.Likes,
+    likes: post._count.likes,
   }));
 
   return (

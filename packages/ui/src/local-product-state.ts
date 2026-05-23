@@ -11,6 +11,8 @@ type ProductRecord = {
   likes: number;
   tags: string;
   active: boolean;
+  price: number;
+  supportingText: string;
 };
 
 export const POST_OVERRIDES_STORAGE_KEY = "admin-post-overrides";

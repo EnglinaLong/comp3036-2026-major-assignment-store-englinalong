@@ -393,7 +393,7 @@ export function CheckoutClient() {
           <div className="mt-5 space-y-4">
             {orderSummary.map((item) => (
               <div
-                key={item.id}
+                key={`checkout-item-${item.urlId}`}
                 className="flex items-start justify-between gap-4 rounded-[22px] border border-neutral-100 bg-neutral-50 px-4 py-4 dark:border-neutral-800 dark:bg-neutral-900"
               >
                 <div>

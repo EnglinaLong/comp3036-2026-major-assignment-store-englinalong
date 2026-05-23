@@ -12,6 +12,7 @@ export type CustomerOrderItem = {
 };
 
 export type CustomerOrder = {
+  databaseId: number;
   id: string;
   date: string;
   status: "Paid";
@@ -45,6 +46,7 @@ export function formatCurrency(amount: number) {
 
 export function mapDatabaseOrder(order: OrderWithProducts): CustomerOrder {
   return {
+    databaseId: order.id,
     id: formatOrderReference(order.id),
     date: order.createdAt.toISOString(),
     status: "Paid",

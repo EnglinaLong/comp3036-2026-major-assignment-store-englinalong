@@ -18,7 +18,7 @@ async function getAdminPosts(): Promise<Post[]> {
     include: {
       _count: {
         select: {
-          Likes: true,
+          likes: true,
         },
       },
     },
@@ -27,7 +27,7 @@ async function getAdminPosts(): Promise<Post[]> {
   return dbPosts.map((post) => ({
     ...post,
     date: getSeededPostDate(post) ?? post.date,
-    likes: post._count.Likes,
+    likes: post._count.likes,
   }));
 }
 

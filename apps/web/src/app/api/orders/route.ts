@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { client } from "@repo/db/client";
 import { authOptions } from "@/lib/auth";
+import { normalizeCustomerEmail } from "@/lib/customerAuth";
 import { mapDatabaseOrder } from "@/lib/orders";
 
 type CheckoutOrderBody = {
@@ -58,7 +59,7 @@ async function getSessionUser(request: NextRequest) {
         : process.env.NEXTAUTH_SECRET || "storefront-local-auth-secret",
   });
   const userId = parseUserId(token?.sub);
-  const email = token?.email?.trim().toLowerCase() ?? "";
+  const email = normalizeCustomerEmail(token?.email ?? "");
 
   if (!userId || !email) {
     return null;
@@ -74,7 +75,7 @@ async function getSessionUser(request: NextRequest) {
     },
   });
 
-  if (!user || user.email.toLowerCase() !== email) {
+  if (!user || normalizeCustomerEmail(user.email) !== email) {
     return null;
   }
 

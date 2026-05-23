@@ -16,6 +16,16 @@ async function clearUsers() {
   await client.db.user.deleteMany();
 }
 
+async function syncProductIdSequence() {
+  await client.db.$executeRaw`
+    SELECT setval(
+      pg_get_serial_sequence('"Product"', 'id'),
+      COALESCE((SELECT MAX(id) FROM "Product"), 1),
+      true
+    );
+  `;
+}
+
 function getProductSeedData(product: (typeof products)[number]) {
   const likesData = Array.from({ length: product.likes }, (_, index) => ({
     userIP: `192.168.100.${index}`,
@@ -56,19 +66,21 @@ export async function seed() {
       create: {
         id: product.id,
         ...productData,
-        Likes: {
+        likes: {
           create: likesData,
         },
       },
       update: {
         ...productData,
-        Likes: {
+        likes: {
           deleteMany: {},
           create: likesData,
         },
       },
     });
   }
+
+  await syncProductIdSequence();
 }
 
 export async function seedForTests() {

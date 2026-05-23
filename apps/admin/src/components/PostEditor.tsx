@@ -375,6 +375,14 @@ export function PostEditor({
         views: 0,
         likes: 0,
         active: true,
+        price: Math.round(Number.parseFloat(submissionValues.price)),
+        supportingText:
+          submissionValues.category.trim().toLowerCase() === "react" ||
+          submissionValues.category.trim().toLowerCase() === "next.js"
+            ? "Includes complete product files and setup resources."
+            : submissionValues.category.trim().toLowerCase() === "node"
+              ? "Built for modern full-stack development workflows."
+              : "Instant access included after purchase.",
       });
       clearCreateDraft();
     }

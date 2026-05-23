@@ -12,7 +12,6 @@ import {
 import { getSession, signIn, signOut, useSession } from "next-auth/react";
 import {
   type CustomerProfile,
-  getFallbackCreatedAt,
   normalizeCustomerCreatedAt,
   normalizeCustomerEmail,
   toCustomerProfile as toAuthCustomerProfile,
@@ -102,36 +101,8 @@ function readStoredAccount() {
   }
 }
 
-function readStoredSession(account: StoredCustomerAccount | null) {
-  if (typeof window === "undefined" || !account) {
-    return null;
-  }
-
-  const rawValue = window.localStorage.getItem(CUSTOMER_SESSION_STORAGE_KEY);
-
-  if (!rawValue) {
-    return null;
-  }
-
-  try {
-    const parsedValue = JSON.parse(rawValue) as { email?: unknown };
-
-    if (
-      normalizeCustomerEmail(String(parsedValue.email ?? "")) !== account.email
-    ) {
-      window.localStorage.removeItem(CUSTOMER_SESSION_STORAGE_KEY);
-      return null;
-    }
-
-    return toStoredCustomerProfile(account);
-  } catch {
-    window.localStorage.removeItem(CUSTOMER_SESSION_STORAGE_KEY);
-    return null;
-  }
-}
-
 async function waitForSessionCustomer() {
-  for (let attempt = 0; attempt < 10; attempt += 1) {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
     const session = await getSession();
     const customer = toAuthCustomerProfile({
       name: session?.user?.name,
@@ -160,7 +131,9 @@ export function CustomerAuthProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     const account = readStoredAccount();
     setStoredAccount(account);
-    setCustomer(readStoredSession(account));
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(CUSTOMER_SESSION_STORAGE_KEY);
+    }
     setHasLoadedStorage(true);
   }, []);
 
@@ -179,6 +152,8 @@ export function CustomerAuthProvider({ children }: PropsWithChildren) {
 
     if (sessionCustomer) {
       setStoredAccount(sessionCustomer);
+    } else if (typeof window !== "undefined") {
+      window.localStorage.removeItem(CUSTOMER_SESSION_STORAGE_KEY);
     }
   }, [session, status]);
 
@@ -266,19 +241,12 @@ export function CustomerAuthProvider({ children }: PropsWithChildren) {
         };
       }
 
-      const nextCustomer =
-        (await waitForSessionCustomer()) ||
-        payload?.customer ||
-        toAuthCustomerProfile({
-          name: trimmedName,
-          email: normalizedEmail,
-          createdAt: getFallbackCreatedAt(),
-        });
+      const nextCustomer = await waitForSessionCustomer();
 
       if (!nextCustomer) {
         return {
           ok: false,
-          error: "Your account was created, but we could not load it.",
+          error: "Your account was created, but we could not confirm your session.",
         };
       }
 
@@ -317,16 +285,12 @@ export function CustomerAuthProvider({ children }: PropsWithChildren) {
         };
       }
 
-      const nextCustomer =
-        (await waitForSessionCustomer()) ||
-        (storedAccount?.email === normalizedEmail
-          ? toStoredCustomerProfile(storedAccount)
-          : null);
+      const nextCustomer = await waitForSessionCustomer();
 
       if (!nextCustomer) {
         return {
           ok: false,
-          error: "We could not load your account. Please try again.",
+          error: "We could not confirm your account session. Please try again.",
         };
       }
 
@@ -338,7 +302,7 @@ export function CustomerAuthProvider({ children }: PropsWithChildren) {
         customer: nextCustomer,
       };
     },
-    [storedAccount],
+    [],
   );
 
   const logout = useCallback(async () => {

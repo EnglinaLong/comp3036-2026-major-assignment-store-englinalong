@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -25,18 +25,16 @@ model Product {
   price          Int         @default(0)
   supportingText String      @default("")
   updatedAt      DateTime    @default(now()) @updatedAt
-  Likes          Like[]
+  likes          Like[]
   orderItems     OrderItem[]
-
-  @@map("Post")
 }
 
 model Like {
-  postId  Int
-  userIP  String
-  Product Product @relation(fields: [postId], references: [id])
+  productId Int
+  userIP    String
+  product   Product @relation(fields: [productId], references: [id])
 
-  @@id([postId, userIP])
+  @@id([productId, userIP])
 }
 
 model User {

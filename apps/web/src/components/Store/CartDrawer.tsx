@@ -128,7 +128,7 @@ export default function CartDrawer() {
             <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5 sm:px-6">
               {cartItems.map((item) => (
                 <article
-                  key={item.id}
+                  key={`cart-item-${item.urlId}`}
                   className="rounded-[24px] border border-black/10 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-neutral-900"
                 >
                   <div className="flex items-start justify-between gap-4">

@@ -19,6 +19,16 @@ function formatOrderDate(value: string) {
   });
 }
 
+function dedupeOrdersById(orders: CustomerOrder[]) {
+  const uniqueOrders = new Map<string, CustomerOrder>();
+
+  for (const order of orders) {
+    uniqueOrders.set(order.id, order);
+  }
+
+  return Array.from(uniqueOrders.values());
+}
+
 export function OrdersClient() {
   const router = useRouter();
   const { customer, hasHydrated } = useCustomerAuth();
@@ -63,18 +73,22 @@ export function OrdersClient() {
 
         setOrders((currentOrders) => {
           if (currentOrders.length === 0) {
-            return payload.orders ?? [];
+            return dedupeOrdersById(payload.orders ?? []);
           }
 
           const storedById = new Map(
-            currentOrders.map((order) => [order.id, order]),
+            currentOrders.map((order) => [order.databaseId, order]),
           );
 
-          return (payload.orders ?? []).map((order) => ({
-            ...order,
-            shipping: storedById.get(order.id)?.shipping ?? order.shipping,
-            payment: storedById.get(order.id)?.payment ?? order.payment,
-          }));
+          return dedupeOrdersById(
+            (payload.orders ?? []).map((order) => ({
+              ...order,
+              shipping:
+                storedById.get(order.databaseId)?.shipping ?? order.shipping,
+              payment:
+                storedById.get(order.databaseId)?.payment ?? order.payment,
+            })),
+          );
         });
       } catch {
         // Keep the local fallback if the API is temporarily unavailable.
@@ -136,7 +150,7 @@ export function OrdersClient() {
       ) : (
         orders.map((order) => (
           <section
-            key={order.id}
+            key={`order-${order.id}`}
             className="rounded-[24px] border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-neutral-950"
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -159,9 +173,13 @@ export function OrdersClient() {
             </div>
 
             <div className="mt-5 space-y-3">
-              {order.items.map((item) => (
+              {order.items.map((item, index) => (
                 <div
-                  key={`${order.id}-${item.id}`}
+                  key={
+                    Number.isSafeInteger(item.id)
+                      ? `order-${order.id}-item-${item.id}`
+                      : `order-${order.id}-product-${item.urlId}-${index}`
+                  }
                   className="flex items-center justify-between gap-4 rounded-[20px] border border-neutral-100 bg-neutral-50 px-4 py-4 dark:border-neutral-800 dark:bg-neutral-900"
                 >
                   <div>

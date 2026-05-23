@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { Post } from "@repo/db/data";
@@ -15,7 +15,6 @@ import {
   getProductViewsLabel,
   getWishlistSavesLabel,
 } from "@/functions/productStats";
-import { useMergedStorefrontPosts } from "@/functions/storefrontPosts";
 import {
   isProductWishlisted,
   setProductWishlisted,
@@ -39,16 +38,8 @@ export default function ProductDetailView({
   const [cartAdded, setCartAdded] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const { addToCart } = useCart();
-  const mergedProducts = useMergedStorefrontPosts([post, ...relatedProducts]);
-  const displayPost = useMemo(
-    () => mergedProducts.find((item) => item.urlId === post.urlId) ?? post,
-    [mergedProducts, post],
-  );
-  const displayRelatedProducts = useMemo(() => {
-    return mergedProducts
-      .filter((item) => item.urlId !== displayPost.urlId && item.active)
-      .slice(0, relatedProducts.length);
-  }, [displayPost.urlId, mergedProducts, relatedProducts.length]);
+  const displayPost = post;
+  const displayRelatedProducts = relatedProducts;
 
   function handleSaveToggle() {
     setSaved((current) => {
@@ -264,7 +255,7 @@ export default function ProductDetailView({
 
               return (
                 <article
-                  key={relatedProduct.id}
+                  key={`related-product-${relatedProduct.urlId}`}
                   className="flex h-full flex-col overflow-hidden rounded-[28px] border border-black/10 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_70px_rgba(15,23,42,0.14)] dark:border-white/10 dark:bg-neutral-900 dark:shadow-[0_20px_60px_rgba(0,0,0,0.30)]"
                 >
                   <Link href={productHref} className="block">
