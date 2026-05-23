@@ -51,7 +51,7 @@ Developers building customer apps, internal tools, and admin systems who want a 
     likes: 18,
     active: true,
     price: 87,
-    stockQuantity: 18,
+    stockQuantity: 20,
     supportingText:
       "Includes starter architecture notes, setup guidance, and reusable backend patterns.",
   },
@@ -86,7 +86,7 @@ Frontend teams who want a faster path to polished shopping and showcase experien
     likes: 12,
     active: true,
     price: 84,
-    stockQuantity: 14,
+    stockQuantity: 20,
     supportingText:
       "Designed for storefront landing pages, product grids, and responsive product detail flows.",
   },
@@ -121,7 +121,7 @@ Product teams improving storefront performance, discoverability, and rendering e
     likes: 9,
     active: true,
     price: 74,
-    stockQuantity: 9,
+    stockQuantity: 20,
     supportingText:
       "Built to help product teams ship faster pages without sacrificing maintainability.",
   },
@@ -156,7 +156,7 @@ Engineers packaging Node.js, React, and database-backed projects for smoother ha
     likes: 7,
     active: true,
     price: 72,
-    stockQuantity: 11,
+    stockQuantity: 20,
     supportingText:
       "Includes release checklists, environment patterns, and container workflow notes.",
   },
@@ -191,7 +191,7 @@ Teams building product-led demos, ecommerce MVPs, and scalable storefront protot
     likes: 24,
     active: true,
     price: 104,
-    stockQuantity: 8,
+    stockQuantity: 20,
     supportingText:
       "A strong base for product catalogs, landing pages, and conversion-focused storefront routes.",
   },
@@ -226,7 +226,7 @@ Frontend teams standardising shared UI across customer dashboards and storefront
     likes: 14,
     active: true,
     price: 67,
-    stockQuantity: 16,
+    stockQuantity: 20,
     supportingText:
       "A reusable kit for teams building consistent customer and admin interfaces.",
   },
@@ -261,7 +261,7 @@ Small teams preparing full-stack apps for dependable cloud launches.
     likes: 11,
     active: true,
     price: 72,
-    stockQuantity: 13,
+    stockQuantity: 20,
     supportingText:
       "Practical for staging, production, and infrastructure handoff workflows.",
   },
@@ -296,7 +296,7 @@ Backend teams improving baseline API security for customer-facing products.
     likes: 19,
     active: true,
     price: 92,
-    stockQuantity: 7,
+    stockQuantity: 20,
     supportingText:
       "Focused on secure defaults, safer request handling, and release-time checks.",
   },
@@ -331,7 +331,7 @@ Teams building customer dashboards, admin portals, and internal product tools.
     likes: 27,
     active: true,
     price: 74,
-    stockQuantity: 15,
+    stockQuantity: 20,
     supportingText:
       "Useful for account screens, metrics views, and scalable product dashboards.",
   },
@@ -366,7 +366,7 @@ Teams shipping internal commerce analytics tools or client-ready reporting inter
     likes: 16,
     active: true,
     price: 74,
-    stockQuantity: 10,
+    stockQuantity: 20,
     supportingText:
       "Built for teams who need clearer product, conversion, and revenue reporting screens.",
   },
@@ -401,7 +401,7 @@ Teams building internal tools, product operations panels, and admin prototypes.
     likes: 8,
     active: true,
     price: 77,
-    stockQuantity: 12,
+    stockQuantity: 20,
     supportingText:
       "Includes patterns for dashboards, management screens, and mobile-friendly admin workflows.",
   },
@@ -436,7 +436,7 @@ Frontend teams shipping customer-facing product grids and detail pages with Reac
     likes: 13,
     active: true,
     price: 74,
-    stockQuantity: 17,
+    stockQuantity: 20,
     supportingText:
       "Made for teams building reusable product cards, filters, and merchandising sections.",
   },
@@ -506,7 +506,7 @@ Engineers growing APIs from prototypes into maintainable full-stack products.
     likes: 20,
     active: true,
     price: 92,
-    stockQuantity: 6,
+    stockQuantity: 20,
     supportingText:
       "A practical fit for backend teams scaling service structure, validation, and request flows.",
   },
@@ -541,7 +541,7 @@ Teams polishing responsive customer journeys across landing pages, product grids
     likes: 0,
     active: true,
     price: 67,
-    stockQuantity: 19,
+    stockQuantity: 20,
     supportingText:
       "Helpful for teams refining mobile-first product pages and responsive customer flows.",
   },

@@ -40,7 +40,7 @@ export default function ProductDetailView({
   const { addToCart } = useCart();
   const displayPost = post;
   const displayRelatedProducts = relatedProducts;
-  const isOutOfStock = displayPost.stockQuantity <= 0;
+  const isOutOfStock = displayPost.active && displayPost.stockQuantity <= 0;
 
   function handleSaveToggle() {
     setSaved((current) => {
@@ -78,7 +78,7 @@ export default function ProductDetailView({
   }, [displayPost.urlId, hydrated]);
 
   function handleAddToCart() {
-    if (isOutOfStock) {
+    if (!displayPost.active || displayPost.stockQuantity <= 0) {
       return;
     }
 
