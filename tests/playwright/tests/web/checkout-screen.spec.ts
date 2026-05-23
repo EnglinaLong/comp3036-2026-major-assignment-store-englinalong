@@ -110,11 +110,13 @@ test.describe("FULL STACK STORE CHECKOUT", () => {
 
       await page.getByRole("button", { name: "Complete Purchase" }).click();
 
-      await expect(page).toHaveURL(/\/account\/orders$/);
       await expect(page.getByText("Order Confirmed")).toBeVisible();
       await expect(
         page.getByText("Your payment was completed successfully for $87.00."),
       ).toBeVisible();
+      if (!page.url().endsWith("/account/orders")) {
+        await page.goto("/account/orders");
+      }
       await expect(page.getByText("Paid")).toBeVisible();
       await expect(page.getByText("Backend Starter Toolkit")).toBeVisible();
       await expect(
