@@ -94,7 +94,7 @@ export function CheckoutClient() {
     hasStockIssues,
     clearAvailableItems,
   } = useCart();
-  const { customer, hasHydrated } = useCustomerAuth();
+  const { account, customer, hasHydrated } = useCustomerAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [errors, setErrors] = useState<CheckoutErrors>({});
@@ -110,23 +110,24 @@ export function CheckoutClient() {
     cvv: "",
   });
 
+  const checkoutCustomer = customer ?? account;
+
   useEffect(() => {
     if (!hasHydrated) {
       return;
     }
 
-    if (!customer) {
-      router.replace("/account/login?intent=checkout&returnTo=%2Fcheckout");
+    if (!checkoutCustomer) {
       return;
     }
 
     setFormState((current) => ({
       ...current,
-      fullName: current.fullName || customer.name,
-      email: current.email || customer.email,
-      cardholderName: current.cardholderName || customer.name,
+      fullName: current.fullName || checkoutCustomer.name,
+      email: current.email || checkoutCustomer.email,
+      cardholderName: current.cardholderName || checkoutCustomer.name,
     }));
-  }, [customer, hasHydrated, router]);
+  }, [checkoutCustomer, hasHydrated]);
 
   const orderSummary = useMemo(
     () =>
@@ -166,7 +167,7 @@ export function CheckoutClient() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!customer || availableCartItems.length === 0 || hasStockIssues) {
+    if (availableCartItems.length === 0 || hasStockIssues) {
       if (hasStockIssues) {
         setFormError("Please reduce item quantities to match available stock.");
       }
@@ -190,7 +191,6 @@ export function CheckoutClient() {
 
       if (!session?.user) {
         setFormError("Please log in before continuing to checkout.");
-        router.replace("/account/login?intent=checkout&returnTo=%2Fcheckout");
         return;
       }
 
@@ -213,7 +213,6 @@ export function CheckoutClient() {
 
       if (response.status === 401) {
         setFormError("Please log in before continuing to checkout.");
-        router.replace("/account/login?intent=checkout&returnTo=%2Fcheckout");
         return;
       }
 
@@ -236,12 +235,31 @@ export function CheckoutClient() {
     }
   }
 
-  if (!hasHydrated || !customer) {
+  if (!hasHydrated) {
     return (
       <div className="rounded-[28px] border border-black/10 bg-white p-8 text-center dark:border-white/10 dark:bg-neutral-950">
         <p className="text-sm text-neutral-600 dark:text-neutral-300">
           Preparing checkout...
         </p>
+      </div>
+    );
+  }
+
+  if (!checkoutCustomer) {
+    return (
+      <div className="rounded-[28px] border border-black/10 bg-white p-8 text-center dark:border-white/10 dark:bg-neutral-950">
+        <h2 className="text-2xl font-semibold text-neutral-950 dark:text-neutral-50">
+          Please log in to continue.
+        </h2>
+        <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-300">
+          Sign in to complete your checkout.
+        </p>
+        <Link
+          href="/account/login?intent=checkout&returnTo=%2Fcheckout"
+          className="mt-6 inline-flex items-center justify-center rounded-full bg-[color:var(--color-wsu)] px-5 py-3 font-medium text-white transition hover:bg-[color:var(--color-wsu-light)]"
+        >
+          Login
+        </Link>
       </div>
     );
   }

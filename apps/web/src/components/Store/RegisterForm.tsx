@@ -20,8 +20,6 @@ export function RegisterForm() {
 
   function navigateTo(target: string) {
     router.replace(target);
-    router.refresh();
-    window.location.assign(target);
   }
 
   if (!hasHydrated) {
