@@ -17,7 +17,7 @@ jobs:
     env:
       CI: true
       COURSE_ID: full-stack-development-comp3036-2026
-      DATABASE_URL: file:./dev.db
+      DATABASE_URL: "postgresql://neondb_owner:npg_X47MHTjyOdhR@ep-red-voice-a7ncmq9h.ap-southeast-2.aws.neon.tech/neondb?sslmode=require"
       E2E: true
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       JWT_SECRET: secret
