@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getSession } from "next-auth/react";
 import { useEffect, useMemo, useState } from "react";
 import { useCart } from "./CartProvider";
 import { useCustomerAuth } from "./CustomerAuthProvider";
@@ -68,20 +67,6 @@ function validateForm(values: CheckoutFormState) {
   }
 
   return errors;
-}
-
-async function waitForAuthenticatedSession() {
-  for (let attempt = 0; attempt < 10; attempt += 1) {
-    const session = await getSession();
-
-    if (session?.user?.id && session.user.email) {
-      return session;
-    }
-
-    await new Promise((resolve) => window.setTimeout(resolve, 150));
-  }
-
-  return null;
 }
 
 export function CheckoutClient() {
@@ -187,12 +172,6 @@ export function CheckoutClient() {
 
     try {
       await new Promise((resolve) => window.setTimeout(resolve, 1200));
-      const session = await waitForAuthenticatedSession();
-
-      if (!session?.user) {
-        setFormError("Please log in before continuing to checkout.");
-        return;
-      }
 
       const response = await fetch("/api/orders", {
         method: "POST",
@@ -229,7 +208,7 @@ export function CheckoutClient() {
         total: payload.order.total,
       });
       clearAvailableItems();
-      router.push("/account/orders");
+      router.replace("/account/orders");
     } finally {
       setIsSubmitting(false);
     }

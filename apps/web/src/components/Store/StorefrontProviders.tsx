@@ -12,7 +12,7 @@ export default function StorefrontProviders({
   initialPosts,
 }: PropsWithChildren<{ initialPosts: Post[] }>) {
   return (
-    <SessionProvider refetchInterval={300}>
+    <SessionProvider>
       <CustomerAuthProvider>
         <CartProvider initialPosts={initialPosts}>
           {children}
