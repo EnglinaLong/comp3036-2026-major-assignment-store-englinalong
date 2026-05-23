@@ -81,6 +81,7 @@ export function CheckoutClient() {
   } = useCart();
   const { account, customer, hasHydrated } = useCustomerAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRedirectingToOrders, setIsRedirectingToOrders] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [errors, setErrors] = useState<CheckoutErrors>({});
   const [formState, setFormState] = useState<CheckoutFormState>({
@@ -113,6 +114,14 @@ export function CheckoutClient() {
       cardholderName: current.cardholderName || checkoutCustomer.name,
     }));
   }, [checkoutCustomer, hasHydrated]);
+
+  useEffect(() => {
+    if (!isRedirectingToOrders) {
+      return;
+    }
+
+    router.replace("/account/orders");
+  }, [isRedirectingToOrders, router]);
 
   const orderSummary = useMemo(
     () =>
@@ -208,10 +217,20 @@ export function CheckoutClient() {
         total: payload.order.total,
       });
       clearAvailableItems();
-      router.replace("/account/orders");
+      setIsRedirectingToOrders(true);
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  if (isRedirectingToOrders) {
+    return (
+      <div className="rounded-[28px] border border-black/10 bg-white p-8 text-center dark:border-white/10 dark:bg-neutral-950">
+        <p className="text-sm text-neutral-600 dark:text-neutral-300">
+          Finalizing your order...
+        </p>
+      </div>
+    );
   }
 
   if (!hasHydrated) {
