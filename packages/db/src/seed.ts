@@ -47,6 +47,7 @@ function getProductSeedData(product: (typeof products)[number]) {
       date: product.date,
       views: product.views,
       price: product.price,
+      stockQuantity: product.stockQuantity,
       supportingText: product.supportingText,
     },
     likesData,

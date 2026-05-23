@@ -23,6 +23,7 @@ model Product {
   views          Int         @default(0)
   active         Boolean     @default(true)
   price          Int         @default(0)
+  stockQuantity  Int         @default(0)
   supportingText String      @default("")
   updatedAt      DateTime    @default(now()) @updatedAt
   likes          Like[]
@@ -52,7 +53,7 @@ model Order {
   userId                  Int?
   email                   String
   total                   Int
-  status                  String      @default("pending")
+  status                  String      @default("Paid")
   stripeCheckoutSessionId String?
   stripePaymentIntentId   String?
   createdAt               DateTime    @default(now())

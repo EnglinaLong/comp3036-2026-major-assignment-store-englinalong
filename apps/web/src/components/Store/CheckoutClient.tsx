@@ -7,7 +7,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useCart } from "./CartProvider";
 import { useCustomerAuth } from "./CustomerAuthProvider";
 import {
-  saveCustomerOrder,
   setPaymentSuccessState,
 } from "@/functions/customerOrders";
 import type { CustomerOrder } from "@/lib/orders";
@@ -92,6 +91,7 @@ export function CheckoutClient() {
     availableCartItems,
     availableCartCount,
     subtotal,
+    hasStockIssues,
     clearAvailableItems,
   } = useCart();
   const { customer, hasHydrated } = useCustomerAuth();
@@ -166,7 +166,10 @@ export function CheckoutClient() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!customer || availableCartItems.length === 0) {
+    if (!customer || availableCartItems.length === 0 || hasStockIssues) {
+      if (hasStockIssues) {
+        setFormError("Please reduce item quantities to match available stock.");
+      }
       return;
     }
 
@@ -222,25 +225,9 @@ export function CheckoutClient() {
         return;
       }
 
-      const order: CustomerOrder = {
-        ...payload.order,
-        shipping: {
-          fullName: formState.fullName.trim(),
-          email: formState.email.trim(),
-          address: formState.address.trim(),
-          city: formState.city.trim(),
-          postalCode: formState.postalCode.trim(),
-        },
-        payment: {
-          cardholderName: formState.cardholderName.trim(),
-          last4: onlyDigits(formState.cardNumber).slice(-4),
-        },
-      };
-
-      saveCustomerOrder(order);
       setPaymentSuccessState({
-        orderId: order.id,
-        total: order.total,
+        orderId: payload.order.id,
+        total: payload.order.total,
       });
       clearAvailableItems();
       router.push("/account/orders");
@@ -403,6 +390,11 @@ export function CheckoutClient() {
                   <p className="mt-1 text-xs uppercase tracking-[0.18em] text-neutral-400 dark:text-neutral-500">
                     {item.category} · Qty {item.quantity}
                   </p>
+                  {item.quantity > item.stockQuantity ? (
+                    <p className="mt-1 text-xs font-medium text-amber-600 dark:text-amber-300">
+                      Only {item.stockQuantity} left in stock.
+                    </p>
+                  ) : null}
                 </div>
                 <p className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
                   {item.lineTotal}
@@ -433,9 +425,15 @@ export function CheckoutClient() {
             </p>
           ) : null}
 
+          {hasStockIssues ? (
+            <p className="mt-5 rounded-[18px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+              Reduce item quantities to match current stock before checkout.
+            </p>
+          ) : null}
+
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || hasStockIssues}
             className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-[color:var(--color-wsu)] px-5 py-3 font-medium text-white transition hover:bg-[color:var(--color-wsu-light)] disabled:cursor-not-allowed disabled:opacity-70"
           >
             {isSubmitting ? "Processing Payment..." : "Complete Purchase"}

@@ -12,6 +12,7 @@ type ProductRecord = {
   tags: string;
   active: boolean;
   price: number;
+  stockQuantity: number;
   supportingText: string;
 };
 

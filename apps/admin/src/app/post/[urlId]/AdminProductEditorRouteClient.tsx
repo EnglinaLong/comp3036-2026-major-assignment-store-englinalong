@@ -39,6 +39,7 @@ export function AdminProductEditorRouteClient({
         likes: matchedPost.likes,
         active: matchedPost.active,
         price: matchedPost.price,
+        stockQuantity: matchedPost.stockQuantity,
         tags: matchedPost.tags,
       }}
     />

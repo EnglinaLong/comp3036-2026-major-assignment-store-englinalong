@@ -12,6 +12,7 @@ export default function CartDrawer() {
     subtotal,
     availableCartCount,
     hasUnavailableItems,
+    hasStockIssues,
     isCartOpen,
     closeCart,
     removeFromCart,
@@ -21,6 +22,7 @@ export default function CartDrawer() {
   const { customer } = useCustomerAuth();
   const router = useRouter();
   const hasAvailableItems = availableCartCount > 0;
+  const canCheckout = hasAvailableItems && !hasStockIssues;
 
   useEffect(() => {
     if (!isCartOpen) return;
@@ -39,7 +41,7 @@ export default function CartDrawer() {
   }, [closeCart, isCartOpen]);
 
   function handleCheckout() {
-    if (!hasAvailableItems) {
+    if (!canCheckout) {
       return;
     }
 
@@ -145,7 +147,13 @@ export default function CartDrawer() {
                       </p>
                       {!item.isAvailable ? (
                         <p className="text-sm text-amber-600 dark:text-amber-300">
-                          This product is no longer available.
+                          {item.stockQuantity <= 0
+                            ? "This product is out of stock."
+                            : "This product is no longer available."}
+                        </p>
+                      ) : item.hasInsufficientStock ? (
+                        <p className="text-sm text-amber-600 dark:text-amber-300">
+                          Only {item.stockQuantity} left in stock.
                         </p>
                       ) : null}
                     </div>
@@ -173,7 +181,7 @@ export default function CartDrawer() {
                         type="button"
                         aria-label={`Increase quantity of ${item.title}`}
                         onClick={() => increaseQuantity(item.id)}
-                        disabled={!item.isAvailable}
+                        disabled={!item.canIncreaseQuantity}
                         className="rounded-full px-3 py-1 text-sm font-semibold text-neutral-700 transition hover:bg-white hover:text-neutral-950 disabled:cursor-not-allowed disabled:opacity-50 dark:text-neutral-200 dark:hover:bg-neutral-900 dark:hover:text-neutral-50"
                       >
                         +
@@ -202,6 +210,8 @@ export default function CartDrawer() {
               <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
                 {!hasAvailableItems
                   ? "No available products to checkout."
+                  : hasStockIssues
+                    ? "Reduce quantities to match available stock before checkout."
                   : customer
                     ? "Secure checkout and instant access after purchase."
                     : "Please sign in to continue to checkout."}
@@ -215,7 +225,7 @@ export default function CartDrawer() {
                 <button
                   type="button"
                   onClick={handleCheckout}
-                  disabled={!hasAvailableItems}
+                  disabled={!canCheckout}
                   className="inline-flex items-center justify-center rounded-full bg-[color:var(--color-wsu)] px-5 py-3 font-medium text-white transition hover:bg-[color:var(--color-wsu-light)] disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   Proceed to Checkout

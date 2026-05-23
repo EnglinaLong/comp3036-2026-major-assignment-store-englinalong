@@ -4,6 +4,7 @@ import { marked } from "marked";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type { Post } from "@repo/db/data";
 import { upsertCreatedProduct } from "@repo/ui/local-product-state";
+import styles from "./admin-ui.module.css";
 
 const PRODUCT_PRICE_OVERRIDES_COOKIE = "store-product-price-overrides";
 const CREATE_PRODUCT_DRAFT_STORAGE_KEY = "admin-create-product-draft";
@@ -24,6 +25,7 @@ type PostEditorProps = {
     | "likes"
     | "active"
     | "price"
+    | "stockQuantity"
   >;
 };
 
@@ -34,6 +36,7 @@ type FormValues = {
   content: string;
   imageUrl: string;
   price: string;
+  stockQuantity: string;
   tags: string;
 };
 
@@ -83,6 +86,14 @@ function validate(values: FormValues) {
 
   if (!values.tags.trim()) {
     errors.tags = "At least one product tag or collection is required";
+  }
+
+  const parsedStockQuantity = Number.parseInt(values.stockQuantity, 10);
+
+  if (!values.stockQuantity.trim()) {
+    errors.stockQuantity = "Stock quantity is required";
+  } else if (!Number.isInteger(parsedStockQuantity) || parsedStockQuantity < 0) {
+    errors.stockQuantity = "Stock quantity must be a non-negative integer";
   }
 
   return errors;
@@ -206,6 +217,10 @@ function readCreateDraft() {
       imageUrl:
         typeof parsedValue.imageUrl === "string" ? parsedValue.imageUrl : "",
       price: typeof parsedValue.price === "string" ? parsedValue.price : "",
+      stockQuantity:
+        typeof parsedValue.stockQuantity === "string"
+          ? parsedValue.stockQuantity
+          : "",
       tags: typeof parsedValue.tags === "string" ? parsedValue.tags : "",
     } satisfies FormValues;
   } catch {
@@ -246,6 +261,7 @@ export function PostEditor({
           getConfiguredPrice(initialPost.title) ??
           getFallbackPrice(postId, initialPost.category),
       ),
+      stockQuantity: String(initialPost.stockQuantity),
     };
 
     if (!isCreateMode) {
@@ -281,6 +297,9 @@ export function PostEditor({
       content: String(formData.get("content") ?? values.content),
       imageUrl: String(formData.get("imageUrl") ?? values.imageUrl),
       price: String(formData.get("price") ?? values.price),
+      stockQuantity: String(
+        formData.get("stockQuantity") ?? values.stockQuantity,
+      ),
       tags: String(formData.get("tags") ?? values.tags),
     };
   };
@@ -376,6 +395,7 @@ export function PostEditor({
         likes: 0,
         active: true,
         price: Math.round(Number.parseFloat(submissionValues.price)),
+        stockQuantity: Number.parseInt(submissionValues.stockQuantity, 10),
         supportingText:
           submissionValues.category.trim().toLowerCase() === "react" ||
           submissionValues.category.trim().toLowerCase() === "next.js"
@@ -574,7 +594,7 @@ export function PostEditor({
           <button
             type="button"
             onClick={togglePreview}
-            style={secondaryButtonStyle}
+            className={styles.editorSecondaryButton}
           >
             {isPreviewOpen ? "Close Preview" : "Preview"}
           </button>
@@ -645,6 +665,32 @@ export function PostEditor({
           />
         </Field>
 
+        <Field
+          label="Stock Quantity"
+          htmlFor="stock-quantity"
+          error={errors.stockQuantity}
+        >
+          <input
+            id="stock-quantity"
+            name="stockQuantity"
+            type="number"
+            min="0"
+            step="1"
+            inputMode="numeric"
+            value={values.stockQuantity}
+            onChange={(event) =>
+              updateValue("stockQuantity", event.target.value)
+            }
+            placeholder="12"
+            style={{
+              ...inputStyle,
+              border: errors.stockQuantity
+                ? "1px solid #dc2626"
+                : inputStyle.border,
+            }}
+          />
+        </Field>
+
         {showImagePreview ? (
           <img
             src={values.imageUrl}
@@ -678,7 +724,7 @@ export function PostEditor({
         </Field>
 
         <div>
-          <button type="submit" style={primaryButtonStyle}>
+          <button type="submit" className={styles.editorPrimaryButton}>
             Save Product
           </button>
         </div>
@@ -735,22 +781,6 @@ const textAreaStyle = {
   ...inputStyle,
   fontFamily: "inherit",
   resize: "vertical" as const,
-};
-
-const primaryButtonStyle = {
-  padding: "0.85rem 1.5rem",
-  backgroundColor: "#374151",
-  color: "white",
-  border: "none",
-  borderRadius: "0.75rem",
-  cursor: "pointer",
-  fontWeight: 700,
-  fontSize: "1rem",
-};
-
-const secondaryButtonStyle = {
-  ...primaryButtonStyle,
-  backgroundColor: "#374151",
 };
 
 const previewStyle = {

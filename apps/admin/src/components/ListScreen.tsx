@@ -6,6 +6,22 @@ import styles from "./admin-ui.module.css";
 
 type SortOption = "title-asc" | "title-desc" | "date-asc" | "date-desc";
 type VisibilityOption = "all" | "active" | "inactive";
+type OrderStatus = "Paid" | "Processing" | "Shipped" | "Cancelled";
+
+export type AdminOrderSummary = {
+  id: number;
+  customerEmail: string;
+  total: string;
+  status: OrderStatus;
+  createdAt: string;
+  items: Array<{
+    id: number;
+    title: string;
+    quantity: number;
+    price: string;
+    urlId: string;
+  }>;
+};
 
 function normalizeFilterValue(value: string) {
   return value.trim().toLowerCase();
@@ -26,8 +42,15 @@ function formatDateAsMmddyyyy(date: Date) {
   return `${month}${day}${year}`;
 }
 
-export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
+export function ListScreen({
+  initialPosts,
+  initialOrders,
+}: {
+  initialPosts: Post[];
+  initialOrders: AdminOrderSummary[];
+}) {
   const [postStates, setPostStates] = useState(initialPosts);
+  const [orderStates, setOrderStates] = useState(initialOrders);
   const [contentFilter, setContentFilter] = useState("");
   const [tagFilter, setTagFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
@@ -35,10 +58,18 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
     useState<VisibilityOption>("all");
   const [sortBy, setSortBy] = useState<SortOption | "">("date-desc");
   const [savingPostId, setSavingPostId] = useState<number | null>(null);
+  const [savingOrderId, setSavingOrderId] = useState<number | null>(null);
+  const [orderFeedback, setOrderFeedback] = useState<
+    Record<number, { type: "success" | "error"; message: string }>
+  >({});
 
   useEffect(() => {
     setPostStates(initialPosts);
   }, [initialPosts]);
+
+  useEffect(() => {
+    setOrderStates(initialOrders);
+  }, [initialOrders]);
 
   const togglePostStatus = async (postId: number) => {
     const post = postStates.find((item) => item.id === postId);
@@ -78,6 +109,65 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
       );
     } finally {
       setSavingPostId(null);
+    }
+  };
+
+  const updateOrderStatus = async (orderId: number) => {
+    const order = orderStates.find((item) => item.id === orderId);
+
+    if (!order || savingOrderId === orderId) {
+      return;
+    }
+
+    setSavingOrderId(orderId);
+    setOrderFeedback((current) => {
+      const next = { ...current };
+      delete next[orderId];
+      return next;
+    });
+
+    try {
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: order.status,
+        }),
+      });
+
+      const payload = (await response.json().catch(() => null)) as
+        | { id?: number; status?: OrderStatus; error?: string }
+        | null;
+
+      if (!response.ok || !payload?.id || !payload.status) {
+        setOrderFeedback((current) => ({
+          ...current,
+          [orderId]: {
+            type: "error",
+            message: payload?.error || "Unable to update order status.",
+          },
+        }));
+        return;
+      }
+
+      const nextStatus = payload.status;
+
+      setOrderStates((current) =>
+        current.map((item) =>
+          item.id === payload.id ? { ...item, status: nextStatus } : item,
+        ),
+      );
+      setOrderFeedback((current) => ({
+        ...current,
+        [orderId]: {
+          type: "success",
+          message: "Order status updated successfully.",
+        },
+      }));
+    } finally {
+      setSavingOrderId(null);
     }
   };
 
@@ -151,6 +241,21 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
 
     return filtered;
   }, [contentFilter, tagFilter, dateFilter, postStates, visibilityFilter, sortBy]);
+
+  const sortedOrders = useMemo(
+    () =>
+      [...orderStates].sort((a, b) => {
+        const dateDifference =
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+
+        if (dateDifference !== 0) {
+          return dateDifference;
+        }
+
+        return b.id - a.id;
+      }),
+    [orderStates],
+  );
 
   return (
     <div>
@@ -266,16 +371,17 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
                 <span>
                   #{post.tags.split(",").map((tag) => tag.trim()).join(", #")}
                 </span>
-                <span>
-                  Added on{" "}
-                  {post.date.toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </span>
-                <span>{post.category}</span>
-              </div>
+        <span>
+          Added on{" "}
+          {post.date.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          })}
+        </span>
+        <span>{post.category}</span>
+        <span>Stock: {post.stockQuantity}</span>
+      </div>
               <button
                 className={`${styles.statusButton} ${
                   post.active ? styles.statusActive : styles.statusInactive
@@ -289,6 +395,115 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
           </article>
         ))}
       </div>
+
+      <section className={styles.orderSection}>
+        <div className={styles.sectionHeader}>
+          <div>
+            <h2 className={styles.sectionTitle}>Customer Orders</h2>
+            <p className={styles.sectionText}>
+              Review recent orders and update their fulfillment status.
+            </p>
+          </div>
+        </div>
+
+        <div className={styles.list}>
+          {sortedOrders.length === 0 ? (
+            <div className={styles.emptyState}>
+              No orders have been placed yet.
+            </div>
+          ) : (
+            sortedOrders.map((order) => (
+              <article className={styles.orderCard} key={`admin-order-${order.id}`}>
+                <div className={styles.orderHeader}>
+                  <div className={styles.orderMeta}>
+                    <h3 className={styles.orderTitle}>Order #{order.id}</h3>
+                    <p className={styles.metaText}>{order.customerEmail}</p>
+                    <p className={styles.metaText}>
+                      {new Date(order.createdAt).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </p>
+                  </div>
+
+                  <div className={styles.orderSummary}>
+                    <span className={styles.orderTotal}>{order.total}</span>
+                    <span className={styles.orderStatusBadge}>{order.status}</span>
+                  </div>
+                </div>
+
+                <div className={styles.orderControls}>
+                  <label className={styles.filterField}>
+                    <span className={styles.filterLabel}>Update Status:</span>
+                    <select
+                      className={styles.filterSelect}
+                      value={order.status}
+                      onChange={(event) => {
+                        const nextStatus = event.target.value as OrderStatus;
+                        setOrderStates((current) =>
+                          current.map((item) =>
+                            item.id === order.id
+                              ? { ...item, status: nextStatus }
+                              : item,
+                          ),
+                        );
+                      }}
+                    >
+                      <option value="Paid">Paid</option>
+                      <option value="Processing">Processing</option>
+                      <option value="Shipped">Shipped</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
+                  </label>
+
+                  <button
+                    className={styles.linkButton}
+                    type="button"
+                    disabled={savingOrderId === order.id}
+                    onClick={() => updateOrderStatus(order.id)}
+                  >
+                    {savingOrderId === order.id ? "Saving..." : "Save Status"}
+                  </button>
+                </div>
+
+                {orderFeedback[order.id] ? (
+                  <p
+                    className={
+                      orderFeedback[order.id]?.type === "success"
+                        ? styles.successMessage
+                        : styles.errorMessage
+                    }
+                  >
+                    {orderFeedback[order.id]?.message}
+                  </p>
+                ) : null}
+
+                <div className={styles.orderItems}>
+                  {order.items.length === 0 ? (
+                    <p className={styles.metaText}>No order items available.</p>
+                  ) : (
+                    order.items.map((item) => (
+                      <div
+                        className={styles.orderItem}
+                        key={`admin-order-${order.id}-item-${item.id}`}
+                      >
+                        <div>
+                          <p className={styles.orderItemTitle}>{item.title}</p>
+                          <p className={styles.metaText}>
+                            /product/{item.urlId} · Qty {item.quantity}
+                          </p>
+                        </div>
+                        <span className={styles.orderItemPrice}>{item.price}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </article>
+            ))
+          )}
+        </div>
+      </section>
     </div>
   );
 }

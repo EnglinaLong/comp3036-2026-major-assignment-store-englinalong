@@ -44,6 +44,7 @@ function postsAreEqual(a: Post[], b: Post[]): boolean {
     if (aPost.tags !== bPost.tags) return false;
     if (aPost.active !== bPost.active) return false;
     if (aPost.price !== bPost.price) return false;
+    if (aPost.stockQuantity !== bPost.stockQuantity) return false;
     if (aPost.supportingText !== bPost.supportingText) return false;
     if (new Date(aPost.date).getTime() !== new Date(bPost.date).getTime()) {
       return false;

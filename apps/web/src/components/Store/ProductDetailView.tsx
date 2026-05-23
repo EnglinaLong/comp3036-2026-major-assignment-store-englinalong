@@ -40,6 +40,7 @@ export default function ProductDetailView({
   const { addToCart } = useCart();
   const displayPost = post;
   const displayRelatedProducts = relatedProducts;
+  const isOutOfStock = displayPost.stockQuantity <= 0;
 
   function handleSaveToggle() {
     setSaved((current) => {
@@ -77,6 +78,10 @@ export default function ProductDetailView({
   }, [displayPost.urlId, hydrated]);
 
   function handleAddToCart() {
+    if (isOutOfStock) {
+      return;
+    }
+
     addToCart(displayPost);
     setCartAdded(true);
   }
@@ -151,8 +156,12 @@ export default function ProductDetailView({
             <span className="rounded-full bg-neutral-100 px-3 py-1 text-sm font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
               {displayPost.category}
             </span>
-            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-700">
-              Available Now
+            <span className={`rounded-full px-3 py-1 text-sm font-medium ${
+              isOutOfStock
+                ? "border border-rose-200 bg-rose-50 text-rose-700"
+                : "border border-emerald-200 bg-emerald-50 text-emerald-700"
+            }`}>
+              {isOutOfStock ? "Out of stock" : "In stock"}
             </span>
           </div>
 
@@ -175,15 +184,25 @@ export default function ProductDetailView({
             <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">
               {getProductPriceSupportingText(displayPost)}
             </p>
+            <p className="mt-3 text-sm font-medium text-neutral-700 dark:text-neutral-200">
+              {isOutOfStock
+                ? "Out of stock"
+                : `In stock - ${displayPost.stockQuantity} available`}
+            </p>
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
             <button
               type="button"
               onClick={handleAddToCart}
-              className="inline-flex items-center justify-center rounded-full bg-[color:var(--color-wsu)] px-5 py-3 font-medium text-white transition hover:bg-[color:var(--color-wsu-light)]"
+              disabled={isOutOfStock}
+              className="inline-flex items-center justify-center rounded-full bg-[color:var(--color-wsu)] px-5 py-3 font-medium text-white transition hover:bg-[color:var(--color-wsu-light)] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {cartAdded ? "Added to Cart" : "Add to Cart"}
+              {isOutOfStock
+                ? "Out of Stock"
+                : cartAdded
+                  ? "Added to Cart"
+                  : "Add to Cart"}
             </button>
 
             <button

@@ -1,5 +1,5 @@
 import type { Post } from "@repo/db/data";
-import BlogListItem from "./ListItem";
+import { BlogListItem } from "./ListItem";
 
 export function BlogList({ posts }: { posts: Post[] }) {
   if (posts.length === 0) {

@@ -50,6 +50,12 @@ function aggregateItems(items: NonNullable<CheckoutOrderBody["items"]>) {
   }));
 }
 
+function isCheckoutError(value: unknown): value is
+  | "UNAVAILABLE_PRODUCT"
+  | "INSUFFICIENT_STOCK" {
+  return value === "UNAVAILABLE_PRODUCT" || value === "INSUFFICIENT_STOCK";
+}
+
 async function getSessionUser(request: NextRequest) {
   const token = await getToken({
     req: request,
@@ -93,9 +99,14 @@ export async function GET(request: NextRequest) {
     where: {
       userId: user.id,
     },
-    orderBy: {
-      createdAt: "desc",
-    },
+    orderBy: [
+      {
+        createdAt: "desc",
+      },
+      {
+        id: "desc",
+      },
+    ],
     include: {
       items: {
         include: {
@@ -126,36 +137,61 @@ export async function POST(request: NextRequest) {
     }
 
     const requestedItems = aggregateItems(body.items!);
-    const products = await client.db.product.findMany({
-      where: {
-        id: {
-          in: requestedItems.map((item) => item.productId),
-        },
-        active: true,
-      },
-    });
-
-    if (products.length !== requestedItems.length) {
-      return NextResponse.json(
-        { error: "One or more selected products are unavailable." },
-        { status: 400 },
-      );
-    }
-
-    const productById = new Map(products.map((product) => [product.id, product]));
-    const total = requestedItems.reduce((sum, item) => {
-      const product = productById.get(item.productId);
-      return sum + (product ? product.price * item.quantity : 0);
-    }, 0);
-
-    if (total <= 0) {
-      return NextResponse.json(
-        { error: "Unable to process this order." },
-        { status: 400 },
-      );
-    }
-
     const order = await client.db.$transaction(async (tx) => {
+      const products = await tx.product.findMany({
+        where: {
+          id: {
+            in: requestedItems.map((item) => item.productId),
+          },
+        },
+      });
+
+      if (products.length !== requestedItems.length) {
+        throw new Error("UNAVAILABLE_PRODUCT");
+      }
+
+      const productById = new Map(products.map((product) => [product.id, product]));
+
+      for (const item of requestedItems) {
+        const product = productById.get(item.productId);
+
+        if (!product || !product.active || product.stockQuantity < item.quantity) {
+          throw new Error(
+            !product || !product.active ? "UNAVAILABLE_PRODUCT" : "INSUFFICIENT_STOCK",
+          );
+        }
+      }
+
+      const total = requestedItems.reduce((sum, item) => {
+        const product = productById.get(item.productId);
+        return sum + (product ? product.price * item.quantity : 0);
+      }, 0);
+
+      if (total <= 0) {
+        throw new Error("UNAVAILABLE_PRODUCT");
+      }
+
+      for (const item of requestedItems) {
+        const updatedProduct = await tx.product.updateMany({
+          where: {
+            id: item.productId,
+            active: true,
+            stockQuantity: {
+              gte: item.quantity,
+            },
+          },
+          data: {
+            stockQuantity: {
+              decrement: item.quantity,
+            },
+          },
+        });
+
+        if (updatedProduct.count !== 1) {
+          throw new Error("INSUFFICIENT_STOCK");
+        }
+      }
+
       return tx.order.create({
         data: {
           userId: user.id,
@@ -188,7 +224,19 @@ export async function POST(request: NextRequest) {
       success: true,
       order: mapDatabaseOrder(order),
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && isCheckoutError(error.message)) {
+      return NextResponse.json(
+        {
+          error:
+            error.message === "INSUFFICIENT_STOCK"
+              ? "One or more requested quantities exceed available stock."
+              : "One or more selected products are unavailable.",
+        },
+        { status: 400 },
+      );
+    }
+
     return NextResponse.json(
       { error: "Unable to complete your checkout." },
       { status: 400 },

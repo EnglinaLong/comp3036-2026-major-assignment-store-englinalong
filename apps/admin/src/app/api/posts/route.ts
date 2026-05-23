@@ -9,6 +9,7 @@ type CreateProductBody = {
   content?: string;
   imageUrl?: string;
   price?: string;
+  stockQuantity?: string;
   tags?: string;
 };
 
@@ -39,6 +40,11 @@ function validate(body: CreateProductBody) {
   if (!String(body.price ?? "").trim()) return "Price is required";
   if (!Number.isFinite(price) || price <= 0) {
     return "Price must be greater than 0";
+  }
+  const stockQuantity = Number.parseInt(String(body.stockQuantity ?? ""), 10);
+  if (!String(body.stockQuantity ?? "").trim()) return "Stock quantity is required";
+  if (!Number.isInteger(stockQuantity) || stockQuantity < 0) {
+    return "Stock quantity must be a non-negative integer";
   }
 
   return null;
@@ -80,6 +86,7 @@ export async function POST(request: Request) {
         tags: body.tags!.trim(),
         active: true,
         price: Math.round(Number.parseFloat(body.price!.trim())),
+        stockQuantity: Number.parseInt(body.stockQuantity!.trim(), 10),
         supportingText: getSupportingText(body.category!.trim()),
         views: 0,
       },
