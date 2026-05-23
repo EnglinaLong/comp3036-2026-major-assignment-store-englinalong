@@ -74,13 +74,13 @@ export default function CartDrawer() {
         type="button"
         aria-label="Close cart"
         onClick={closeCart}
-        className={`absolute inset-0 bg-black/40 transition ${
+        className={`absolute inset-0 bg-black/40 transition-opacity duration-150 ${
           isCartOpen ? "opacity-100" : "opacity-0"
         }`}
       />
 
       <aside
-        className={`absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-black/10 bg-white shadow-[-18px_0_60px_rgba(15,23,42,0.16)] transition duration-300 dark:border-white/10 dark:bg-neutral-950 dark:shadow-[-18px_0_60px_rgba(0,0,0,0.45)] ${
+        className={`absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-black/10 bg-white shadow-[-18px_0_60px_rgba(15,23,42,0.16)] transition-none dark:border-white/10 dark:bg-neutral-950 dark:shadow-[-18px_0_60px_rgba(0,0,0,0.45)] ${
           isCartOpen ? "translate-x-0" : "translate-x-full"
         }`}
         role="dialog"
@@ -164,13 +164,13 @@ export default function CartDrawer() {
                   </div>
 
                   <div className="mt-4 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 p-1 dark:border-neutral-700 dark:bg-neutral-950">
+                    <div className="grid grid-cols-[2.5rem_2rem_2.5rem] items-center rounded-full border border-neutral-200 bg-neutral-50 p-1 dark:border-neutral-700 dark:bg-neutral-950">
                       <button
                         type="button"
                         aria-label={`Decrease quantity of ${item.title}`}
                         onClick={() => decreaseQuantity(item.id)}
                         disabled={!item.isAvailable}
-                        className="rounded-full px-3 py-1 text-sm font-semibold text-neutral-700 transition hover:bg-white hover:text-neutral-950 disabled:cursor-not-allowed disabled:opacity-50 dark:text-neutral-200 dark:hover:bg-neutral-900 dark:hover:text-neutral-50"
+                        className="h-9 w-10 rounded-full text-sm font-semibold text-neutral-700 transition-none hover:bg-white hover:text-neutral-950 disabled:cursor-not-allowed disabled:opacity-50 dark:text-neutral-200 dark:hover:bg-neutral-900 dark:hover:text-neutral-50"
                       >
                         -
                       </button>
@@ -182,7 +182,7 @@ export default function CartDrawer() {
                         aria-label={`Increase quantity of ${item.title}`}
                         onClick={() => increaseQuantity(item.id)}
                         disabled={!item.canIncreaseQuantity}
-                        className="rounded-full px-3 py-1 text-sm font-semibold text-neutral-700 transition hover:bg-white hover:text-neutral-950 disabled:cursor-not-allowed disabled:opacity-50 dark:text-neutral-200 dark:hover:bg-neutral-900 dark:hover:text-neutral-50"
+                        className="h-9 w-10 rounded-full text-sm font-semibold text-neutral-700 transition-none hover:bg-white hover:text-neutral-950 disabled:cursor-not-allowed disabled:opacity-50 dark:text-neutral-200 dark:hover:bg-neutral-900 dark:hover:text-neutral-50"
                       >
                         +
                       </button>

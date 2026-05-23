@@ -132,7 +132,7 @@ export function TopMenu({
             <button
               type="button"
               onClick={openCart}
-              className="inline-flex items-center rounded-full border border-[color:var(--color-wsu)]/20 bg-[color:var(--color-wsu)]/5 px-4 py-2 font-medium text-[color:var(--color-wsu)] transition hover:border-[color:var(--color-wsu)]/35 hover:bg-[color:var(--color-wsu)]/10"
+              className="inline-flex min-w-[6.5rem] items-center justify-center rounded-full border border-[color:var(--color-wsu)]/20 bg-[color:var(--color-wsu)]/5 px-4 py-2 font-medium text-[color:var(--color-wsu)] transition-none hover:border-[color:var(--color-wsu)]/35 hover:bg-[color:var(--color-wsu)]/10"
             >
               Cart ({cartCount})
             </button>
