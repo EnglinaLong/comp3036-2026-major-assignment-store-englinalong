@@ -3,7 +3,6 @@ import { expect, test } from "./fixtures";
 
 const CUSTOMER_ACCOUNT_STORAGE_KEY = "storefront-customer-account";
 const CUSTOMER_SESSION_STORAGE_KEY = "storefront-customer-session";
-const CUSTOMER_ORDERS_STORAGE_KEY = "storefront-customer-orders";
 const PAYMENT_SUCCESS_STORAGE_KEY = "storefront-payment-success";
 const CART_STORAGE_KEY = "storefront-cart-items";
 
@@ -16,20 +15,17 @@ test.describe("FULL STACK STORE CHECKOUT", () => {
       ({
         customerAccountStorageKey,
         customerSessionStorageKey,
-        customerOrdersStorageKey,
         paymentSuccessStorageKey,
         cartStorageKey,
       }) => {
         window.localStorage.removeItem(customerAccountStorageKey);
         window.localStorage.removeItem(customerSessionStorageKey);
-        window.localStorage.removeItem(customerOrdersStorageKey);
         window.localStorage.removeItem(paymentSuccessStorageKey);
         window.localStorage.removeItem(cartStorageKey);
       },
       {
         customerAccountStorageKey: CUSTOMER_ACCOUNT_STORAGE_KEY,
         customerSessionStorageKey: CUSTOMER_SESSION_STORAGE_KEY,
-        customerOrdersStorageKey: CUSTOMER_ORDERS_STORAGE_KEY,
         paymentSuccessStorageKey: PAYMENT_SUCCESS_STORAGE_KEY,
         cartStorageKey: CART_STORAGE_KEY,
       },
@@ -121,6 +117,13 @@ test.describe("FULL STACK STORE CHECKOUT", () => {
       ).toBeVisible();
       await expect(page.getByText("Paid")).toBeVisible();
       await expect(page.getByText("Backend Starter Toolkit")).toBeVisible();
+      await expect(
+        page
+          .locator("section")
+          .filter({ has: page.getByText("Backend Starter Toolkit") })
+          .getByText("$87.00", { exact: true })
+          .first(),
+      ).toBeVisible();
 
       await page.getByRole("button", { name: /Cart \(0\)/ }).click();
       const clearedCartDrawer = page.getByRole("dialog", { name: "Shopping cart" });
@@ -130,24 +133,19 @@ test.describe("FULL STACK STORE CHECKOUT", () => {
       const storedState = await page.evaluate(
         ({
           cartStorageKey,
-          customerOrdersStorageKey,
           paymentSuccessStorageKey,
         }) => ({
           cart: window.localStorage.getItem(cartStorageKey),
-          orders: window.localStorage.getItem(customerOrdersStorageKey),
           paymentSuccess: window.localStorage.getItem(paymentSuccessStorageKey),
         }),
         {
           cartStorageKey: CART_STORAGE_KEY,
-          customerOrdersStorageKey: CUSTOMER_ORDERS_STORAGE_KEY,
           paymentSuccessStorageKey: PAYMENT_SUCCESS_STORAGE_KEY,
         },
       );
 
       expect(storedState.cart).toBe("[]");
       expect(storedState.paymentSuccess).toContain("$87.00");
-      expect(storedState.orders).toContain("Backend Starter Toolkit");
-      expect(storedState.orders).toContain('"status":"Paid"');
 
       await page.reload();
       await expect(
@@ -155,6 +153,13 @@ test.describe("FULL STACK STORE CHECKOUT", () => {
       ).toBeVisible();
       await expect(page.getByText("Backend Starter Toolkit")).toBeVisible();
       await expect(page.getByText("Paid")).toBeVisible();
+      await expect(
+        page
+          .locator("section")
+          .filter({ has: page.getByText("Backend Starter Toolkit") })
+          .getByText("$87.00", { exact: true })
+          .first(),
+      ).toBeVisible();
     },
   );
 });
