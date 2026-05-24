@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import "dotenv/config";
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
@@ -9,75 +10,6 @@ import { defineConfig, devices } from "@playwright/test";
 
 import fs from "fs";
 import path from "path";
-
-function resolveDatabaseEnvPath() {
-  const candidates = [
-    path.resolve(process.cwd(), "packages/db/.env"),
-    path.resolve(process.cwd(), "../../packages/db/.env"),
-    path.resolve(__dirname, "../../packages/db/.env"),
-  ];
-
-  return candidates.find((candidate) => fs.existsSync(candidate)) ?? candidates[0];
-}
-
-const databaseEnvPath = resolveDatabaseEnvPath();
-
-function parseEnvFile(filePath: string) {
-  const values: Record<string, string> = {};
-
-  if (!fs.existsSync(filePath)) {
-    return values;
-  }
-
-  for (const line of fs.readFileSync(filePath, "utf8").split(/\r?\n/)) {
-    const trimmedLine = line.trim();
-
-    if (!trimmedLine || trimmedLine.startsWith("#")) {
-      continue;
-    }
-
-    const separatorIndex = trimmedLine.indexOf("=");
-
-    if (separatorIndex < 0) {
-      continue;
-    }
-
-    const key = trimmedLine.slice(0, separatorIndex).trim();
-    const value = trimmedLine.slice(separatorIndex + 1).trim();
-
-    values[key] = value.replace(/^['"]|['"]$/g, "");
-  }
-
-  return values;
-}
-
-const fileEnv = parseEnvFile(databaseEnvPath);
-
-if (fs.existsSync(databaseEnvPath)) {
-  process.loadEnvFile(databaseEnvPath);
-}
-
-function normalizeEnvValue(value: string | undefined) {
-  return value?.trim().replace(/^['"]|['"]$/g, "") ?? "";
-}
-
-const runtimeDatabaseUrl =
-  normalizeEnvValue(fileEnv.DATABASE_URL) ||
-  normalizeEnvValue(process.env.DATABASE_URL);
-const testDatabaseUrl =
-  normalizeEnvValue(fileEnv.TEST_DATABASE_URL) ||
-  normalizeEnvValue(process.env.TEST_DATABASE_URL);
-
-if (!testDatabaseUrl) {
-  throw new Error(
-    `Missing TEST_DATABASE_URL. Playwright test setup requires ${databaseEnvPath}.`,
-  );
-}
-
-process.env.PLAYWRIGHT_REAL_DATABASE_URL = runtimeDatabaseUrl;
-process.env.PLAYWRIGHT_TEST = "true";
-process.env.DATABASE_URL = testDatabaseUrl;
-process.env.TEST_DATABASE_URL = testDatabaseUrl;
 
 // Define the directory path
 const authDir = path.resolve(".auth");
@@ -183,25 +115,11 @@ export default defineConfig({
       reuseExistingServer: true,
       command: "pnpm start:admin",
       url: "http://localhost:3002",
-      env: {
-        ...process.env,
-        DATABASE_URL: testDatabaseUrl,
-        TEST_DATABASE_URL: testDatabaseUrl,
-        PLAYWRIGHT_TEST: "true",
-        PLAYWRIGHT_REAL_DATABASE_URL: runtimeDatabaseUrl,
-      },
     },
     {
       reuseExistingServer: true,
       command: "pnpm start:web",
       url: "http://localhost:3001",
-      env: {
-        ...process.env,
-        DATABASE_URL: testDatabaseUrl,
-        TEST_DATABASE_URL: testDatabaseUrl,
-        PLAYWRIGHT_TEST: "true",
-        PLAYWRIGHT_REAL_DATABASE_URL: runtimeDatabaseUrl,
-      },
     },
   ],
 });
