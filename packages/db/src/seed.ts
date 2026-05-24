@@ -2,6 +2,40 @@ import { pathToFileURL } from "node:url";
 import { client } from "./client.js";
 import { products } from "./data.js";
 
+function normalizeEnvValue(value: string | undefined) {
+  return value?.trim().replace(/^['"]|['"]$/g, "") ?? "";
+}
+
+function assertSafeTestDatabaseReset() {
+  const activeDatabaseUrl = normalizeEnvValue(process.env.DATABASE_URL);
+  const testDatabaseUrl = normalizeEnvValue(process.env.TEST_DATABASE_URL);
+  const realDatabaseUrl = normalizeEnvValue(process.env.PLAYWRIGHT_REAL_DATABASE_URL);
+
+  if (!testDatabaseUrl) {
+    throw new Error(
+      "Missing TEST_DATABASE_URL. Refusing to reset test data without an explicit test database.",
+    );
+  }
+
+  if (!activeDatabaseUrl) {
+    throw new Error(
+      "Missing DATABASE_URL. Refusing to reset test data without an active Prisma datasource URL.",
+    );
+  }
+
+  if (activeDatabaseUrl !== testDatabaseUrl) {
+    throw new Error(
+      "Refusing to reset test data because DATABASE_URL is not using TEST_DATABASE_URL.",
+    );
+  }
+
+  if (realDatabaseUrl && activeDatabaseUrl === realDatabaseUrl) {
+    throw new Error(
+      "Refusing to reset test data because the active DATABASE_URL matches the real store database.",
+    );
+  }
+}
+
 async function clearProducts() {
   await client.db.like.deleteMany();
   await client.db.product.deleteMany();
@@ -85,6 +119,7 @@ export async function seed() {
 }
 
 export async function seedForTests() {
+  assertSafeTestDatabaseReset();
   console.log("Resetting store test data");
 
   await clearOrders();
