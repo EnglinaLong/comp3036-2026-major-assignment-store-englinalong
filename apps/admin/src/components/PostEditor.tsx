@@ -3,10 +3,8 @@
 import { marked } from "marked";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type { Post } from "@repo/db/data";
-import { upsertCreatedProduct } from "@repo/ui/local-product-state";
 import styles from "./admin-ui.module.css";
 
-const PRODUCT_PRICE_OVERRIDES_COOKIE = "store-product-price-overrides";
 const CREATE_PRODUCT_DRAFT_STORAGE_KEY = "admin-create-product-draft";
 
 type PostEditorProps = {
@@ -135,62 +133,6 @@ function getFallbackPrice(postId: number | undefined, category: string) {
   return String(base + ((postId % 3) * 5));
 }
 
-function readStoredPrice(title: string) {
-  if (typeof document === "undefined") {
-    return null;
-  }
-
-  const cookieValue = document.cookie
-    .split("; ")
-    .find((entry) => entry.startsWith(`${PRODUCT_PRICE_OVERRIDES_COOKIE}=`))
-    ?.split("=")[1];
-
-  if (!cookieValue) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(
-      decodeURIComponent(cookieValue),
-    ) as Record<string, number>;
-    const slugKey = slugifyTitle(title);
-    return parsed[slugKey] ?? null;
-  } catch {
-    return null;
-  }
-}
-
-function storePriceOverride(price: number, title: string) {
-  if (typeof document === "undefined") {
-    return;
-  }
-
-  const cookieValue = document.cookie
-    .split("; ")
-    .find((entry) => entry.startsWith(`${PRODUCT_PRICE_OVERRIDES_COOKIE}=`))
-    ?.split("=")[1];
-
-  let overrides: Record<string, number> = {};
-
-  if (cookieValue) {
-    try {
-      overrides = JSON.parse(decodeURIComponent(cookieValue)) as Record<
-        string,
-        number
-      >;
-    } catch {
-      overrides = {};
-    }
-  }
-
-  const slugKey = slugifyTitle(title);
-  overrides[slugKey] = price;
-
-  document.cookie = `${PRODUCT_PRICE_OVERRIDES_COOKIE}=${encodeURIComponent(
-    JSON.stringify(overrides),
-  )}; path=/; max-age=31536000; SameSite=Lax`;
-}
-
 function readCreateDraft() {
   if (typeof window === "undefined") {
     return null;
@@ -257,9 +199,9 @@ export function PostEditor({
     const baseValues = {
       ...initialPost,
       price: String(
-        (initialPost.price || readStoredPrice(initialPost.title)) ??
-          getConfiguredPrice(initialPost.title) ??
-          getFallbackPrice(postId, initialPost.category),
+        initialPost.price ||
+          (getConfiguredPrice(initialPost.title) ??
+            getFallbackPrice(postId, initialPost.category)),
       ),
       stockQuantity: String(initialPost.stockQuantity),
     };
@@ -380,37 +322,10 @@ export function PostEditor({
         return;
       }
 
-      const result = (await response.json()) as { id: number };
-      upsertCreatedProduct({
-        id: result.id,
-        urlId: slugifyTitle(submissionValues.title),
-        title: submissionValues.title.trim(),
-        category: submissionValues.category.trim(),
-        description: submissionValues.description.trim(),
-        content: submissionValues.content.trim(),
-        imageUrl: submissionValues.imageUrl.trim(),
-        date: new Date(),
-        tags: submissionValues.tags.trim(),
-        views: 0,
-        likes: 0,
-        active: true,
-        price: Math.round(Number.parseFloat(submissionValues.price)),
-        stockQuantity: Number.parseInt(submissionValues.stockQuantity, 10),
-        supportingText:
-          submissionValues.category.trim().toLowerCase() === "react" ||
-          submissionValues.category.trim().toLowerCase() === "next.js"
-            ? "Includes complete product files and setup resources."
-            : submissionValues.category.trim().toLowerCase() === "node"
-              ? "Built for modern full-stack development workflows."
-              : "Instant access included after purchase.",
-      });
+      await response.json();
       clearCreateDraft();
     }
 
-    storePriceOverride(
-      Number.parseFloat(submissionValues.price),
-      submissionValues.title,
-    );
     setShowSaveError(false);
     setSaveMessage(
       isCreateMode

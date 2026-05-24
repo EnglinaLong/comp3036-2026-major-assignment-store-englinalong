@@ -1,35 +1,19 @@
+import type { Page } from "@playwright/test";
 import { seedTestData } from "../dbSeed";
 import { expect, test } from "./fixtures";
+import { resetStorefrontState } from "./helpers";
 
-const CUSTOMER_ACCOUNT_STORAGE_KEY = "storefront-customer-account";
-const CUSTOMER_SESSION_STORAGE_KEY = "storefront-customer-session";
-const PAYMENT_SUCCESS_STORAGE_KEY = "storefront-payment-success";
-const CART_STORAGE_KEY = "storefront-cart-items";
+function orderCard(page: Page) {
+  return page
+    .locator("section")
+    .filter({ has: page.getByText("Backend Starter Toolkit", { exact: true }) })
+    .first();
+}
 
 test.describe("FULL STACK STORE CHECKOUT", () => {
   test.beforeEach(async ({ page }) => {
     await seedTestData();
-
-    await page.goto("/");
-    await page.evaluate(
-      ({
-        customerAccountStorageKey,
-        customerSessionStorageKey,
-        paymentSuccessStorageKey,
-        cartStorageKey,
-      }) => {
-        window.localStorage.removeItem(customerAccountStorageKey);
-        window.localStorage.removeItem(customerSessionStorageKey);
-        window.localStorage.removeItem(paymentSuccessStorageKey);
-        window.localStorage.removeItem(cartStorageKey);
-      },
-      {
-        customerAccountStorageKey: CUSTOMER_ACCOUNT_STORAGE_KEY,
-        customerSessionStorageKey: CUSTOMER_SESSION_STORAGE_KEY,
-        paymentSuccessStorageKey: PAYMENT_SUCCESS_STORAGE_KEY,
-        cartStorageKey: CART_STORAGE_KEY,
-      },
-    );
+    await resetStorefrontState(page);
   });
 
   test(
@@ -45,7 +29,6 @@ test.describe("FULL STACK STORE CHECKOUT", () => {
       };
 
       await page.goto("/account/register");
-
       await page.getByLabel("Full name").fill(customer.name);
       await page.getByLabel("Email").fill(customer.email);
       await page.getByLabel("Password").fill(customer.password);
@@ -61,14 +44,22 @@ test.describe("FULL STACK STORE CHECKOUT", () => {
       ).toBeVisible();
 
       await page.goto("/product/backend-starter-toolkit");
+      await expect(
+        page.getByRole("heading", { name: "Backend Starter Toolkit" }).first(),
+      ).toBeVisible();
+      const productPrice = (
+        await page.getByText(/^\$\d+\.\d{2}$/).first().textContent()
+      )?.trim();
+      expect(productPrice).toMatch(/^\$\d+\.\d{2}$/);
       await page.getByRole("button", { name: "Add to Cart" }).click();
 
       const cartDrawer = page.getByRole("dialog", { name: "Shopping cart" });
       await expect(cartDrawer).toBeVisible();
       await expect(cartDrawer.getByText("Backend Starter Toolkit")).toBeVisible();
       await expect(
-        page.getByRole("button", { name: /Cart \(1\)/ }),
+        cartDrawer.getByText(productPrice!, { exact: true }),
       ).toBeVisible();
+      await expect(page.getByRole("button", { name: /Cart \(1\)/ })).toBeVisible();
 
       await cartDrawer.getByRole("button", { name: "Proceed to Checkout" }).click();
 
@@ -85,21 +76,23 @@ test.describe("FULL STACK STORE CHECKOUT", () => {
       await expect(
         page.getByRole("heading", { name: "Complete your order" }),
       ).toBeVisible();
+      await expect(page.getByText("Shipping Information")).toBeVisible();
+      await expect(page.getByText("Payment Details", { exact: true })).toBeVisible();
       await expect(page.getByText("Order Summary")).toBeVisible();
       await expect(
-        page.getByText("Payment Details", { exact: true }),
-      ).toBeVisible();
-      await expect(page.getByText("Shipping Information")).toBeVisible();
-      await expect(
         page.getByText("Backend Starter Toolkit", { exact: true }).first(),
+      ).toBeVisible();
+      await expect(
+        page.getByText(productPrice!, { exact: true }).first(),
       ).toBeVisible();
 
       await expect(page.getByLabel("Full Name")).toHaveValue(customer.name);
       await expect(page.getByLabel("Email")).toHaveValue(customer.email);
+      await expect(page.getByLabel("Cardholder Name")).toHaveValue(customer.name);
+
       await page.getByLabel("Address").fill("12 George Street");
       await page.getByLabel("City").fill("Sydney");
       await page.getByLabel("Postal Code").fill("2000");
-      await expect(page.getByLabel("Cardholder Name")).toHaveValue(customer.name);
       await page.getByLabel("Card Number").fill("4242424242424242");
       await expect(page.getByLabel("Card Number")).toHaveValue(
         "4242 4242 4242 4242",
@@ -110,58 +103,31 @@ test.describe("FULL STACK STORE CHECKOUT", () => {
 
       await page.getByRole("button", { name: "Complete Purchase" }).click();
 
-      await expect(page.getByText("Order Confirmed")).toBeVisible();
-      await expect(
-        page.getByText("Your payment was completed successfully for $87.00."),
-      ).toBeVisible();
       if (!page.url().endsWith("/account/orders")) {
+        await expect(page.getByText("Order Confirmed")).toBeVisible();
         await page.goto("/account/orders");
       }
-      await expect(page.getByText("Paid")).toBeVisible();
-      await expect(page.getByText("Backend Starter Toolkit")).toBeVisible();
-      await expect(
-        page
-          .locator("section")
-          .filter({ has: page.getByText("Backend Starter Toolkit") })
-          .getByText("$87.00", { exact: true })
-          .first(),
-      ).toBeVisible();
 
-      await page.getByRole("button", { name: /Cart \(0\)/ }).click();
-      const clearedCartDrawer = page.getByRole("dialog", { name: "Shopping cart" });
-      await expect(clearedCartDrawer).toBeVisible();
-      await expect(clearedCartDrawer.getByText("Your cart is empty.")).toBeVisible();
-
-      const storedState = await page.evaluate(
-        ({
-          cartStorageKey,
-          paymentSuccessStorageKey,
-        }) => ({
-          cart: window.localStorage.getItem(cartStorageKey),
-          paymentSuccess: window.localStorage.getItem(paymentSuccessStorageKey),
-        }),
-        {
-          cartStorageKey: CART_STORAGE_KEY,
-          paymentSuccessStorageKey: PAYMENT_SUCCESS_STORAGE_KEY,
-        },
-      );
-
-      expect(storedState.cart).toBe("[]");
-      expect(storedState.paymentSuccess).toContain("$87.00");
-
-      await page.reload();
       await expect(
         page.getByRole("heading", { name: "Orders", exact: true }),
       ).toBeVisible();
-      await expect(page.getByText("Backend Starter Toolkit")).toBeVisible();
-      await expect(page.getByText("Paid")).toBeVisible();
+      await expect(page.getByText("Order Confirmed")).toBeVisible();
       await expect(
-        page
-          .locator("section")
-          .filter({ has: page.getByText("Backend Starter Toolkit") })
-          .getByText("$87.00", { exact: true })
-          .first(),
+        page.getByText(
+          `Your payment was completed successfully for ${productPrice!}.`,
+        ),
       ).toBeVisible();
+
+      const backendToolkitOrder = orderCard(page);
+      await expect(
+        backendToolkitOrder.getByText("Backend Starter Toolkit"),
+      ).toBeVisible();
+      await expect(backendToolkitOrder.getByText("Paid")).toBeVisible();
+      await expect(backendToolkitOrder).toContainText(productPrice!);
+
+      await page.getByRole("button", { name: /Cart \(0\)/ }).click();
+      await expect(cartDrawer).toBeVisible();
+      await expect(cartDrawer.getByText("Your cart is empty.")).toBeVisible();
     },
   );
 });

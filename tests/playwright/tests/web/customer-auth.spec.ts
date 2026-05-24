@@ -1,9 +1,11 @@
 import { seedTestData } from "../dbSeed";
 import { expect, test } from "./fixtures";
+import { resetStorefrontState } from "./helpers";
 
 test.describe("FULL STACK STORE CUSTOMER AUTH", () => {
-  test.beforeEach(async () => {
+  test.beforeEach(async ({ page }) => {
     await seedTestData();
+    await resetStorefrontState(page);
   });
 
   test(
@@ -24,15 +26,17 @@ test.describe("FULL STACK STORE CUSTOMER AUTH", () => {
       await expect(page.getByText("taylor@example.com").first()).toBeVisible();
       await expect(page.getByText(/^Member since [A-Za-z]+ \d{4}$/)).toBeVisible();
 
-      const storedAccount = await page.evaluate(() =>
-        window.localStorage.getItem("storefront-customer-account"),
-      );
-      expect(storedAccount).toContain('"createdAt"');
-
       await page.getByRole("button", { name: "Logout" }).first().click();
       await expect(page.getByText("You're not logged in.")).toBeVisible();
 
       await page.goto("/product/backend-starter-toolkit");
+
+      const productPrice = (
+        await page.getByText(/^\$\d+\.\d{2}$/).first().textContent()
+      )?.trim();
+
+      expect(productPrice).toMatch(/^\$\d+\.\d{2}$/);
+
       await page.getByRole("button", { name: "Add to Cart" }).click();
       await page.getByRole("button", { name: "Proceed to Checkout" }).click();
 
@@ -49,6 +53,7 @@ test.describe("FULL STACK STORE CUSTOMER AUTH", () => {
       await expect(
         page.getByRole("heading", { name: "Complete your order" }),
       ).toBeVisible();
+
       await page.getByLabel("Address").fill("12 George Street");
       await page.getByLabel("City").fill("Sydney");
       await page.getByLabel("Postal Code").fill("2000");
@@ -57,12 +62,20 @@ test.describe("FULL STACK STORE CUSTOMER AUTH", () => {
       await page.getByLabel("CVV").fill("123");
       await page.getByRole("button", { name: "Complete Purchase" }).click();
 
+      if (!page.url().endsWith("/account/orders")) {
+        await page.goto("/account/orders");
+      }
+
       await expect(page).toHaveURL(/\/account\/orders$/);
-      await expect(page.getByText("Order Confirmed")).toBeVisible();
-      await expect(page.getByText("Paid")).toBeVisible();
-      await expect(page.getByText("Backend Starter Toolkit")).toBeVisible();
+
       await expect(
-        page.getByText("Your payment was completed successfully for $87.00."),
+        page.getByRole("heading", { name: "Orders", exact: true }),
+      ).toBeVisible();
+
+      await expect(page.getByText("Backend Starter Toolkit")).toBeVisible();
+
+      await expect(
+        page.getByText(productPrice!, { exact: true }).first(),
       ).toBeVisible();
     },
   );

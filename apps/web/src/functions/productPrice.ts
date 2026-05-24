@@ -1,7 +1,4 @@
 import type { Post } from "@repo/db/data";
-import { slugifyTitle } from "@/functions/productHref";
-
-export const PRODUCT_PRICE_OVERRIDES_COOKIE = "store-product-price-overrides";
 
 const productPricing: Record<
   string,
@@ -47,27 +44,6 @@ function fallbackPrice(post: Pick<Post, "id" | "category">) {
   return base + ((post.id % 3) * 5);
 }
 
-function readPriceOverridesFromCookie() {
-  if (typeof document === "undefined") {
-    return null;
-  }
-
-  const cookieValue = document.cookie
-    .split("; ")
-    .find((entry) => entry.startsWith(`${PRODUCT_PRICE_OVERRIDES_COOKIE}=`))
-    ?.split("=")[1];
-
-  if (!cookieValue) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(decodeURIComponent(cookieValue)) as Record<string, number>;
-  } catch {
-    return null;
-  }
-}
-
 function getConfiguredPrice(
   post: Pick<Post, "id" | "urlId" | "category" | "price">,
 ) {
@@ -85,14 +61,9 @@ export function getDefaultProductPrice(
 }
 
 export function getProductPrice(
-  post: Pick<Post, "id" | "urlId" | "category" | "title" | "price">,
+  post: Pick<Post, "id" | "urlId" | "category" | "price">,
 ) {
-  const priceOverrides = readPriceOverridesFromCookie();
-  const slugKey = slugifyTitle(post.title);
-  const overriddenPrice =
-    priceOverrides?.[post.urlId] ?? priceOverrides?.[slugKey];
-
-  return formatCurrency(overriddenPrice ?? getConfiguredPrice(post));
+  return formatCurrency(getConfiguredPrice(post));
 }
 
 export function getProductPriceSupportingText(

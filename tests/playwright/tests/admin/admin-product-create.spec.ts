@@ -62,24 +62,7 @@ test.describe("FULL STACK STORE ADMIN PRODUCT CREATE", () => {
         .fill("Front-End, Testing, Storefront");
 
       await userPage.getByRole("button", { name: "Save Product" }).click();
-      await userPage.waitForFunction(
-        (urlId) => {
-          const stored = window.localStorage.getItem("admin-created-posts");
-
-          if (!stored) {
-            return false;
-          }
-
-          try {
-            return JSON.parse(stored).some(
-              (post: { urlId?: string }) => post.urlId === urlId,
-            );
-          } catch {
-            return false;
-          }
-        },
-        productUrlId,
-      );
+      await expect(userPage.getByText("Product created successfully")).toBeVisible();
 
       await userPage.goto("/");
       await waitForAdminProductList(userPage);

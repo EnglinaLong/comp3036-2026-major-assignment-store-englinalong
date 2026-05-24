@@ -203,8 +203,11 @@ export default function CartDrawer() {
             <div className="border-t border-neutral-200 bg-neutral-50 px-5 py-5 dark:border-neutral-800 dark:bg-neutral-900 sm:px-6">
               <div className="flex items-center justify-between text-sm text-neutral-600 dark:text-neutral-300">
                 <span>Subtotal</span>
-                <span className="text-xl font-semibold text-neutral-950 dark:text-neutral-50">
-                  {subtotal}
+                <span
+                  aria-label={`Subtotal ${subtotal}`}
+                  className="text-xl font-semibold text-neutral-950 dark:text-neutral-50"
+                >
+                  Total: {subtotal}
                 </span>
               </div>
               <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">

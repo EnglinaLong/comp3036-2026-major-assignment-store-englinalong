@@ -215,6 +215,8 @@ export function CheckoutClient() {
       setPaymentSuccessState({
         orderId: payload.order.id,
         total: payload.order.total,
+        status: payload.order.status,
+        items: payload.order.items,
       });
       clearAvailableItems();
       setIsRedirectingToOrders(true);

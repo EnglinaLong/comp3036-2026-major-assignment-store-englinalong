@@ -1,10 +1,11 @@
 import { seedTestData } from "../dbSeed";
 import { expect, test } from "./fixtures";
-import { featuredProductsSection } from "./helpers";
+import { featuredProductsSection, resetStorefrontState } from "./helpers";
 
 test.describe("FULL STACK STORE LATEST ARRIVALS", () => {
-  test.beforeEach(async () => {
+  test.beforeEach(async ({ page }) => {
     await seedTestData();
+    await resetStorefrontState(page);
   });
 
   test(

@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import {
   clearPaymentSuccessState,
   readPaymentSuccessState,
+  toFallbackCustomerOrder,
+  type PaymentSuccessState,
 } from "@/functions/customerOrders";
 import type { CustomerOrder } from "@/lib/orders";
 
@@ -21,21 +23,31 @@ export function OrdersClient({
 }: {
   initialOrders: CustomerOrder[];
 }) {
-  const [successState, setSuccessState] = useState<{
-    orderId: string;
-    total: string;
-  } | null>(null);
+  const [successState, setSuccessState] = useState<PaymentSuccessState | null>(
+    null,
+  );
 
   useEffect(() => {
     setSuccessState(readPaymentSuccessState());
   }, []);
+
+  const orders =
+    successState &&
+    !initialOrders.some((order) => order.id === successState.orderId)
+      ? [toFallbackCustomerOrder(successState), ...initialOrders]
+      : initialOrders;
+
+  const confirmedOrderId =
+    successState?.orderId ??
+    orders.find((order) => order.status === "Paid")?.id ??
+    null;
 
   return (
     <div className="space-y-5">
       {successState ? (
         <div className="rounded-[24px] border border-[color:var(--color-wsu)]/20 bg-[color:var(--color-wsu)]/5 px-5 py-5">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[color:var(--color-wsu)]">
-            Order Confirmed
+            Payment Received
           </p>
           <p className="mt-2 text-sm text-neutral-700 dark:text-neutral-200">
             Your payment was completed successfully for {successState.total}.
@@ -56,7 +68,7 @@ export function OrdersClient({
         </div>
       ) : null}
 
-      {initialOrders.length === 0 ? (
+      {orders.length === 0 ? (
         <div className="rounded-[24px] border border-black/10 bg-neutral-50 p-6 text-center dark:border-white/10 dark:bg-neutral-900">
           <h2 className="text-xl font-semibold text-neutral-950 dark:text-neutral-50">
             No orders yet
@@ -72,13 +84,18 @@ export function OrdersClient({
           </Link>
         </div>
       ) : (
-        initialOrders.map((order) => (
+        orders.map((order) => (
           <section
             key={`order-${order.id}`}
             className="rounded-[24px] border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-neutral-950"
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
+                {order.id === confirmedOrderId ? (
+                  <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[color:var(--color-wsu)]">
+                    Order Confirmed
+                  </p>
+                ) : null}
                 <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[color:var(--color-wsu)]">
                   {order.id}
                 </p>
@@ -86,6 +103,7 @@ export function OrdersClient({
                   {formatOrderDate(order.date)}
                 </p>
               </div>
+
               <div className="text-right">
                 <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                   {order.status}

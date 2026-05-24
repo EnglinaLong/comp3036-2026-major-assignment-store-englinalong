@@ -1,10 +1,11 @@
 import { seedTestData } from "../dbSeed";
 import { expect, test } from "./fixtures";
-import { featuredProductsSection } from "./helpers";
+import { featuredProductsSection, resetStorefrontState } from "./helpers";
 
 test.describe("FULL STACK STORE CATEGORIES", () => {
-  test.beforeEach(async () => {
+  test.beforeEach(async ({ page }) => {
     await seedTestData();
+    await resetStorefrontState(page);
   });
 
   test(
@@ -15,6 +16,9 @@ test.describe("FULL STACK STORE CATEGORIES", () => {
     async ({ page }) => {
       await page.goto("/");
       const featuredProducts = featuredProductsSection(page);
+      await expect(
+        featuredProducts.getByText("Backend Starter Toolkit"),
+      ).toBeVisible();
 
       await page
         .locator("#shop-by-category")
