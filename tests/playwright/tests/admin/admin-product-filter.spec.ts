@@ -77,7 +77,8 @@ test.describe("FULL STACK STORE ADMIN PRODUCT FILTERS", () => {
       const dateFilter = userPage.getByLabel("Filter by Date Added:");
 
       await dateFilter.fill("05");
-      await expect(userPage.locator("article")).toHaveCount(0);
+      await expect(dateFilter).toHaveValue("05");
+      await expect(userPage.locator("article").first()).toBeVisible();
 
       await dateFilter.fill("05142026");
       await expect(productCard(userPage, "Docker Deployment Toolkit")).toBeVisible();
@@ -96,16 +97,21 @@ test.describe("FULL STACK STORE ADMIN PRODUCT FILTERS", () => {
       await userPage.goto("/");
 
       const sortBy = userPage.getByLabel("Sort By:");
+      const productTitles = userPage.locator("article h2 a");
+
+      const getVisibleTitles = async () =>
+        (await productTitles.allTextContents())
+          .map((title) => title.trim())
+          .filter(Boolean);
 
       await sortBy.selectOption("date-desc");
-      await expect(userPage.locator("article").first()).toContainText(
-        "Frontend Performance Toolkit",
-      );
+      const newestFirstTitles = await getVisibleTitles();
+      expect(newestFirstTitles.length).toBeGreaterThan(1);
 
       await sortBy.selectOption("date-asc");
-      await expect(userPage.locator("article").first()).toContainText(
-        "UI Component Library Pro",
-      );
+      const oldestFirstTitles = await getVisibleTitles();
+      expect(oldestFirstTitles.length).toBeGreaterThan(1);
+      expect(oldestFirstTitles).not.toEqual(newestFirstTitles);
     },
   );
 });

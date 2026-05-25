@@ -31,7 +31,7 @@ export type ResolvedCartItem = CartItem & {
   canIncreaseQuantity: boolean;
 };
 
-const CART_STORAGE_KEY = "storefront-cart-items";
+export const CART_STORAGE_KEY = "storefront-cart-items";
 
 type CartContextValue = {
   cartItems: ResolvedCartItem[];

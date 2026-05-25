@@ -2,10 +2,7 @@ import type { Post } from "@repo/db/data";
 import Link from "next/link";
 import Image from "next/image";
 import { getProductHref } from "@/functions/productHref";
-import {
-  getProductViewsLabel,
-  getWishlistSavesLabel,
-} from "@/functions/productStats";
+import { getProductViewsLabel } from "@/functions/productStats";
 import {
   getStorefrontCategoryHref,
   getStorefrontCollectionHref,
@@ -77,7 +74,6 @@ export function ProductCard({ post }: { post: Post }) {
         <div className="mt-auto flex flex-col gap-4 border-t border-neutral-100 pt-4 sm:flex-row sm:items-center sm:justify-between dark:border-neutral-800">
           <div className="flex flex-wrap items-center gap-4 text-sm text-neutral-500 dark:text-neutral-400">
             <span>{getProductViewsLabel(post.views)}</span>
-            <span>{getWishlistSavesLabel(post.likes)}</span>
           </div>
 
           <a

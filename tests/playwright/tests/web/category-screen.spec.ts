@@ -26,9 +26,11 @@ test.describe("FULL STACK STORE CATEGORIES", () => {
         .click();
       await expect(page).toHaveURL(/\/\?category=react#featured-products$/);
       await expect(page.getByText("Showing React products")).toBeVisible();
-      await expect(featuredProducts.getByTestId("product-card-2")).toBeVisible();
       await expect(
-        featuredProducts.getByTestId("product-card-4"),
+        featuredProducts.getByText("React Storefront UI Kit"),
+      ).toBeVisible();
+      await expect(
+        featuredProducts.getByText("Docker Deployment Toolkit"),
       ).not.toBeVisible();
 
       await page.reload();
@@ -45,9 +47,11 @@ test.describe("FULL STACK STORE CATEGORIES", () => {
         .click();
       await expect(page).toHaveURL(/\/\?category=devops#featured-products$/);
       await expect(page.getByText("Showing DevOps products")).toBeVisible();
-      await expect(featuredProducts.getByTestId("product-card-4")).toBeVisible();
       await expect(
-        featuredProducts.getByTestId("product-card-2"),
+        featuredProducts.getByText("Docker Deployment Toolkit"),
+      ).toBeVisible();
+      await expect(
+        featuredProducts.getByText("React Storefront UI Kit"),
       ).not.toBeVisible();
 
       await page.getByRole("button", { name: "Clear filters" }).click();
@@ -60,7 +64,9 @@ test.describe("FULL STACK STORE CATEGORIES", () => {
       await expect(
         page.getByText("Showing Responsive Design products"),
       ).toBeVisible();
-      await expect(featuredProducts.getByTestId("product-card-15")).toBeVisible();
+      await expect(
+        featuredProducts.getByText("Mobile Responsive Design Pack"),
+      ).toBeVisible();
     },
   );
 });

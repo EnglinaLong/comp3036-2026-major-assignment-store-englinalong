@@ -19,6 +19,7 @@ export function RegisterForm() {
   const intent = searchParams.get("intent");
 
   function navigateTo(target: string) {
+    router.refresh();
     router.replace(target);
   }
 

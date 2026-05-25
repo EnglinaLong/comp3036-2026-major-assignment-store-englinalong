@@ -45,6 +45,35 @@ function formatExpiryDate(value: string) {
   return `${digits.slice(0, 2)}/${digits.slice(2)}`;
 }
 
+function isValidExpiryDate(value: string) {
+  const match = /^(\d{2})\/(\d{2})$/.exec(value.trim());
+
+  if (!match || !match[1] || !match[2]) {
+    return false;
+  }
+
+  const month = Number.parseInt(match[1], 10);
+  const year = Number.parseInt(match[2], 10);
+
+  if (!Number.isInteger(month) || month < 1 || month > 12) {
+    return false;
+  }
+
+  const now = new Date();
+  const currentYear = now.getFullYear() % 100;
+  const currentMonth = now.getMonth() + 1;
+
+  if (year < currentYear) {
+    return false;
+  }
+
+  if (year === currentYear && month < currentMonth) {
+    return false;
+  }
+
+  return true;
+}
+
 function validateForm(values: CheckoutFormState) {
   const errors: CheckoutErrors = {};
 
@@ -59,8 +88,8 @@ function validateForm(values: CheckoutFormState) {
   if (onlyDigits(values.cardNumber).length !== 16) {
     errors.cardNumber = "Enter a valid card number.";
   }
-  if (!/^\d{2}\/\d{2}$/.test(values.expiryDate)) {
-    errors.expiryDate = "Enter a valid expiry date.";
+  if (!isValidExpiryDate(values.expiryDate)) {
+    errors.expiryDate = "Enter a valid expiry date in MM/YY format.";
   }
   if (onlyDigits(values.cvv).length < 3) {
     errors.cvv = "Enter a valid security code.";
@@ -180,6 +209,13 @@ export function CheckoutClient() {
     setIsSubmitting(true);
 
     try {
+      const customerEmail = checkoutCustomer?.email;
+
+      if (!customerEmail) {
+        setFormError("Please log in before continuing to checkout.");
+        return;
+      }
+
       await new Promise((resolve) => window.setTimeout(resolve, 1200));
 
       const response = await fetch("/api/orders", {
@@ -213,6 +249,7 @@ export function CheckoutClient() {
       }
 
       setPaymentSuccessState({
+        customerEmail,
         orderId: payload.order.id,
         total: payload.order.total,
         status: payload.order.status,

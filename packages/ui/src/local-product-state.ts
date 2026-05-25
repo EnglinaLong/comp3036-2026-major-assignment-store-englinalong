@@ -8,7 +8,6 @@ type ProductRecord = {
   date: Date;
   category: string;
   views: number;
-  likes: number;
   tags: string;
   active: boolean;
   price: number;

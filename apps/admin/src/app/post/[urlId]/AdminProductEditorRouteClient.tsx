@@ -36,7 +36,6 @@ export function AdminProductEditorRouteClient({
         imageUrl: matchedPost.imageUrl,
         date: matchedPost.date,
         views: matchedPost.views,
-        likes: matchedPost.likes,
         active: matchedPost.active,
         price: matchedPost.price,
         stockQuantity: matchedPost.stockQuantity,

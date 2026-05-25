@@ -4,6 +4,7 @@ import { client } from "@repo/db/client";
 import { AccountShell } from "@/components/Store/AccountShell";
 import { OrdersClient } from "@/components/Store/OrdersClient";
 import { authOptions } from "@/lib/auth";
+import { normalizeCustomerEmail } from "@/lib/customerAuth";
 import { mapDatabaseOrder } from "@/lib/orders";
 
 export const dynamic = "force-dynamic";
@@ -17,14 +18,38 @@ function parseSessionUserId(value: string) {
 export default async function OrdersPage() {
   const session = await getServerSession(authOptions);
   const sessionUserId = session?.user?.id ? parseSessionUserId(session.user.id) : null;
+  const sessionEmail = normalizeCustomerEmail(session?.user?.email ?? "");
 
-  if (!sessionUserId) {
+  const sessionUser = sessionUserId
+    ? await client.db.user.findUnique({
+        where: {
+          id: sessionUserId,
+        },
+        select: {
+          id: true,
+        },
+      })
+    : sessionEmail
+      ? await client.db.user.findFirst({
+          where: {
+            email: {
+              equals: sessionEmail,
+              mode: "insensitive",
+            },
+          },
+          select: {
+            id: true,
+          },
+        })
+      : null;
+
+  if (!sessionUser) {
     redirect("/account/login?returnTo=%2Faccount%2Forders");
   }
 
   const orders = await client.db.order.findMany({
     where: {
-      userId: sessionUserId,
+      userId: sessionUser.id,
     },
     orderBy: [
       {

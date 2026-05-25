@@ -27,18 +27,10 @@ export default async function UpdatePostPage({
     orderBy: {
       id: "asc",
     },
-    include: {
-      _count: {
-        select: {
-          likes: true,
-        },
-      },
-    },
   });
   const initialPosts = posts.map((post) => ({
     ...post,
     date: getSeededPostDate(post) ?? post.date,
-    likes: post._count.likes,
   }));
 
   return (

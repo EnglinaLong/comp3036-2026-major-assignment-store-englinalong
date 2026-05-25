@@ -11,10 +11,7 @@ import {
   getProductPrice,
   getProductPriceSupportingText,
 } from "@/functions/productPrice";
-import {
-  getProductViewsLabel,
-  getWishlistSavesLabel,
-} from "@/functions/productStats";
+import { getProductViewsLabel } from "@/functions/productStats";
 import {
   isProductWishlisted,
   setProductWishlisted,
@@ -34,7 +31,6 @@ export default function ProductDetailView({
   initialSaved: boolean;
 }) {
   const [saved, setSaved] = useState(initialSaved);
-  const [savedCount, setSavedCount] = useState(post.likes);
   const [cartAdded, setCartAdded] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const { addToCart } = useCart();
@@ -45,7 +41,6 @@ export default function ProductDetailView({
   function handleSaveToggle() {
     setSaved((current) => {
       const next = !current;
-      setSavedCount((count) => Math.max(0, count + (next ? 1 : -1)));
       setProductWishlisted(displayPost.urlId, next);
       return next;
     });
@@ -64,10 +59,6 @@ export default function ProductDetailView({
   useEffect(() => {
     setHydrated(true);
   }, []);
-
-  useEffect(() => {
-    setSavedCount(displayPost.likes);
-  }, [displayPost.likes]);
 
   useEffect(() => {
     if (!hydrated) {
@@ -132,7 +123,6 @@ export default function ProductDetailView({
 
         <div className="flex flex-wrap items-center gap-3 text-sm text-neutral-500 dark:text-neutral-400">
           <span>{getProductViewsLabel(displayPost.views)}</span>
-          <span>{getWishlistSavesLabel(savedCount)}</span>
         </div>
       </div>
 

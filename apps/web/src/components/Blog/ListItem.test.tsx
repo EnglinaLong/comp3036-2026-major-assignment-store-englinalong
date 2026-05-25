@@ -15,5 +15,4 @@ test("render blog post data", async () => {
   await expect.element(getByText("#World")).toBeVisible();
   await expect.element(getByText("01 Oct 2024")).toBeVisible();
   await expect.element(getByText("200 views")).toBeVisible();
-  await expect.element(getByText("30 likes")).toBeVisible();
 });

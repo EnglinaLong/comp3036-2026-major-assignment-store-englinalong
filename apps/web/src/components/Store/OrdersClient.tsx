@@ -9,6 +9,7 @@ import {
   type PaymentSuccessState,
 } from "@/functions/customerOrders";
 import type { CustomerOrder } from "@/lib/orders";
+import { useCustomerAuth } from "./CustomerAuthProvider";
 
 function formatOrderDate(value: string) {
   return new Date(value).toLocaleDateString("en-AU", {
@@ -23,13 +24,14 @@ export function OrdersClient({
 }: {
   initialOrders: CustomerOrder[];
 }) {
+  const { customer } = useCustomerAuth();
   const [successState, setSuccessState] = useState<PaymentSuccessState | null>(
     null,
   );
 
   useEffect(() => {
-    setSuccessState(readPaymentSuccessState());
-  }, []);
+    setSuccessState(readPaymentSuccessState(customer?.email ?? null));
+  }, [customer?.email]);
 
   const orders =
     successState &&
@@ -44,27 +46,35 @@ export function OrdersClient({
 
   return (
     <div className="space-y-5">
-      {successState ? (
+      {confirmedOrderId ? (
         <div className="rounded-[24px] border border-[color:var(--color-wsu)]/20 bg-[color:var(--color-wsu)]/5 px-5 py-5">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[color:var(--color-wsu)]">
-            Payment Received
+            Order Confirmed
           </p>
-          <p className="mt-2 text-sm text-neutral-700 dark:text-neutral-200">
-            Your payment was completed successfully for {successState.total}.
-          </p>
+          {successState ? (
+            <p className="mt-2 text-sm text-neutral-700 dark:text-neutral-200">
+              Your payment was completed successfully for {successState.total}.
+            </p>
+          ) : (
+            <p className="mt-2 text-sm text-neutral-700 dark:text-neutral-200">
+              Your most recent order has been recorded successfully.
+            </p>
+          )}
           <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-            Order reference: {successState.orderId}
+            Order reference: {confirmedOrderId}
           </p>
-          <button
-            type="button"
-            onClick={() => {
-              clearPaymentSuccessState();
-              setSuccessState(null);
-            }}
-            className="mt-4 inline-flex items-center justify-center rounded-full border border-[color:var(--color-wsu)]/20 bg-white px-4 py-2 text-sm font-medium text-[color:var(--color-wsu)] transition hover:bg-[color:var(--color-wsu)]/5 dark:bg-neutral-950"
-          >
-            Dismiss
-          </button>
+          {successState ? (
+            <button
+              type="button"
+              onClick={() => {
+                clearPaymentSuccessState();
+                setSuccessState(null);
+              }}
+              className="mt-4 inline-flex items-center justify-center rounded-full border border-[color:var(--color-wsu)]/20 bg-white px-4 py-2 text-sm font-medium text-[color:var(--color-wsu)] transition hover:bg-[color:var(--color-wsu)]/5 dark:bg-neutral-950"
+            >
+              Dismiss
+            </button>
+          ) : null}
         </div>
       ) : null}
 
@@ -91,11 +101,6 @@ export function OrdersClient({
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                {order.id === confirmedOrderId ? (
-                  <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[color:var(--color-wsu)]">
-                    Order Confirmed
-                  </p>
-                ) : null}
                 <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[color:var(--color-wsu)]">
                   {order.id}
                 </p>

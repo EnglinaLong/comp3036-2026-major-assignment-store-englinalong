@@ -67,19 +67,32 @@ async function getSessionUser(request: NextRequest) {
   const userId = parseUserId(token?.sub);
   const email = normalizeCustomerEmail(token?.email ?? "");
 
-  if (!userId || !email) {
+  if (!email) {
     return null;
   }
 
-  const user = await client.db.user.findUnique({
-    where: {
-      id: userId,
-    },
-    select: {
-      id: true,
-      email: true,
-    },
-  });
+  const user = userId
+    ? await client.db.user.findUnique({
+        where: {
+          id: userId,
+        },
+        select: {
+          id: true,
+          email: true,
+        },
+      })
+    : await client.db.user.findFirst({
+        where: {
+          email: {
+            equals: email,
+            mode: "insensitive",
+          },
+        },
+        select: {
+          id: true,
+          email: true,
+        },
+      });
 
   if (!user || normalizeCustomerEmail(user.email) !== email) {
     return null;

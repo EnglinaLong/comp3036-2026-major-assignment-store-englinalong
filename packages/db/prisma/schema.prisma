@@ -26,16 +26,7 @@ model Product {
   stockQuantity  Int         @default(0)
   supportingText String      @default("")
   updatedAt      DateTime    @default(now()) @updatedAt
-  likes          Like[]
   orderItems     OrderItem[]
-}
-
-model Like {
-  productId Int
-  userIP    String
-  product   Product @relation(fields: [productId], references: [id])
-
-  @@id([productId, userIP])
 }
 
 model User {

@@ -58,10 +58,6 @@ export function ListScreen({
     useState<VisibilityOption>("all");
   const [sortBy, setSortBy] = useState<SortOption | "">("date-desc");
   const [savingPostId, setSavingPostId] = useState<number | null>(null);
-  const [savingOrderId, setSavingOrderId] = useState<number | null>(null);
-  const [orderFeedback, setOrderFeedback] = useState<
-    Record<number, { type: "success" | "error"; message: string }>
-  >({});
 
   useEffect(() => {
     setPostStates(initialPosts);
@@ -109,65 +105,6 @@ export function ListScreen({
       );
     } finally {
       setSavingPostId(null);
-    }
-  };
-
-  const updateOrderStatus = async (orderId: number) => {
-    const order = orderStates.find((item) => item.id === orderId);
-
-    if (!order || savingOrderId === orderId) {
-      return;
-    }
-
-    setSavingOrderId(orderId);
-    setOrderFeedback((current) => {
-      const next = { ...current };
-      delete next[orderId];
-      return next;
-    });
-
-    try {
-      const response = await fetch(`/api/orders/${orderId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          status: order.status,
-        }),
-      });
-
-      const payload = (await response.json().catch(() => null)) as
-        | { id?: number; status?: OrderStatus; error?: string }
-        | null;
-
-      if (!response.ok || !payload?.id || !payload.status) {
-        setOrderFeedback((current) => ({
-          ...current,
-          [orderId]: {
-            type: "error",
-            message: payload?.error || "Unable to update order status.",
-          },
-        }));
-        return;
-      }
-
-      const nextStatus = payload.status;
-
-      setOrderStates((current) =>
-        current.map((item) =>
-          item.id === payload.id ? { ...item, status: nextStatus } : item,
-        ),
-      );
-      setOrderFeedback((current) => ({
-        ...current,
-        [orderId]: {
-          type: "success",
-          message: "Order status updated successfully.",
-        },
-      }));
-    } finally {
-      setSavingOrderId(null);
     }
   };
 
@@ -401,7 +338,7 @@ export function ListScreen({
           <div>
             <h2 className={styles.sectionTitle}>Customer Orders</h2>
             <p className={styles.sectionText}>
-              Review recent orders and update their fulfillment status.
+              Review recent purchase records and their current status.
             </p>
           </div>
         </div>
@@ -432,52 +369,6 @@ export function ListScreen({
                     <span className={styles.orderStatusBadge}>{order.status}</span>
                   </div>
                 </div>
-
-                <div className={styles.orderControls}>
-                  <label className={styles.filterField}>
-                    <span className={styles.filterLabel}>Update Status:</span>
-                    <select
-                      className={styles.filterSelect}
-                      value={order.status}
-                      onChange={(event) => {
-                        const nextStatus = event.target.value as OrderStatus;
-                        setOrderStates((current) =>
-                          current.map((item) =>
-                            item.id === order.id
-                              ? { ...item, status: nextStatus }
-                              : item,
-                          ),
-                        );
-                      }}
-                    >
-                      <option value="Paid">Paid</option>
-                      <option value="Processing">Processing</option>
-                      <option value="Shipped">Shipped</option>
-                      <option value="Cancelled">Cancelled</option>
-                    </select>
-                  </label>
-
-                  <button
-                    className={styles.linkButton}
-                    type="button"
-                    disabled={savingOrderId === order.id}
-                    onClick={() => updateOrderStatus(order.id)}
-                  >
-                    {savingOrderId === order.id ? "Saving..." : "Save Status"}
-                  </button>
-                </div>
-
-                {orderFeedback[order.id] ? (
-                  <p
-                    className={
-                      orderFeedback[order.id]?.type === "success"
-                        ? styles.successMessage
-                        : styles.errorMessage
-                    }
-                  >
-                    {orderFeedback[order.id]?.message}
-                  </p>
-                ) : null}
 
                 <div className={styles.orderItems}>
                   {order.items.length === 0 ? (

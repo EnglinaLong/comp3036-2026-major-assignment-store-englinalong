@@ -10,6 +10,9 @@ import {
   type PropsWithChildren,
 } from "react";
 import { getSession, signIn, signOut, useSession } from "next-auth/react";
+import { CART_STORAGE_KEY } from "./CartProvider";
+import { clearPaymentSuccessState } from "@/functions/customerOrders";
+import { clearCustomerWishlist } from "@/functions/customerWishlist";
 import {
   type CustomerProfile,
   normalizeCustomerCreatedAt,
@@ -118,6 +121,18 @@ async function waitForSessionCustomer() {
   }
 
   return null;
+}
+
+function clearCustomerClientState() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(CUSTOMER_ACCOUNT_STORAGE_KEY);
+  window.localStorage.removeItem(CUSTOMER_SESSION_STORAGE_KEY);
+  window.localStorage.removeItem(CART_STORAGE_KEY);
+  clearCustomerWishlist();
+  clearPaymentSuccessState();
 }
 
 export function CustomerAuthProvider({ children }: PropsWithChildren) {
@@ -250,6 +265,7 @@ export function CustomerAuthProvider({ children }: PropsWithChildren) {
         };
       }
 
+      clearPaymentSuccessState();
       setCustomer(nextCustomer);
       setStoredAccount(nextCustomer);
 
@@ -294,6 +310,7 @@ export function CustomerAuthProvider({ children }: PropsWithChildren) {
         };
       }
 
+      clearPaymentSuccessState();
       setCustomer(nextCustomer);
       setStoredAccount(nextCustomer);
 
@@ -306,10 +323,13 @@ export function CustomerAuthProvider({ children }: PropsWithChildren) {
   );
 
   const logout = useCallback(async () => {
+    clearCustomerClientState();
+    setCustomer(null);
+    setStoredAccount(null);
     await signOut({
       redirect: false,
     });
-    setCustomer(null);
+    clearCustomerClientState();
   }, []);
 
   const value = useMemo<CustomerAuthContextValue>(

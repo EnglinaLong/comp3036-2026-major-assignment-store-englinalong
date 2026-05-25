@@ -1,10 +1,12 @@
 "use client";
 
 import type { CustomerOrder, CustomerOrderItem, OrderStatus } from "@/lib/orders";
+import { normalizeCustomerEmail } from "@/lib/customerAuth";
 
 export const PAYMENT_SUCCESS_STORAGE_KEY = "storefront-payment-success";
 
 export type PaymentSuccessState = {
+  customerEmail: string;
   orderId: string;
   total: string;
   status: OrderStatus;
@@ -26,10 +28,23 @@ export function setPaymentSuccessState(state: PaymentSuccessState) {
     return;
   }
 
-  storage.setItem(PAYMENT_SUCCESS_STORAGE_KEY, JSON.stringify(state));
+  const customerEmail = normalizeCustomerEmail(state.customerEmail);
+
+  if (!customerEmail) {
+    storage.removeItem(PAYMENT_SUCCESS_STORAGE_KEY);
+    return;
+  }
+
+  storage.setItem(
+    PAYMENT_SUCCESS_STORAGE_KEY,
+    JSON.stringify({
+      ...state,
+      customerEmail,
+    }),
+  );
 }
 
-export function readPaymentSuccessState() {
+export function readPaymentSuccessState(customerEmail?: string | null) {
   const storage = getStorage();
 
   if (!storage) {
@@ -44,8 +59,13 @@ export function readPaymentSuccessState() {
 
   try {
     const parsedValue = JSON.parse(rawValue) as PaymentSuccessState;
+    const normalizedCustomerEmail = normalizeCustomerEmail(customerEmail ?? "");
+    const storedCustomerEmail = normalizeCustomerEmail(
+      parsedValue.customerEmail ?? "",
+    );
 
     if (
+      typeof parsedValue.customerEmail !== "string" ||
       typeof parsedValue.orderId !== "string" ||
       typeof parsedValue.total !== "string" ||
       typeof parsedValue.status !== "string" ||
@@ -55,7 +75,14 @@ export function readPaymentSuccessState() {
       return null;
     }
 
-    return parsedValue;
+    if (!normalizedCustomerEmail || storedCustomerEmail !== normalizedCustomerEmail) {
+      return null;
+    }
+
+    return {
+      ...parsedValue,
+      customerEmail: storedCustomerEmail,
+    };
   } catch {
     storage.removeItem(PAYMENT_SUCCESS_STORAGE_KEY);
     return null;

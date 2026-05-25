@@ -1,10 +1,7 @@
-import { headers } from "next/headers";
 import { TopMenu } from "@/components/Layout/TopMenu";
 import {
   getProductByUrlId,
   getProducts,
-  getRequestIp,
-  hasLikedProduct,
   incrementProductViews,
 } from "@/app/posts";
 import { ProductRouteClient } from "./ProductRouteClient";
@@ -16,14 +13,10 @@ export default async function Page({
 }) {
   const { urlId } = await params;
   const decodedUrlId = decodeURIComponent(urlId);
-  const requestHeaders = await headers();
   const existingProduct = await getProductByUrlId(decodedUrlId);
   const initialProduct = existingProduct?.active
     ? await incrementProductViews(decodedUrlId)
     : existingProduct;
-  const initialLiked = initialProduct
-    ? await hasLikedProduct(initialProduct.id, getRequestIp(requestHeaders))
-    : false;
   const initialProducts = await getProducts({
     active: true,
   });
@@ -38,7 +31,7 @@ export default async function Page({
         urlId={decodedUrlId}
         initialPost={initialProduct}
         initialProducts={initialProducts}
-        initialSaved={initialLiked}
+        initialSaved={false}
       />
     </div>
   );

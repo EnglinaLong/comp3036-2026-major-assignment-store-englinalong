@@ -20,7 +20,6 @@ type PostEditorProps = {
     | "urlId"
     | "date"
     | "views"
-    | "likes"
     | "active"
     | "price"
     | "stockQuantity"

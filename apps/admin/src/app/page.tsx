@@ -15,19 +15,11 @@ async function getAdminPosts(): Promise<Post[]> {
     orderBy: {
       id: "asc",
     },
-    include: {
-      _count: {
-        select: {
-          likes: true,
-        },
-      },
-    },
   });
 
   return dbPosts.map((post) => ({
     ...post,
     date: getSeededPostDate(post) ?? post.date,
-    likes: post._count.likes,
   }));
 }
 
