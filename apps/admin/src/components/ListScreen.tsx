@@ -2,16 +2,26 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { Post } from "@repo/db/data";
-import {
-  mergeLocalProducts,
-  readLocalProductState,
-  upsertCreatedProduct,
-  upsertProductOverride,
-} from "@repo/ui/local-product-state";
 import styles from "./admin-ui.module.css";
 
 type SortOption = "title-asc" | "title-desc" | "date-asc" | "date-desc";
 type VisibilityOption = "all" | "active" | "inactive";
+type OrderStatus = "Paid" | "Processing" | "Shipped" | "Cancelled";
+
+export type AdminOrderSummary = {
+  id: number;
+  customerEmail: string;
+  total: string;
+  status: OrderStatus;
+  createdAt: string;
+  items: Array<{
+    id: number;
+    title: string;
+    quantity: number;
+    price: string;
+    urlId: string;
+  }>;
+};
 
 function normalizeFilterValue(value: string) {
   return value.trim().toLowerCase();
@@ -32,8 +42,15 @@ function formatDateAsMmddyyyy(date: Date) {
   return `${month}${day}${year}`;
 }
 
-export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
+export function ListScreen({
+  initialPosts,
+  initialOrders,
+}: {
+  initialPosts: Post[];
+  initialOrders: AdminOrderSummary[];
+}) {
   const [postStates, setPostStates] = useState(initialPosts);
+  const [orderStates, setOrderStates] = useState(initialOrders);
   const [contentFilter, setContentFilter] = useState("");
   const [tagFilter, setTagFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
@@ -43,8 +60,12 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
   const [savingPostId, setSavingPostId] = useState<number | null>(null);
 
   useEffect(() => {
-    setPostStates(mergeLocalProducts(initialPosts));
+    setPostStates(initialPosts);
   }, [initialPosts]);
+
+  useEffect(() => {
+    setOrderStates(initialOrders);
+  }, [initialOrders]);
 
   const togglePostStatus = async (postId: number) => {
     const post = postStates.find((item) => item.id === postId);
@@ -67,24 +88,6 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
       });
 
       if (!response.ok) {
-        const { createdPosts } = readLocalProductState();
-
-        if (!createdPosts.some((item) => item.id === postId)) {
-          return;
-        }
-
-        const nextActive = !post.active;
-        const createdPost = createdPosts.find((item) => item.id === postId);
-
-        if (createdPost) {
-          upsertCreatedProduct({ ...createdPost, active: nextActive });
-        }
-
-        setPostStates((current) =>
-          current.map((item) =>
-            item.id === postId ? { ...item, active: nextActive } : item,
-          ),
-        );
         return;
       }
 
@@ -100,7 +103,6 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
             : item,
         ),
       );
-      upsertProductOverride(post.urlId, { active: updatedPost.active });
     } finally {
       setSavingPostId(null);
     }
@@ -135,13 +137,13 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
       }
 
       if (dateFilter) {
-        const searchTerm = dateFilter.trim();
+        const searchTerm = dateFilter.replace(/\D/g, "");
 
-        if (!/^\d{8}$/.test(searchTerm)) {
-          return false;
+        if (!searchTerm) {
+          return true;
         }
 
-        if (formatDateAsMmddyyyy(new Date(post.date)) !== searchTerm) {
+        if (!formatDateAsMmddyyyy(new Date(post.date)).startsWith(searchTerm)) {
           return false;
         }
       }
@@ -176,6 +178,21 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
 
     return filtered;
   }, [contentFilter, tagFilter, dateFilter, postStates, visibilityFilter, sortBy]);
+
+  const sortedOrders = useMemo(
+    () =>
+      [...orderStates].sort((a, b) => {
+        const dateDifference =
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+
+        if (dateDifference !== 0) {
+          return dateDifference;
+        }
+
+        return b.id - a.id;
+      }),
+    [orderStates],
+  );
 
   return (
     <div>
@@ -272,7 +289,7 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
 
       <div className={styles.list}>
         {filteredAndSortedPosts.map((post) => (
-          <article className={styles.postCard} key={post.id}>
+          <article className={styles.postCard} key={`admin-product-${post.urlId}`}>
             <img
               className={styles.postImage}
               src={post.imageUrl}
@@ -291,16 +308,17 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
                 <span>
                   #{post.tags.split(",").map((tag) => tag.trim()).join(", #")}
                 </span>
-                <span>
-                  Added on{" "}
-                  {post.date.toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </span>
-                <span>{post.category}</span>
-              </div>
+        <span>
+          Added on{" "}
+          {post.date.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          })}
+        </span>
+        <span>{post.category}</span>
+        <span>Stock: {post.stockQuantity}</span>
+      </div>
               <button
                 className={`${styles.statusButton} ${
                   post.active ? styles.statusActive : styles.statusInactive
@@ -314,6 +332,69 @@ export function ListScreen({ initialPosts }: { initialPosts: Post[] }) {
           </article>
         ))}
       </div>
+
+      <section className={styles.orderSection}>
+        <div className={styles.sectionHeader}>
+          <div>
+            <h2 className={styles.sectionTitle}>Customer Orders</h2>
+            <p className={styles.sectionText}>
+              Review recent purchase records and their current status.
+            </p>
+          </div>
+        </div>
+
+        <div className={styles.list}>
+          {sortedOrders.length === 0 ? (
+            <div className={styles.emptyState}>
+              No orders have been placed yet.
+            </div>
+          ) : (
+            sortedOrders.map((order) => (
+              <article className={styles.orderCard} key={`admin-order-${order.id}`}>
+                <div className={styles.orderHeader}>
+                  <div className={styles.orderMeta}>
+                    <h3 className={styles.orderTitle}>Order #{order.id}</h3>
+                    <p className={styles.metaText}>{order.customerEmail}</p>
+                    <p className={styles.metaText}>
+                      {new Date(order.createdAt).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </p>
+                  </div>
+
+                  <div className={styles.orderSummary}>
+                    <span className={styles.orderTotal}>{order.total}</span>
+                    <span className={styles.orderStatusBadge}>{order.status}</span>
+                  </div>
+                </div>
+
+                <div className={styles.orderItems}>
+                  {order.items.length === 0 ? (
+                    <p className={styles.metaText}>No order items available.</p>
+                  ) : (
+                    order.items.map((item) => (
+                      <div
+                        className={styles.orderItem}
+                        key={`admin-order-${order.id}-item-${item.id}`}
+                      >
+                        <div>
+                          <p className={styles.orderItemTitle}>{item.title}</p>
+                          <p className={styles.metaText}>
+                            /product/{item.urlId} · Qty {item.quantity}
+                          </p>
+                        </div>
+                        <span className={styles.orderItemPrice}>{item.price}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </article>
+            ))
+          )}
+        </div>
+      </section>
     </div>
   );
 }

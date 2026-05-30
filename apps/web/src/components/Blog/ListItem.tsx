@@ -71,7 +71,6 @@ export function BlogListItem({ post }: { post: Post }) {
 
       <div className="flex items-center justify-between pt-2 text-sm text-gray-500">
         <span>{post.views} views</span>
-        <span>{post.likes} likes</span>
       </div>
     </article>
   );

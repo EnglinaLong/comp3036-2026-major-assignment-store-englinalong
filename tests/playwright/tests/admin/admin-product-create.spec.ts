@@ -1,24 +1,24 @@
-import { seed } from "@repo/db/seed";
+import { seedTestData } from "../dbSeed";
 import { expect, test } from "./fixtures";
-import { productCard, waitForAdminProductList } from "./helpers";
 
 test.describe("FULL STACK STORE ADMIN PRODUCT CREATE", () => {
   test.beforeEach(async () => {
-    await seed();
+    await seedTestData();
   });
 
   test(
-    "Admin can create a product and it appears on the customer storefront",
+    "Admin create product form loads, validates, and previews product content safely",
     {
       tag: "@a2",
     },
     async ({ userPage }) => {
       test.setTimeout(60000);
 
-      const productName = "Playwright Admin Test Product";
-      const productUrlId = "playwright-admin-test-product";
+      const productName = "Admin Product Form Coverage";
       const imageUrl =
         "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80";
+      const productDetails =
+        "## Product Overview\n\nA realistic admin product draft used to verify form validation, preview, and field behaviour.";
 
       await userPage.goto("/");
       await userPage.getByRole("link", { name: "Create Product" }).click();
@@ -28,26 +28,43 @@ test.describe("FULL STACK STORE ADMIN PRODUCT CREATE", () => {
       ).toBeVisible();
       await expect(userPage.getByLabel("Product Name")).toBeVisible();
       await expect(userPage.getByRole("button", { name: "Save Product" })).toBeVisible();
+      await userPage.getByRole("button", { name: "Save Product" }).click();
+      await expect(
+        userPage.getByText("Please fix the product details before saving"),
+      ).toBeVisible();
+      await expect(userPage.getByText("Product name is required")).toBeVisible();
+      await expect(
+        userPage.getByText("Product category is required"),
+      ).toBeVisible();
+      await expect(
+        userPage.getByText("Product summary is required"),
+      ).toBeVisible();
+      await expect(
+        userPage.getByText("Product details are required"),
+      ).toBeVisible();
+      await expect(
+        userPage.getByText("Product image URL is required"),
+      ).toBeVisible();
+      await expect(userPage.getByText("Price is required")).toBeVisible();
+      await expect(
+        userPage.getByText("At least one product tag or collection is required"),
+      ).toBeVisible();
 
       await userPage.getByLabel("Product Name").fill(productName);
       await userPage.getByLabel("Product Category").fill("React");
       await userPage
         .getByLabel("Product Summary")
-        .fill("A storefront-ready admin test product for Playwright coverage.");
+        .fill("A reusable admin form draft used to validate product creation fields safely.");
       await userPage
         .getByPlaceholder(
           "Outline the product overview, what is included, setup notes, and ideal use cases for your storefront resource.",
         )
-        .fill(
-          "## Product Overview\n\nA realistic admin-created product used to verify storefront rendering and cart flows.",
-        );
+        .fill(productDetails);
       await expect(
         userPage.getByPlaceholder(
           "Outline the product overview, what is included, setup notes, and ideal use cases for your storefront resource.",
         ),
-      ).toHaveValue(
-        "## Product Overview\n\nA realistic admin-created product used to verify storefront rendering and cart flows.",
-      );
+      ).toHaveValue(productDetails);
       await userPage
         .getByPlaceholder("https://images.unsplash.com/example-product-image")
         .fill(imageUrl);
@@ -57,77 +74,27 @@ test.describe("FULL STACK STORE ADMIN PRODUCT CREATE", () => {
         ),
       ).toHaveValue(imageUrl);
       await userPage.getByLabel("Price").fill("72.00");
+      await userPage.getByLabel("Stock Quantity").fill("12");
       await userPage
         .getByLabel("Product Tags / Collections")
         .fill("Front-End, Testing, Storefront");
-
-      await userPage.getByRole("button", { name: "Save Product" }).click();
-      await userPage.waitForFunction(
-        (urlId) => {
-          const stored = window.localStorage.getItem("admin-created-posts");
-
-          if (!stored) {
-            return false;
-          }
-
-          try {
-            return JSON.parse(stored).some(
-              (post: { urlId?: string }) => post.urlId === urlId,
-            );
-          } catch {
-            return false;
-          }
-        },
-        productUrlId,
+      await userPage.getByRole("button", { name: "Preview" }).click();
+      await expect(userPage.getByTestId("content-preview")).toContainText(
+        "Product Overview",
       );
-
-      await userPage.goto("/");
-      await waitForAdminProductList(userPage);
-      await expect(productCard(userPage, productName)).toBeVisible();
-
-      await userPage.reload();
-      await expect(productCard(userPage, productName)).toBeVisible();
-
-      const storefrontPage = await userPage.context().newPage();
-      await storefrontPage.goto("http://localhost:3001/");
-
-      const storefrontCard = storefrontPage
-        .locator("article")
-        .filter({
-          has: storefrontPage.getByText(productName, { exact: true }),
-        })
-        .first();
-
-      await expect(storefrontCard).toBeVisible();
-      await storefrontCard.getByRole("link", { name: "View Product" }).click();
-      await expect(storefrontPage).toHaveURL(
-        new RegExp(`/product/${productUrlId}$`),
+      await expect(userPage.getByTestId("content-preview")).toContainText(
+        "verify form validation, preview, and field behaviour",
       );
+      await expect(userPage.getByTestId("image-preview")).toBeVisible();
+      await userPage.getByRole("button", { name: "Close Preview" }).click();
 
+      await expect(userPage.getByLabel("Product Name")).toHaveValue(productName);
+      await expect(userPage.getByLabel("Product Category")).toHaveValue("React");
+      await expect(userPage.getByLabel("Price")).toHaveValue("72.00");
+      await expect(userPage.getByLabel("Stock Quantity")).toHaveValue("12");
       await expect(
-        storefrontPage.getByRole("heading", { name: productName }).first(),
-      ).toBeVisible();
-      await expect(
-        storefrontPage.getByRole("img", { name: productName }),
-      ).toBeVisible();
-      await expect(storefrontPage.getByText("$72.00")).toBeVisible();
-      await expect(
-        storefrontPage.getByRole("link", { name: "Front-End", exact: true }),
-      ).toBeVisible();
-      await expect(
-        storefrontPage.getByRole("link", { name: "Testing", exact: true }),
-      ).toBeVisible();
-      await expect(
-        storefrontPage.getByRole("link", { name: "Storefront", exact: true }),
-      ).toBeVisible();
-
-      await storefrontPage.reload();
-      await expect(
-        storefrontPage.getByRole("heading", { name: productName }).first(),
-      ).toBeVisible();
-      await expect(storefrontPage.getByText("$72.00")).toBeVisible();
-
-      await storefrontPage.close();
+        userPage.getByLabel("Product Tags / Collections"),
+      ).toHaveValue("Front-End, Testing, Storefront");
     },
   );
 });

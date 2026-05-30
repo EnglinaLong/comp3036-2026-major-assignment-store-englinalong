@@ -7,7 +7,23 @@ export const env = createEnv({
    * isn't built with invalid env vars.
    */
   server: {
-    DATABASE_URL: z.string().url(),
+    DATABASE_URL: z
+      .string()
+      .min(1)
+      .refine(
+        (value) =>
+          value.startsWith("file:") ||
+          value.startsWith("prisma://") ||
+          value.startsWith("postgresql://") ||
+          value.startsWith("postgres://") ||
+          value.startsWith("mysql://") ||
+          value.startsWith("sqlserver://") ||
+          value.startsWith("mongodb://") ||
+          value.startsWith("mongodb+srv://"),
+        {
+          message: "DATABASE_URL must be a valid Prisma datasource URL",
+        },
+      ),
   },
 
   /**

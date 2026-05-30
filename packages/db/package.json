@@ -8,6 +8,8 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
     "db:push": "prisma db push",
+    "db:seed": "tsc -p tsconfig.json && node ./dist/seed.js",
+    "db:seed:test": "tsc -p tsconfig.json && node -e \"import('./dist/seed.js').then(({ seedForTests }) => seedForTests())\"",
     "lint": "eslint . --max-warnings 0",
     "prebuild": "pnpm db:generate",
     "predev": "pnpm db:generate",

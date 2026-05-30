@@ -75,6 +75,17 @@ export function setProductWishlisted(urlId: string, wished: boolean) {
   notifyWishlistChanged();
 }
 
+export function clearCustomerWishlist() {
+  const storage = getStorage();
+
+  if (!storage) {
+    return;
+  }
+
+  storage.removeItem(CUSTOMER_WISHLIST_STORAGE_KEY);
+  notifyWishlistChanged();
+}
+
 export function subscribeToCustomerWishlist(callback: () => void) {
   if (typeof window === "undefined") {
     return () => {};

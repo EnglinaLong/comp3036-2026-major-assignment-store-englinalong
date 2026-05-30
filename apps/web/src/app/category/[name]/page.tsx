@@ -1,6 +1,6 @@
 import { Main } from "@/components/Main";
 import { categorySlug } from "@/functions/categories";
-import { getPosts } from "@/app/posts";
+import { getProducts } from "@/app/posts";
 
 export default async function Page({
   params,
@@ -9,9 +9,9 @@ export default async function Page({
 }) {
   const { name } = await params;
   const decodedName = decodeURIComponent(name).trim().toLowerCase();
-  const filteredPosts = (await getPosts({
+  const filteredProducts = (await getProducts({
     active: true,
-  })).filter((post) => categorySlug(post.category) === decodedName);
+  })).filter((product) => categorySlug(product.category) === decodedName);
 
-  return <Main posts={filteredPosts} />;
+  return <Main posts={filteredProducts} />;
 }

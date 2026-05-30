@@ -9,8 +9,8 @@ import { useCustomerAuth } from "./CustomerAuthProvider";
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { account, customer, hasHydrated, login } = useCustomerAuth();
-  const [email, setEmail] = useState(account?.email ?? "");
+  const { customer, hasHydrated, login } = useCustomerAuth();
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -18,15 +18,30 @@ export function LoginForm() {
   const intent = searchParams.get("intent");
   const needsCheckout = intent === "checkout";
 
+  function navigateTo(target: string) {
+    router.refresh();
+    router.replace(target);
+  }
+
   useEffect(() => {
-    if (!account?.email) {
+    if (!hasHydrated || customer) {
       return;
     }
 
-    setEmail(account.email);
-  }, [account?.email]);
+    setEmail("");
+    setPassword("");
+    setError(null);
+  }, [customer, hasHydrated]);
 
-  if (hasHydrated && customer) {
+  if (!hasHydrated) {
+    return (
+      <div className="rounded-[24px] border border-black/10 bg-neutral-50 p-5 text-sm text-neutral-600 dark:border-white/10 dark:bg-neutral-900 dark:text-neutral-300">
+        Loading account tools...
+      </div>
+    );
+  }
+
+  if (customer) {
     return (
       <div className="rounded-[24px] border border-[color:var(--color-wsu)]/15 bg-[color:var(--color-wsu)]/5 p-5">
         <p className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">
@@ -57,10 +72,11 @@ export function LoginForm() {
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_16.5rem] lg:items-stretch">
       <form
         className="space-y-5"
-        onSubmit={(event) => {
+        autoComplete="off"
+        onSubmit={async (event) => {
           event.preventDefault();
 
-          const result = login({
+          const result = await login({
             email,
             password,
           });
@@ -71,7 +87,7 @@ export function LoginForm() {
           }
 
           setError(null);
-          router.push(needsCheckout ? returnTo : "/account");
+          navigateTo(needsCheckout ? returnTo : "/account");
         }}
       >
         {needsCheckout ? (
@@ -91,7 +107,7 @@ export function LoginForm() {
             id="login-email"
             name="email"
             type="email"
-            autoComplete="email"
+            autoComplete="off"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             className="w-full rounded-[20px] border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-[color:var(--color-wsu)] focus:bg-white dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:bg-neutral-950"
@@ -109,7 +125,7 @@ export function LoginForm() {
             id="login-password"
             name="password"
             type="password"
-            autoComplete="current-password"
+            autoComplete="new-password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             className="w-full rounded-[20px] border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-[color:var(--color-wsu)] focus:bg-white dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:bg-neutral-950"

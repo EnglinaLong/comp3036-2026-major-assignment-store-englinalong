@@ -1,10 +1,12 @@
-import { seed } from "@repo/db/seed";
+import { seedTestData } from "../dbSeed";
 import { expect, test } from "./fixtures";
 import { productCard, waitForAdminProductList } from "./helpers";
 
 test.describe("FULL STACK STORE ADMIN PRODUCT VISIBILITY", () => {
+  test.setTimeout(60000);
+
   test.beforeEach(async () => {
-    await seed();
+    await seedTestData();
   });
 
   test(

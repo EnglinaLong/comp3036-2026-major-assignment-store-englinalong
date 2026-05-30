@@ -1,16 +1,18 @@
 import { AccountShell } from "@/components/Store/AccountShell";
 import { WishlistClient } from "@/components/Store/WishlistClient";
-import { getPosts } from "@/app/posts";
+import { getProducts } from "@/app/posts";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function WishlistPage() {
-  const initialPosts = await getPosts();
+  const initialProducts = await getProducts({
+    active: true,
+  });
 
   return (
     <AccountShell title="Wishlist">
-      <WishlistClient initialPosts={initialPosts} />
+      <WishlistClient initialPosts={initialProducts} />
     </AccountShell>
   );
 }

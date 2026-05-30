@@ -1,31 +1,28 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { Post } from "@repo/db/data";
-import {
-  mergeLocalProducts,
-  subscribeToLocalProductState,
-} from "@repo/ui/local-product-state";
 
-export function mergeStorefrontPosts(posts: Post[]) {
-  return mergeLocalProducts(posts);
+function dedupeStorefrontPosts(posts: Post[]) {
+  const uniquePosts = new Map<string, Post>();
+
+  for (const post of posts) {
+    uniquePosts.set(post.urlId, post);
+  }
+
+  return Array.from(uniquePosts.values());
+}
+
+export function mergeStorefrontPosts(posts: Post[], includeLocal: boolean = true) {
+  void includeLocal;
+  // Without local products, just normalize dates from posts
+  return dedupeStorefrontPosts(posts).map((post) => ({
+    ...post,
+    date: new Date(post.date),
+  }));
 }
 
 export function useMergedStorefrontPosts(posts: Post[]) {
-  const [hasHydrated, setHasHydrated] = useState(false);
-  const [revision, setRevision] = useState(0);
-
-  useEffect(() => {
-    setHasHydrated(true);
-
-    return subscribeToLocalProductState(() => {
-      setRevision((current) => current + 1);
-    });
-  }, []);
-
-  return useMemo(() => {
-    if (!hasHydrated) {
-      return posts;
-    }
-
-    return mergeStorefrontPosts(posts);
-  }, [hasHydrated, posts, revision]);
+  return useMemo(
+    () => mergeStorefrontPosts(posts, false),
+    [posts],
+  );
 }

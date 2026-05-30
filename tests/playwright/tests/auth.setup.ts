@@ -1,6 +1,9 @@
 import { test as setup } from "@playwright/test";
 import fs from "fs";
 
+const playwrightCompatibilityToken = "123";
+const adminPassword = process.env.PASSWORD ?? "123";
+
 ////////////////////////////////////////
 // Admin authentication state for store UI tests
 ////////////////////////////////////////
@@ -14,7 +17,7 @@ setup(
       cookies: [
         {
           name: "auth_token",
-          value: "123",
+          value: playwrightCompatibilityToken,
           domain: "localhost",
           secure: false,
           expires: -1,
@@ -41,7 +44,7 @@ setup(
     const apiContext = await playwright.request.newContext();
 
     await apiContext.post("/api/auth/login", {
-      data: JSON.stringify({ password: "123" }),
+      data: JSON.stringify({ password: adminPassword }),
       headers: {
         "Content-Type": "application/json",
       },

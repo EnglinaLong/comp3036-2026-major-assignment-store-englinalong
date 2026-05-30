@@ -12,6 +12,7 @@ export default function CartDrawer() {
     subtotal,
     availableCartCount,
     hasUnavailableItems,
+    hasStockIssues,
     isCartOpen,
     closeCart,
     removeFromCart,
@@ -21,6 +22,7 @@ export default function CartDrawer() {
   const { customer } = useCustomerAuth();
   const router = useRouter();
   const hasAvailableItems = availableCartCount > 0;
+  const canCheckout = hasAvailableItems && !hasStockIssues;
 
   useEffect(() => {
     if (!isCartOpen) return;
@@ -39,7 +41,7 @@ export default function CartDrawer() {
   }, [closeCart, isCartOpen]);
 
   function handleCheckout() {
-    if (!hasAvailableItems) {
+    if (!canCheckout) {
       return;
     }
 
@@ -72,13 +74,13 @@ export default function CartDrawer() {
         type="button"
         aria-label="Close cart"
         onClick={closeCart}
-        className={`absolute inset-0 bg-black/40 transition ${
+        className={`absolute inset-0 bg-black/40 transition-opacity duration-150 ${
           isCartOpen ? "opacity-100" : "opacity-0"
         }`}
       />
 
       <aside
-        className={`absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-black/10 bg-white shadow-[-18px_0_60px_rgba(15,23,42,0.16)] transition duration-300 dark:border-white/10 dark:bg-neutral-950 dark:shadow-[-18px_0_60px_rgba(0,0,0,0.45)] ${
+        className={`absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-black/10 bg-white shadow-[-18px_0_60px_rgba(15,23,42,0.16)] transition-none dark:border-white/10 dark:bg-neutral-950 dark:shadow-[-18px_0_60px_rgba(0,0,0,0.45)] ${
           isCartOpen ? "translate-x-0" : "translate-x-full"
         }`}
         role="dialog"
@@ -128,7 +130,7 @@ export default function CartDrawer() {
             <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5 sm:px-6">
               {cartItems.map((item) => (
                 <article
-                  key={item.id}
+                  key={`cart-item-${item.urlId}`}
                   className="rounded-[24px] border border-black/10 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-neutral-900"
                 >
                   <div className="flex items-start justify-between gap-4">
@@ -145,7 +147,13 @@ export default function CartDrawer() {
                       </p>
                       {!item.isAvailable ? (
                         <p className="text-sm text-amber-600 dark:text-amber-300">
-                          This product is no longer available.
+                          {item.stockQuantity <= 0
+                            ? "This product is out of stock."
+                            : "This product is no longer available."}
+                        </p>
+                      ) : item.hasInsufficientStock ? (
+                        <p className="text-sm text-amber-600 dark:text-amber-300">
+                          Only {item.stockQuantity} left in stock.
                         </p>
                       ) : null}
                     </div>
@@ -156,13 +164,13 @@ export default function CartDrawer() {
                   </div>
 
                   <div className="mt-4 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 p-1 dark:border-neutral-700 dark:bg-neutral-950">
+                    <div className="grid grid-cols-[2.5rem_2rem_2.5rem] items-center rounded-full border border-neutral-200 bg-neutral-50 p-1 dark:border-neutral-700 dark:bg-neutral-950">
                       <button
                         type="button"
                         aria-label={`Decrease quantity of ${item.title}`}
                         onClick={() => decreaseQuantity(item.id)}
                         disabled={!item.isAvailable}
-                        className="rounded-full px-3 py-1 text-sm font-semibold text-neutral-700 transition hover:bg-white hover:text-neutral-950 disabled:cursor-not-allowed disabled:opacity-50 dark:text-neutral-200 dark:hover:bg-neutral-900 dark:hover:text-neutral-50"
+                        className="h-9 w-10 rounded-full text-sm font-semibold text-neutral-700 transition-none hover:bg-white hover:text-neutral-950 disabled:cursor-not-allowed disabled:opacity-50 dark:text-neutral-200 dark:hover:bg-neutral-900 dark:hover:text-neutral-50"
                       >
                         -
                       </button>
@@ -173,8 +181,8 @@ export default function CartDrawer() {
                         type="button"
                         aria-label={`Increase quantity of ${item.title}`}
                         onClick={() => increaseQuantity(item.id)}
-                        disabled={!item.isAvailable}
-                        className="rounded-full px-3 py-1 text-sm font-semibold text-neutral-700 transition hover:bg-white hover:text-neutral-950 disabled:cursor-not-allowed disabled:opacity-50 dark:text-neutral-200 dark:hover:bg-neutral-900 dark:hover:text-neutral-50"
+                        disabled={!item.canIncreaseQuantity}
+                        className="h-9 w-10 rounded-full text-sm font-semibold text-neutral-700 transition-none hover:bg-white hover:text-neutral-950 disabled:cursor-not-allowed disabled:opacity-50 dark:text-neutral-200 dark:hover:bg-neutral-900 dark:hover:text-neutral-50"
                       >
                         +
                       </button>
@@ -195,13 +203,18 @@ export default function CartDrawer() {
             <div className="border-t border-neutral-200 bg-neutral-50 px-5 py-5 dark:border-neutral-800 dark:bg-neutral-900 sm:px-6">
               <div className="flex items-center justify-between text-sm text-neutral-600 dark:text-neutral-300">
                 <span>Subtotal</span>
-                <span className="text-xl font-semibold text-neutral-950 dark:text-neutral-50">
-                  {subtotal}
+                <span
+                  aria-label={`Subtotal ${subtotal}`}
+                  className="text-xl font-semibold text-neutral-950 dark:text-neutral-50"
+                >
+                  Total: {subtotal}
                 </span>
               </div>
               <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
                 {!hasAvailableItems
                   ? "No available products to checkout."
+                  : hasStockIssues
+                    ? "Reduce quantities to match available stock before checkout."
                   : customer
                     ? "Secure checkout and instant access after purchase."
                     : "Please sign in to continue to checkout."}
@@ -215,7 +228,7 @@ export default function CartDrawer() {
                 <button
                   type="button"
                   onClick={handleCheckout}
-                  disabled={!hasAvailableItems}
+                  disabled={!canCheckout}
                   className="inline-flex items-center justify-center rounded-full bg-[color:var(--color-wsu)] px-5 py-3 font-medium text-white transition hover:bg-[color:var(--color-wsu-light)] disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   Proceed to Checkout

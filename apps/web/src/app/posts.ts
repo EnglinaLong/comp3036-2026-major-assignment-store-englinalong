@@ -3,56 +3,67 @@ import { client } from "@repo/db/client";
 import type { Prisma } from "@prisma/client";
 import { slugifyTitle } from "@/functions/productHref";
 
-function mapPost(
-  post: Prisma.PostGetPayload<{
-    include: {
-      _count: {
-        select: {
-          Likes: true;
-        };
-      };
-    };
-  }>,
+function mapProduct(
+  product: Prisma.ProductGetPayload<Prisma.ProductDefaultArgs>,
 ): Post {
-  const seededDate = getSeededPostDate(post);
+  const seededDate = getSeededPostDate(product);
 
   return {
-    ...post,
-    date: seededDate ?? post.date,
-    likes: post._count.Likes,
+    ...product,
+    date: seededDate ?? product.date,
   };
 }
 
-export function getRequestIp(requestHeaders: Headers) {
-  const forwardedFor = requestHeaders.get("x-forwarded-for");
-
-  if (forwardedFor) {
-    return forwardedFor.split(",")[0]?.trim() || "127.0.0.1";
-  }
-
-  return requestHeaders.get("x-real-ip")?.trim() || "127.0.0.1";
-}
-
-export async function getPosts(where?: Prisma.PostWhereInput) {
-  const posts = await client.db.post.findMany({
+export async function getProducts(where?: Prisma.ProductWhereInput) {
+  const products = await client.db.product.findMany({
     where,
     orderBy: {
       id: "asc",
     },
-    include: {
-      _count: {
-        select: {
-          Likes: true,
-        },
-      },
+  });
+
+  return products.map(mapProduct);
+}
+
+export async function getPosts(where?: Prisma.ProductWhereInput) {
+  return getProducts(where);
+}
+
+export async function getProductByUrlId(
+  urlId: string,
+  where?: Prisma.ProductWhereInput,
+) {
+  const directMatch = await client.db.product.findFirst({
+    where: {
+      ...where,
+      urlId,
     },
   });
 
-  return posts.map(mapPost);
+  if (directMatch) {
+    return mapProduct(directMatch);
+  }
+
+  const candidateProducts = await client.db.product.findMany({
+    where,
+  });
+
+  const slugMatch = candidateProducts.find(
+    (product) => slugifyTitle(product.title) === urlId,
+  );
+
+  return slugMatch ? mapProduct(slugMatch) : null;
 }
 
-export async function incrementPostViews(urlId: string) {
-  const existingPost = await client.db.post.findFirst({
+export async function getPostByUrlId(
+  urlId: string,
+  where?: Prisma.ProductWhereInput,
+) {
+  return getProductByUrlId(urlId, where);
+}
+
+export async function incrementProductViews(urlId: string) {
+  const existingProduct = await client.db.product.findFirst({
     where: {
       active: true,
       urlId,
@@ -62,10 +73,10 @@ export async function incrementPostViews(urlId: string) {
     },
   });
 
-  let targetPostId = existingPost?.id ?? null;
+  let targetProductId = existingProduct?.id ?? null;
 
-  if (!targetPostId) {
-    const activePosts = await client.db.post.findMany({
+  if (!targetProductId) {
+    const activeProducts = await client.db.product.findMany({
       where: {
         active: true,
       },
@@ -76,103 +87,31 @@ export async function incrementPostViews(urlId: string) {
       },
     });
 
-    const fallbackPost = activePosts.find(
-      (post) => post.urlId === urlId || slugifyTitle(post.title) === urlId,
+    const fallbackProduct = activeProducts.find(
+      (product) =>
+        product.urlId === urlId || slugifyTitle(product.title) === urlId,
     );
 
-    if (!fallbackPost) {
+    if (!fallbackProduct) {
       return null;
     }
-    targetPostId = fallbackPost.id;
+    targetProductId = fallbackProduct.id;
   }
 
-  const updatedPost = await client.db.post.update({
+  const updatedProduct = await client.db.product.update({
     where: {
-      id: targetPostId,
+      id: targetProductId,
     },
     data: {
       views: {
         increment: 1,
       },
     },
-    include: {
-      _count: {
-        select: {
-          Likes: true,
-        },
-      },
-    },
   });
 
-  return mapPost(updatedPost);
+  return mapProduct(updatedProduct);
 }
 
-export async function hasLikedPost(postId: number, userIP: string) {
-  const like = await client.db.like.findUnique({
-    where: {
-      postId_userIP: {
-        postId,
-        userIP,
-      },
-    },
-  });
-
-  return like !== null;
-}
-
-export async function setPostLike(postId: number, userIP: string, liked: boolean) {
-  await client.db.$transaction(async (tx) => {
-    const post = await tx.post.findUnique({
-      where: {
-        id: postId,
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    if (!post) {
-      throw new Error("POST_NOT_FOUND");
-    }
-
-    const existingLike = await tx.like.findUnique({
-      where: {
-        postId_userIP: {
-          postId,
-          userIP,
-        },
-      },
-    });
-
-    if (liked && !existingLike) {
-      await tx.like.create({
-        data: {
-          postId,
-          userIP,
-        },
-      });
-    }
-
-    if (!liked && existingLike) {
-      await tx.like.delete({
-        where: {
-          postId_userIP: {
-            postId,
-            userIP,
-          },
-        },
-      });
-    }
-  });
-
-  const likes = await client.db.like.count({
-    where: {
-      postId,
-    },
-  });
-
-  return {
-    liked,
-    likes,
-  };
+export async function incrementPostViews(urlId: string) {
+  return incrementProductViews(urlId);
 }

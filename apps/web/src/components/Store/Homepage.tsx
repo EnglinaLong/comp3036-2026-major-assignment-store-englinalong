@@ -179,7 +179,7 @@ export function StoreHomepage({
                 <div className="mt-4 grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
                   {spotlightItems.map((item) => (
                     <Link
-                      key={item.id}
+                      key={`spotlight-product-${item.urlId}`}
                       href={getProductHref(item)}
                       className="rounded-[20px] border border-black/5 bg-white/90 p-4 transition hover:-translate-y-1 hover:shadow-md dark:border-white/10 dark:bg-neutral-950/90"
                     >
@@ -375,9 +375,9 @@ export function StoreHomepage({
               </p>
             </div>
           ) : (
-            <div className="grid gap-6 md:grid-cols-2 2xl:grid-cols-3">
+              <div className="grid gap-6 md:grid-cols-2 2xl:grid-cols-3">
               {featuredProducts.map((post) => (
-                <ProductCard key={post.id} post={post} />
+                <ProductCard key={`featured-product-${post.urlId}`} post={post} />
               ))}
             </div>
           )}

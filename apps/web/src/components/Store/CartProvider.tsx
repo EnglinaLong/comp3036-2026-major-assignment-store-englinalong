@@ -26,9 +26,12 @@ export type CartItem = {
 
 export type ResolvedCartItem = CartItem & {
   isAvailable: boolean;
+  stockQuantity: number;
+  hasInsufficientStock: boolean;
+  canIncreaseQuantity: boolean;
 };
 
-const CART_STORAGE_KEY = "storefront-cart-items";
+export const CART_STORAGE_KEY = "storefront-cart-items";
 
 type CartContextValue = {
   cartItems: ResolvedCartItem[];
@@ -37,6 +40,7 @@ type CartContextValue = {
   availableCartCount: number;
   subtotal: string;
   hasUnavailableItems: boolean;
+  hasStockIssues: boolean;
   isCartOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
@@ -79,8 +83,16 @@ function resolveCartItem(item: CartItem, products: Post[]): ResolvedCartItem {
     return {
       ...item,
       isAvailable: false,
+      stockQuantity: 0,
+      hasInsufficientStock: false,
+      canIncreaseQuantity: false,
     };
   }
+
+  const stockQuantity = latestProduct.stockQuantity;
+  const isAvailable = latestProduct.active && stockQuantity > 0;
+  const hasInsufficientStock =
+    latestProduct.active && stockQuantity > 0 && item.quantity > stockQuantity;
 
   return {
     ...item,
@@ -89,7 +101,10 @@ function resolveCartItem(item: CartItem, products: Post[]): ResolvedCartItem {
     category: latestProduct.category,
     price: getProductPrice(latestProduct),
     href: getProductHref(latestProduct),
-    isAvailable: latestProduct.active,
+    isAvailable,
+    stockQuantity,
+    hasInsufficientStock,
+    canIncreaseQuantity: latestProduct.active && item.quantity < stockQuantity,
   };
 }
 
@@ -143,9 +158,17 @@ export function CartProvider({
 
   const addToCart = useCallback((post: Post) => {
     setCartItems((current) => {
+      if (!post.active || post.stockQuantity <= 0) {
+        return current;
+      }
+
       const existingItem = current.find((item) => item.id === post.id);
 
       if (existingItem) {
+        if (existingItem.quantity >= post.stockQuantity) {
+          return current;
+        }
+
         return current.map((item) =>
           item.id === post.id
             ? { ...item, quantity: item.quantity + 1 }
@@ -173,18 +196,34 @@ export function CartProvider({
           mergedProducts.find((product) => product.id === item.id) ??
           mergedProducts.find((product) => product.urlId === item.urlId);
 
-        return !latestProduct || !latestProduct.active;
+        return !latestProduct || !latestProduct.active || latestProduct.stockQuantity <= 0;
       }),
     );
   }, [mergedProducts]);
 
   const increaseQuantity = useCallback((postId: number) => {
     setCartItems((current) =>
-      current.map((item) =>
-        item.id === postId ? { ...item, quantity: item.quantity + 1 } : item,
-      ),
+      current.map((item) => {
+        if (item.id !== postId) {
+          return item;
+        }
+
+        const latestProduct =
+          mergedProducts.find((product) => product.id === item.id) ??
+          mergedProducts.find((product) => product.urlId === item.urlId);
+
+        if (
+          !latestProduct ||
+          !latestProduct.active ||
+          latestProduct.stockQuantity <= item.quantity
+        ) {
+          return item;
+        }
+
+        return { ...item, quantity: item.quantity + 1 };
+      }),
     );
-  }, []);
+  }, [mergedProducts]);
 
   const decreaseQuantity = useCallback((postId: number) => {
     setCartItems((current) =>
@@ -251,6 +290,11 @@ export function CartProvider({
     [resolvedCartItems],
   );
 
+  const hasStockIssues = useMemo(
+    () => resolvedCartItems.some((item) => item.hasInsufficientStock),
+    [resolvedCartItems],
+  );
+
   const subtotal = useMemo(
     () =>
       formatCurrency(
@@ -270,6 +314,7 @@ export function CartProvider({
       availableCartCount,
       subtotal,
       hasUnavailableItems,
+      hasStockIssues,
       isCartOpen,
       openCart,
       closeCart,
@@ -290,6 +335,7 @@ export function CartProvider({
       closeCart,
       decreaseQuantity,
       hasUnavailableItems,
+      hasStockIssues,
       increaseQuantity,
       isCartOpen,
       openCart,

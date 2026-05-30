@@ -11,10 +11,10 @@ export async function PATCH(
   }
 
   const { id } = await params;
-  const postId = Number(id);
+  const productId = Number(id);
 
-  if (!Number.isInteger(postId) || postId <= 0) {
-    return NextResponse.json({ error: "Invalid post id" }, { status: 400 });
+  if (!Number.isInteger(productId) || productId <= 0) {
+    return NextResponse.json({ error: "Invalid product id" }, { status: 400 });
   }
 
   try {
@@ -24,9 +24,9 @@ export async function PATCH(
       return NextResponse.json({ error: "Invalid active value" }, { status: 400 });
     }
 
-    const post = await client.db.post.update({
+    const product = await client.db.product.update({
       where: {
-        id: postId,
+        id: productId,
       },
       data: {
         active: body.active,
@@ -37,8 +37,8 @@ export async function PATCH(
       },
     });
 
-    return NextResponse.json(post);
+    return NextResponse.json(product);
   } catch {
-    return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    return NextResponse.json({ error: "Product not found" }, { status: 404 });
   }
 }

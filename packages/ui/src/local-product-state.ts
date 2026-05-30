@@ -8,9 +8,11 @@ type ProductRecord = {
   date: Date;
   category: string;
   views: number;
-  likes: number;
   tags: string;
   active: boolean;
+  price: number;
+  stockQuantity: number;
+  supportingText: string;
 };
 
 export const POST_OVERRIDES_STORAGE_KEY = "admin-post-overrides";

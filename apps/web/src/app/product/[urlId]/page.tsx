@@ -1,12 +1,13 @@
-import { headers } from "next/headers";
 import { TopMenu } from "@/components/Layout/TopMenu";
 import {
-  getPosts,
-  getRequestIp,
-  hasLikedPost,
-  incrementPostViews,
+  getProductByUrlId,
+  getProducts,
+  incrementProductViews,
 } from "@/app/posts";
 import { ProductRouteClient } from "./ProductRouteClient";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function Page({
   params,
@@ -15,12 +16,13 @@ export default async function Page({
 }) {
   const { urlId } = await params;
   const decodedUrlId = decodeURIComponent(urlId);
-  const requestHeaders = await headers();
-  const initialPost = await incrementPostViews(decodedUrlId);
-  const initialLiked = initialPost
-    ? await hasLikedPost(initialPost.id, getRequestIp(requestHeaders))
-    : false;
-  const initialProducts = await getPosts();
+  const existingProduct = await getProductByUrlId(decodedUrlId);
+  const initialProduct = existingProduct?.active
+    ? await incrementProductViews(decodedUrlId)
+    : existingProduct;
+  const initialProducts = await getProducts({
+    active: true,
+  });
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_24%,#f7f7f7_100%)] dark:bg-[linear-gradient(180deg,#0f172a_0%,#111827_38%,#020617_100%)]">
@@ -30,9 +32,9 @@ export default async function Page({
 
       <ProductRouteClient
         urlId={decodedUrlId}
-        initialPost={initialPost}
+        initialPost={initialProduct}
         initialProducts={initialProducts}
-        initialSaved={initialLiked}
+        initialSaved={false}
       />
     </div>
   );

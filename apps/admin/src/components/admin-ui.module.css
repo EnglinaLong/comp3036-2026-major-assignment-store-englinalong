@@ -1,14 +1,28 @@
 .loginCard {
   width: min(420px, 100%);
-  padding: 32px;
+  padding: 36px 34px;
   background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 20px;
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.1);
+  border: 1px solid rgba(163, 22, 49, 0.12);
+  border-radius: 30px;
+  box-shadow:
+    0 30px 90px rgba(15, 23, 42, 0.1),
+    0 1px 0 rgba(255, 255, 255, 0.8) inset;
+  position: relative;
+  overflow: hidden;
+}
+
+.loginCard::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 112px;
+  background: linear-gradient(135deg, rgba(163, 22, 49, 0.12), rgba(251, 207, 232, 0.18));
+  pointer-events: none;
 }
 
 .loginHeader {
-  margin-bottom: 24px;
+  margin-bottom: 28px;
+  position: relative;
 }
 
 .kicker {
@@ -17,29 +31,32 @@
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: #2563eb;
+  color: #a31631;
 }
 
 .loginTitle {
   margin: 0;
-  font-size: 1.9rem;
-  line-height: 1.1;
+  font-size: clamp(2rem, 4vw, 2.35rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
   color: #111827;
 }
 
 .loginText {
-  margin: 10px 0 0;
-  color: #4b5563;
+  margin: 8px 0 0;
+  color: #6b5a5f;
+  line-height: 1.6;
 }
 
 .form {
   display: grid;
-  gap: 18px;
+  gap: 20px;
+  position: relative;
 }
 
 .field {
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
 .label {
@@ -50,22 +67,32 @@
 
 .input {
   width: 100%;
-  padding: 0.85rem 0.95rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 12px;
-  background: #ffffff;
+  min-height: 50px;
+  padding: 0.95rem 1rem;
+  border: 1px solid #ead8d7;
+  border-radius: 16px;
+  background: #fff8f7;
   color: #111827;
   box-sizing: border-box;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .input:focus {
   outline: 2px solid transparent;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  border-color: #a31631;
+  box-shadow: 0 0 0 4px rgba(163, 22, 49, 0.1);
+  background: #ffffff;
 }
 
 .error {
   margin: 0;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid #fecaca;
+  border-radius: 14px;
+  background: #fef2f2;
   color: #b91c1c;
   font-size: 0.95rem;
 }
@@ -75,25 +102,32 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: 44px;
-  padding: 0.85rem 1rem;
+  min-height: 50px;
+  padding: 0.95rem 1.1rem;
   border: none;
-  border-radius: 12px;
-  background: #2563eb;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #a31631 0%, #8b1029 100%);
   color: #ffffff;
   font-weight: 600;
   cursor: pointer;
+  box-shadow: 0 16px 32px rgba(163, 22, 49, 0.2);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
 }
 
 .primaryButton:hover {
-  background: #1d4ed8;
+  filter: brightness(1.03);
+  transform: translateY(-1px);
+  box-shadow: 0 20px 36px rgba(163, 22, 49, 0.24);
 }
 
 .primaryButton:focus-visible,
 .logoutButton:focus-visible,
 .statusButton:focus-visible,
 .linkButton:focus-visible {
-  outline: 3px solid rgba(37, 99, 235, 0.2);
+  outline: 3px solid rgba(163, 22, 49, 0.18);
   outline-offset: 2px;
 }
 
@@ -118,31 +152,101 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 42px;
-  padding: 0.75rem 1rem;
-  border-radius: 12px;
+  min-height: 44px;
+  padding: 0.8rem 1.1rem;
+  border-radius: 999px;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
 }
 
 .linkButton {
-  background: #2563eb;
+  background: linear-gradient(135deg, #a31631 0%, #8b1029 100%);
   color: #ffffff;
+  box-shadow: 0 14px 28px rgba(163, 22, 49, 0.18);
 }
 
 .linkButton:hover {
-  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 18px 32px rgba(163, 22, 49, 0.22);
 }
 
 .logoutButton {
-  border: 1px solid #d1d5db;
-  background: #ffffff;
-  color: #111827;
+  border: 1px solid rgba(163, 22, 49, 0.12);
+  background: rgba(255, 255, 255, 0.92);
+  color: #7f1d1d;
 }
 
 .logoutButton:hover {
-  background: #f9fafb;
+  background: #fff3f2;
+  border-color: rgba(163, 22, 49, 0.24);
+  color: #a31631;
+}
+
+.editorPrimaryButton,
+.editorSecondaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0.9rem 1.4rem;
+  border-radius: 999px;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.editorPrimaryButton {
+  width: 100%;
+  background: linear-gradient(135deg, #a31631 0%, #8b1029 100%);
+  box-shadow: 0 16px 32px rgba(163, 22, 49, 0.2);
+}
+
+.editorSecondaryButton {
+  background: linear-gradient(135deg, #a31631 0%, #8b1029 100%);
+  box-shadow: 0 14px 28px rgba(163, 22, 49, 0.18);
+}
+
+.editorPrimaryButton:hover,
+.editorSecondaryButton:hover {
+  filter: brightness(1.03);
+  transform: translateY(-1px);
+}
+
+.editorPrimaryButton:hover {
+  box-shadow: 0 20px 36px rgba(163, 22, 49, 0.24);
+}
+
+.editorSecondaryButton:hover {
+  box-shadow: 0 18px 32px rgba(163, 22, 49, 0.22);
+}
+
+.editorPrimaryButton:focus-visible,
+.editorSecondaryButton:focus-visible {
+  outline: 3px solid rgba(163, 22, 49, 0.18);
+  outline-offset: 2px;
+}
+
+.editorPrimaryButton:disabled,
+.editorSecondaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+  transform: none;
+  box-shadow: none;
 }
 
 .filters {
@@ -151,9 +255,10 @@
   gap: 16px;
   margin-bottom: 24px;
   padding: 18px;
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
-  background: #f8fafc;
+  border: 1px solid rgba(163, 22, 49, 0.1);
+  border-radius: 24px;
+  background: linear-gradient(180deg, #fff6f4 0%, #fffdfc 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 .filterField {
@@ -164,19 +269,26 @@
 .filterLabel {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #374151;
+  color: #6f4b53;
 }
 
 .filterInput,
 .filterSelect {
   width: 100%;
-  min-height: 40px;
-  padding: 0.7rem 0.85rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 10px;
-  background: #ffffff;
+  min-height: 46px;
+  padding: 0.8rem 0.95rem;
+  border: 1px solid #ead8d7;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.96);
   color: #111827;
   box-sizing: border-box;
+}
+
+.filterInput:focus,
+.filterSelect:focus {
+  outline: 2px solid transparent;
+  border-color: #a31631;
+  box-shadow: 0 0 0 4px rgba(163, 22, 49, 0.08);
 }
 
 .list {
@@ -187,19 +299,22 @@
 .postCard {
   display: flex;
   gap: 16px;
-  padding: 18px;
-  border: 1px solid #e5e7eb;
-  border-radius: 18px;
+  padding: 20px;
+  border: 1px solid rgba(163, 22, 49, 0.08);
+  border-radius: 28px;
   background: #ffffff;
+  box-shadow:
+    0 18px 50px rgba(15, 23, 42, 0.05),
+    0 1px 0 rgba(255, 255, 255, 0.82) inset;
 }
 
 .postImage {
-  width: 112px;
-  height: 112px;
+  width: 124px;
+  height: 124px;
   object-fit: cover;
-  border-radius: 14px;
+  border-radius: 24px;
   flex-shrink: 0;
-  background: #e5e7eb;
+  background: #f7dfe2;
 }
 
 .postBody {
@@ -209,8 +324,8 @@
 
 .postTitle {
   margin: 0 0 10px;
-  font-size: 1.15rem;
-  line-height: 1.3;
+  font-size: 1.25rem;
+  line-height: 1.2;
 }
 
 .postTitleLink {
@@ -219,40 +334,194 @@
 }
 
 .postTitleLink:hover {
-  color: #2563eb;
+  color: #a31631;
 }
 
 .metaList {
   display: grid;
   gap: 8px;
   margin: 0 0 14px;
-  color: #4b5563;
+  color: #6b5a5f;
   font-size: 0.95rem;
 }
 
 .statusButton {
   min-height: 36px;
-  padding: 0.5rem 0.8rem;
-  border: none;
+  padding: 0.55rem 0.95rem;
+  border: 1px solid transparent;
   border-radius: 999px;
   color: #ffffff;
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 600;
+  box-shadow: none;
 }
 
 .statusActive {
-  background: #16a34a;
+  background: #ecfdf3;
+  border-color: #b7ebcd;
+  color: #0f7a43;
 }
 
 .statusInactive {
-  background: #dc2626;
+  background: #fdf0f0;
+  border-color: #f3c4c4;
+  color: #b42318;
+}
+
+.orderSection {
+  margin-top: 32px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.1;
+  color: #111827;
+}
+
+.sectionText {
+  margin: 8px 0 0;
+  color: #6b5a5f;
+  line-height: 1.7;
+}
+
+.emptyState {
+  padding: 18px;
+  border: 1px dashed rgba(163, 22, 49, 0.18);
+  border-radius: 24px;
+  background: linear-gradient(180deg, #fff6f4 0%, #fffdfc 100%);
+  color: #6b5a5f;
+}
+
+.orderCard {
+  padding: 22px;
+  border: 1px solid rgba(163, 22, 49, 0.08);
+  border-radius: 28px;
+  background: #ffffff;
+  box-shadow:
+    0 18px 50px rgba(15, 23, 42, 0.05),
+    0 1px 0 rgba(255, 255, 255, 0.82) inset;
+}
+
+.orderHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.orderMeta {
+  min-width: 0;
+}
+
+.orderTitle {
+  margin: 0;
+  font-size: 1.05rem;
+  color: #111827;
+}
+
+.metaText {
+  margin: 6px 0 0;
+  color: #6b5a5f;
+  font-size: 0.95rem;
+}
+
+.orderSummary {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+}
+
+.orderTotal {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.orderStatusBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(163, 22, 49, 0.08);
+  border: 1px solid rgba(163, 22, 49, 0.12);
+  color: #a31631;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.orderControls {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.orderItems {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.orderItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #fff7f5 0%, #fffdfc 100%);
+  border: 1px solid rgba(163, 22, 49, 0.06);
+}
+
+.orderItemTitle {
+  margin: 0;
+  font-weight: 600;
+  color: #111827;
+}
+
+.orderItemPrice {
+  font-weight: 700;
+  color: #111827;
+}
+
+.successMessage,
+.errorMessage {
+  margin: 14px 0 0;
+  padding: 0.8rem 0.95rem;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  border: 1px solid transparent;
+}
+
+.successMessage {
+  background: #ecfdf3;
+  border-color: #b7ebcd;
+  color: #0f7a43;
+}
+
+.errorMessage {
+  background: #fef2f2;
+  border-color: #f3c4c4;
+  color: #b91c1c;
 }
 
 @media (max-width: 640px) {
   .loginCard {
-    padding: 24px;
-    border-radius: 16px;
+    padding: 28px 22px;
+    border-radius: 24px;
   }
 
   .postCard {
@@ -262,5 +531,14 @@
   .postImage {
     width: 100%;
     height: 180px;
+  }
+
+  .orderSummary {
+    justify-items: start;
+  }
+
+  .orderItem {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

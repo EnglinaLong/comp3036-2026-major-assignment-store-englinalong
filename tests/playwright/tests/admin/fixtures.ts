@@ -56,7 +56,10 @@ export const test = base.extend<MyFixtures>({
       storageState: ".auth/user.json",
     });
     const userPage = await context.newPage(); //  new UserPage(await context.newPage());
-    await userPage.goto("/");
+    await userPage.goto("/", {
+      waitUntil: "domcontentloaded",
+      timeout: 60000,
+    });
     await userPage.evaluate(
       ({ storageKeys, cookieKeys }) => {
         for (const key of storageKeys) {

@@ -1,9 +1,13 @@
-import { seed } from "@repo/db/seed";
 import { expect, test } from "./fixtures";
+import {
+  featuredProductCard,
+  featuredProductsSection,
+  resetStorefrontState,
+} from "./helpers";
 
 test.describe("FULL STACK STORE HOME", () => {
-  test.beforeEach(async () => {
-    await seed();
+  test.beforeEach(async ({ page }) => {
+    await resetStorefrontState(page);
   });
 
   test(
@@ -68,12 +72,39 @@ test.describe("FULL STACK STORE HOME", () => {
     async ({ page }) => {
       await page.goto("/");
 
-      const featuredProducts = page.locator("#featured-products");
+      const featuredProducts = featuredProductsSection(page);
+      const backendToolkitCard = featuredProductCard(
+        page,
+        "Backend Starter Toolkit",
+      );
+      const reactStorefrontCard = featuredProductCard(
+        page,
+        "React Storefront UI Kit",
+      );
+      const mobileResponsiveCard = featuredProductCard(
+        page,
+        "Mobile Responsive Design Pack",
+      );
 
       await expect(page.getByText("Available products")).toBeVisible();
-      await expect(page.getByText("Showing all 15 products")).toBeVisible();
-      await expect(featuredProducts.getByTestId("product-card-15")).toBeVisible();
-      await expect(page.getByText("Mobile Responsive Design Pack")).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "Featured Products" }),
+      ).toBeVisible();
+      await expect(featuredProducts).toBeVisible();
+      await expect(backendToolkitCard).toBeVisible();
+      await expect(
+        backendToolkitCard.getByText("Backend Starter Toolkit", { exact: true }),
+      ).toBeVisible();
+      await expect(reactStorefrontCard).toBeVisible();
+      await expect(
+        reactStorefrontCard.getByText("React Storefront UI Kit", { exact: true }),
+      ).toBeVisible();
+      await expect(mobileResponsiveCard).toBeVisible();
+      await expect(
+        mobileResponsiveCard.getByText("Mobile Responsive Design Pack", {
+          exact: true,
+        }),
+      ).toBeVisible();
     },
   );
 });

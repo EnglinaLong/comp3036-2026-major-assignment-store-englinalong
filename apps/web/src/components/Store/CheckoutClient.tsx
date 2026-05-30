@@ -6,10 +6,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useCart } from "./CartProvider";
 import { useCustomerAuth } from "./CustomerAuthProvider";
 import {
-  saveCustomerOrder,
   setPaymentSuccessState,
-  type CustomerOrder,
 } from "@/functions/customerOrders";
+import type { CustomerOrder } from "@/lib/orders";
 
 type CheckoutFormState = {
   fullName: string;
@@ -24,10 +23,6 @@ type CheckoutFormState = {
 };
 
 type CheckoutErrors = Partial<Record<keyof CheckoutFormState, string>>;
-
-function createOrderId() {
-  return `ORD-${Date.now().toString(36).toUpperCase()}`;
-}
 
 function onlyDigits(value: string) {
   return value.replace(/\D/g, "");
@@ -50,6 +45,35 @@ function formatExpiryDate(value: string) {
   return `${digits.slice(0, 2)}/${digits.slice(2)}`;
 }
 
+function isValidExpiryDate(value: string) {
+  const match = /^(\d{2})\/(\d{2})$/.exec(value.trim());
+
+  if (!match || !match[1] || !match[2]) {
+    return false;
+  }
+
+  const month = Number.parseInt(match[1], 10);
+  const year = Number.parseInt(match[2], 10);
+
+  if (!Number.isInteger(month) || month < 1 || month > 12) {
+    return false;
+  }
+
+  const now = new Date();
+  const currentYear = now.getFullYear() % 100;
+  const currentMonth = now.getMonth() + 1;
+
+  if (year < currentYear) {
+    return false;
+  }
+
+  if (year === currentYear && month < currentMonth) {
+    return false;
+  }
+
+  return true;
+}
+
 function validateForm(values: CheckoutFormState) {
   const errors: CheckoutErrors = {};
 
@@ -64,8 +88,8 @@ function validateForm(values: CheckoutFormState) {
   if (onlyDigits(values.cardNumber).length !== 16) {
     errors.cardNumber = "Enter a valid card number.";
   }
-  if (!/^\d{2}\/\d{2}$/.test(values.expiryDate)) {
-    errors.expiryDate = "Enter a valid expiry date.";
+  if (!isValidExpiryDate(values.expiryDate)) {
+    errors.expiryDate = "Enter a valid expiry date in MM/YY format.";
   }
   if (onlyDigits(values.cvv).length < 3) {
     errors.cvv = "Enter a valid security code.";
@@ -81,10 +105,12 @@ export function CheckoutClient() {
     availableCartItems,
     availableCartCount,
     subtotal,
+    hasStockIssues,
     clearAvailableItems,
   } = useCart();
-  const { customer, hasHydrated } = useCustomerAuth();
+  const { account, customer, hasHydrated } = useCustomerAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRedirectingToOrders, setIsRedirectingToOrders] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [errors, setErrors] = useState<CheckoutErrors>({});
   const [formState, setFormState] = useState<CheckoutFormState>({
@@ -99,23 +125,32 @@ export function CheckoutClient() {
     cvv: "",
   });
 
+  const checkoutCustomer = customer ?? account;
+
   useEffect(() => {
     if (!hasHydrated) {
       return;
     }
 
-    if (!customer) {
-      router.replace("/account/login?intent=checkout&returnTo=%2Fcheckout");
+    if (!checkoutCustomer) {
       return;
     }
 
     setFormState((current) => ({
       ...current,
-      fullName: current.fullName || customer.name,
-      email: current.email || customer.email,
-      cardholderName: current.cardholderName || customer.name,
+      fullName: current.fullName || checkoutCustomer.name,
+      email: current.email || checkoutCustomer.email,
+      cardholderName: current.cardholderName || checkoutCustomer.name,
     }));
-  }, [customer, hasHydrated, router]);
+  }, [checkoutCustomer, hasHydrated]);
+
+  useEffect(() => {
+    if (!isRedirectingToOrders) {
+      return;
+    }
+
+    router.replace("/account/orders");
+  }, [isRedirectingToOrders, router]);
 
   const orderSummary = useMemo(
     () =>
@@ -155,7 +190,10 @@ export function CheckoutClient() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!customer || availableCartItems.length === 0) {
+    if (availableCartItems.length === 0 || hasStockIssues) {
+      if (hasStockIssues) {
+        setFormError("Please reduce item quantities to match available stock.");
+      }
       return;
     }
 
@@ -170,48 +208,95 @@ export function CheckoutClient() {
     setFormError(null);
     setIsSubmitting(true);
 
-    await new Promise((resolve) => window.setTimeout(resolve, 1200));
+    try {
+      const customerEmail = checkoutCustomer?.email;
 
-    const purchasedItems = availableCartItems.map(({ isAvailable, ...item }) => {
-      void isAvailable;
-      return item;
-    });
+      if (!customerEmail) {
+        setFormError("Please log in before continuing to checkout.");
+        return;
+      }
 
-    const order: CustomerOrder = {
-      id: createOrderId(),
-      date: new Date().toISOString(),
-      status: "Paid",
-      total: subtotal,
-      itemCount: availableCartCount,
-      items: purchasedItems,
-      shipping: {
-        fullName: formState.fullName.trim(),
-        email: formState.email.trim(),
-        address: formState.address.trim(),
-        city: formState.city.trim(),
-        postalCode: formState.postalCode.trim(),
-      },
-      payment: {
-        cardholderName: formState.cardholderName.trim(),
-        last4: onlyDigits(formState.cardNumber).slice(-4),
-      },
-    };
+      await new Promise((resolve) => window.setTimeout(resolve, 1200));
 
-    saveCustomerOrder(order);
-    setPaymentSuccessState({
-      orderId: order.id,
-      total: order.total,
-    });
-    clearAvailableItems();
-    router.push("/account/orders");
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          items: availableCartItems.map((item) => ({
+            productId: item.id,
+            quantity: item.quantity,
+          })),
+        }),
+      });
+
+      const payload = (await response.json().catch(() => null)) as
+        | { error?: string; order?: CustomerOrder }
+        | null;
+
+      if (response.status === 401) {
+        setFormError("Please log in before continuing to checkout.");
+        return;
+      }
+
+      if (!response.ok || !payload?.order) {
+        setFormError(
+          payload?.error ||
+            "Please review your checkout details and try again.",
+        );
+        return;
+      }
+
+      setPaymentSuccessState({
+        customerEmail,
+        orderId: payload.order.id,
+        total: payload.order.total,
+        status: payload.order.status,
+        items: payload.order.items,
+      });
+      clearAvailableItems();
+      setIsRedirectingToOrders(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
-  if (!hasHydrated || !customer) {
+  if (isRedirectingToOrders) {
+    return (
+      <div className="rounded-[28px] border border-black/10 bg-white p-8 text-center dark:border-white/10 dark:bg-neutral-950">
+        <p className="text-sm text-neutral-600 dark:text-neutral-300">
+          Finalizing your order...
+        </p>
+      </div>
+    );
+  }
+
+  if (!hasHydrated) {
     return (
       <div className="rounded-[28px] border border-black/10 bg-white p-8 text-center dark:border-white/10 dark:bg-neutral-950">
         <p className="text-sm text-neutral-600 dark:text-neutral-300">
           Preparing checkout...
         </p>
+      </div>
+    );
+  }
+
+  if (!checkoutCustomer) {
+    return (
+      <div className="rounded-[28px] border border-black/10 bg-white p-8 text-center dark:border-white/10 dark:bg-neutral-950">
+        <h2 className="text-2xl font-semibold text-neutral-950 dark:text-neutral-50">
+          Please log in to continue.
+        </h2>
+        <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-300">
+          Sign in to complete your checkout.
+        </p>
+        <Link
+          href="/account/login?intent=checkout&returnTo=%2Fcheckout"
+          className="mt-6 inline-flex items-center justify-center rounded-full bg-[color:var(--color-wsu)] px-5 py-3 font-medium text-white transition hover:bg-[color:var(--color-wsu-light)]"
+        >
+          Login
+        </Link>
       </div>
     );
   }
@@ -350,7 +435,7 @@ export function CheckoutClient() {
           <div className="mt-5 space-y-4">
             {orderSummary.map((item) => (
               <div
-                key={item.id}
+                key={`checkout-item-${item.urlId}`}
                 className="flex items-start justify-between gap-4 rounded-[22px] border border-neutral-100 bg-neutral-50 px-4 py-4 dark:border-neutral-800 dark:bg-neutral-900"
               >
                 <div>
@@ -360,6 +445,11 @@ export function CheckoutClient() {
                   <p className="mt-1 text-xs uppercase tracking-[0.18em] text-neutral-400 dark:text-neutral-500">
                     {item.category} · Qty {item.quantity}
                   </p>
+                  {item.quantity > item.stockQuantity ? (
+                    <p className="mt-1 text-xs font-medium text-amber-600 dark:text-amber-300">
+                      Only {item.stockQuantity} left in stock.
+                    </p>
+                  ) : null}
                 </div>
                 <p className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
                   {item.lineTotal}
@@ -390,9 +480,15 @@ export function CheckoutClient() {
             </p>
           ) : null}
 
+          {hasStockIssues ? (
+            <p className="mt-5 rounded-[18px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+              Reduce item quantities to match current stock before checkout.
+            </p>
+          ) : null}
+
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || hasStockIssues}
             className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-[color:var(--color-wsu)] px-5 py-3 font-medium text-white transition hover:bg-[color:var(--color-wsu-light)] disabled:cursor-not-allowed disabled:opacity-70"
           >
             {isSubmitting ? "Processing Payment..." : "Complete Purchase"}

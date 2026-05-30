@@ -1,5 +1,5 @@
 import { Main } from "@/components/Main";
-import { getPosts } from "@/app/posts";
+import { getProducts } from "@/app/posts";
 
 export default async function Page({
   params,
@@ -7,16 +7,16 @@ export default async function Page({
   params: Promise<{ year: string; month: string }>;
 }) {
   const { year, month } = await params;
-  const filteredPosts = (await getPosts({
+  const filteredProducts = (await getProducts({
     active: true,
-  })).filter((post) => {
+  })).filter((product) => {
 
-    const date = new Date(post.date);
-    const postYear = date.getFullYear().toString();
-    const postMonth = (date.getMonth() + 1).toString();
+    const date = new Date(product.date);
+    const productYear = date.getFullYear().toString();
+    const productMonth = (date.getMonth() + 1).toString();
 
-    return postYear === year && postMonth === month;
+    return productYear === year && productMonth === month;
   });
 
-  return <Main posts={filteredPosts} />;
+  return <Main posts={filteredProducts} />;
 }

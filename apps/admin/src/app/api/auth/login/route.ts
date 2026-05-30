@@ -7,8 +7,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { password } = body;
 
-    // For Assignment 2: Simple password check
-    if (password !== "123") {
+    // Legacy compatibility endpoint used by Playwright setup.
+    if (password !== env.PASSWORD) {
       return NextResponse.json(
         { error: "Invalid password" },
         { status: 401 }
@@ -25,11 +25,11 @@ export async function POST(request: NextRequest) {
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 10,
     });
 
     return response;
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Invalid request" },
       { status: 400 }

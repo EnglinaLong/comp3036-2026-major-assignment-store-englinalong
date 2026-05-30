@@ -1,37 +1,63 @@
+import { pathToFileURL } from "node:url";
 import { client } from "./client.js";
-import { posts } from "./data.js";
+import { products } from "./data.js";
+
+function getProductSeedData(product: (typeof products)[number]) {
+  return {
+    title: product.title,
+    content: product.content,
+    category: product.category,
+    description: product.description,
+    imageUrl: product.imageUrl,
+    tags: product.tags
+      .split(",")
+      .map((p) => p.trim())
+      .join(","),
+    urlId: product.urlId,
+    active: product.active,
+    date: product.date,
+    views: product.views,
+    price: product.price,
+    stockQuantity: product.stockQuantity,
+    supportingText: product.supportingText,
+  };
+}
 
 export async function seed() {
-  console.log("🌱 Seeding data");
+  console.log("Seeding store product data");
 
-  await client.db.$transaction(async (tx) => {
-    await tx.like.deleteMany();
-    await tx.post.deleteMany();
+  for (const product of products) {
+    const productData = getProductSeedData(product);
 
-    for (const post of posts) {
-      await tx.post.create({
-        data: {
-          title: post.title,
-          content: post.content,
-          category: post.category,
-          description: post.description,
-          imageUrl: post.imageUrl,
-          tags: post.tags
-            .split(",")
-            .map((p) => p.trim())
-            .join(","),
-          urlId: post.urlId,
-          active: post.active,
-          date: post.date,
-          id: post.id,
-          views: post.views,
-          Likes: {
-            create: Array.from({ length: post.likes }, (_, index) => ({
-              userIP: `192.168.100.${index}`,
-            })),
-          },
-        },
-      });
-    }
-  });
+    await client.db.product.upsert({
+      where: {
+        urlId: productData.urlId,
+      },
+      create: productData,
+      update: {
+        ...productData,
+      },
+    });
+  }
+}
+
+export async function seedForTests() {
+  // Keep Playwright seeding product-only so local runs against Neon do not
+  // recreate customer accounts, orders, or order items.
+  await seed();
+}
+
+const isDirectExecution = process.argv[1]
+  ? import.meta.url === pathToFileURL(process.argv[1]).href
+  : false;
+
+if (isDirectExecution) {
+  seed()
+    .catch((error) => {
+      console.error(error);
+      process.exitCode = 1;
+    })
+    .finally(async () => {
+      await client.db.$disconnect();
+    });
 }

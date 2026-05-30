@@ -1,5 +1,5 @@
 import type { Post } from "@repo/db/data";
-import BlogListItem from "./ListItem";
+import { BlogListItem } from "./ListItem";
 
 export function BlogList({ posts }: { posts: Post[] }) {
   if (posts.length === 0) {
@@ -11,7 +11,7 @@ export function BlogList({ posts }: { posts: Post[] }) {
       <p>{posts.length} Posts</p>
 
       {posts.map((post) => (
-        <div key={post.id} style={{ marginBottom: "20px" }}>
+        <div key={`blog-post-${post.urlId}`} style={{ marginBottom: "20px" }}>
           <BlogListItem post={post} />
         </div>
       ))}

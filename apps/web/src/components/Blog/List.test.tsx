@@ -12,10 +12,12 @@ export const post1: Post = {
   description: "Description of Hello World",
   id: 1,
   imageUrl: "https://example.com/image.jpg",
-  likes: 30,
   active: true,
   urlId: "hello-world",
   views: 200,
+  price: 79,
+  stockQuantity: 12,
+  supportingText: "Includes complete product files and setup resources.",
 };
 
 export const post2: Post = {
@@ -27,10 +29,12 @@ export const post2: Post = {
   description: "Descripcion de Hola Mundo",
   id: 2,
   imageUrl: "https://example.com/image.jpg",
-  likes: 550,
   active: true,
   urlId: "hola-mundo",
   views: 1000,
+  price: 89,
+  stockQuantity: 8,
+  supportingText: "Built for modern full-stack development workflows.",
 };
 
 test("renders 0 posts when no posts are present", async () => {

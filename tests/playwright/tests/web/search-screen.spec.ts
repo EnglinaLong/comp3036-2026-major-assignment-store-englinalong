@@ -1,10 +1,15 @@
-import { seed } from "@repo/db/seed";
+import { seedTestData } from "../dbSeed";
 import { expect, test } from "./fixtures";
-import { featuredProductsSection } from "./helpers";
+import {
+  featuredProductCard,
+  featuredProductsSection,
+  resetStorefrontState,
+} from "./helpers";
 
 test.describe("FULL STACK STORE SEARCH", () => {
-  test.beforeEach(async () => {
-    await seed();
+  test.beforeEach(async ({ page }) => {
+    await seedTestData();
+    await resetStorefrontState(page);
   });
 
   test(
@@ -17,6 +22,42 @@ test.describe("FULL STACK STORE SEARCH", () => {
 
       const searchInput = page.getByPlaceholder("Search products");
       const featuredProducts = featuredProductsSection(page);
+      const backendToolkitCard = featuredProductCard(
+        page,
+        "Backend Starter Toolkit",
+      );
+      const dockerToolkitCard = featuredProductCard(
+        page,
+        "Docker Deployment Toolkit",
+      );
+      const reactStorefrontCard = featuredProductCard(
+        page,
+        "React Storefront UI Kit",
+      );
+      const frontendPerformanceCard = featuredProductCard(
+        page,
+        "Frontend Performance Toolkit",
+      );
+      const reactEcommerceCard = featuredProductCard(
+        page,
+        "React Ecommerce Components",
+      );
+      const nextEcommerceCard = featuredProductCard(
+        page,
+        "Next.js Ecommerce Starter",
+      );
+      const ecommerceAnalyticsCard = featuredProductCard(
+        page,
+        "Ecommerce Analytics Dashboard",
+      );
+      const nodeApiBuilderCard = featuredProductCard(
+        page,
+        "Node API Builder Pack",
+      );
+      const mobileResponsiveCard = featuredProductCard(
+        page,
+        "Mobile Responsive Design Pack",
+      );
       const storeHighlights = page
         .locator("section")
         .filter({ has: page.getByText("Store highlights") });
@@ -27,7 +68,8 @@ test.describe("FULL STACK STORE SEARCH", () => {
       await expect(searchInput).toHaveValue("docker");
       await expect(searchInput).toBeFocused();
       await expect(page.getByText("Showing results for: docker")).toBeVisible();
-      await expect(featuredProducts.getByTestId("product-card-4")).toBeVisible();
+      await expect(dockerToolkitCard).toBeVisible();
+      await expect(backendToolkitCard).not.toBeVisible();
 
       await searchInput.fill("react");
       await expect(
@@ -40,65 +82,59 @@ test.describe("FULL STACK STORE SEARCH", () => {
           hasText: 'for "react"',
         }),
       ).toBeVisible();
-      await expect(featuredProducts.getByTestId("product-card-2")).toBeVisible();
-      await expect(featuredProducts.getByTestId("product-card-3")).toBeVisible();
-      await expect(featuredProducts.getByTestId("product-card-12")).toBeVisible();
-      await expect(
-        featuredProducts.getByTestId("product-card-1"),
-      ).not.toBeVisible();
+      await expect(reactStorefrontCard).toBeVisible();
+      await expect(frontendPerformanceCard).toBeVisible();
+      await expect(reactEcommerceCard).toBeVisible();
+      await expect(backendToolkitCard).not.toBeVisible();
       await expect(storeHighlights).not.toBeVisible();
 
       await searchInput.fill("toolkit");
       await expect(page).toHaveURL(/\/\?q=toolkit#featured-products$/);
       await expect(page.getByText("Showing results for: toolkit")).toBeVisible();
-      await expect(featuredProducts.getByTestId("product-card-1")).toBeVisible();
-      await expect(featuredProducts.getByTestId("product-card-4")).toBeVisible();
+      await expect(backendToolkitCard).toBeVisible();
+      await expect(dockerToolkitCard).toBeVisible();
 
       await searchInput.fill("docker");
       await expect(page.getByText("Showing results for: docker")).toBeVisible();
-      await expect(featuredProducts.getByTestId("product-card-4")).toBeVisible();
-      await expect(
-        featuredProducts.getByTestId("product-card-2"),
-      ).not.toBeVisible();
+      await expect(dockerToolkitCard).toBeVisible();
+      await expect(reactStorefrontCard).not.toBeVisible();
 
       await searchInput.fill("ecommerce");
       await expect(page.getByText("Showing results for: ecommerce")).toBeVisible();
-      await expect(featuredProducts.getByTestId("product-card-5")).toBeVisible();
-      await expect(featuredProducts.getByTestId("product-card-10")).toBeVisible();
-      await expect(featuredProducts.getByTestId("product-card-12")).toBeVisible();
+      await expect(nextEcommerceCard).toBeVisible();
+      await expect(ecommerceAnalyticsCard).toBeVisible();
+      await expect(reactEcommerceCard).toBeVisible();
 
       await searchInput.fill("backend");
       await expect(page.getByText("Showing results for: backend")).toBeVisible();
-      await expect(featuredProducts.getByTestId("product-card-1")).toBeVisible();
-      await expect(featuredProducts.getByTestId("product-card-4")).toBeVisible();
+      await expect(backendToolkitCard).toBeVisible();
+      await expect(dockerToolkitCard).toBeVisible();
 
       await searchInput.fill("containerised");
       await expect(
         page.getByText("Showing results for: containerised"),
       ).toBeVisible();
-      await expect(featuredProducts.getByTestId("product-card-4")).toBeVisible();
-      await expect(
-        featuredProducts.getByTestId("product-card-1"),
-      ).not.toBeVisible();
+      await expect(dockerToolkitCard).toBeVisible();
+      await expect(backendToolkitCard).not.toBeVisible();
       await expect(storeHighlights).not.toBeVisible();
 
       await searchInput.fill("Back-End");
       await expect(
         page.getByText("Showing results for: Back-End"),
       ).toBeVisible();
-      await expect(featuredProducts.getByTestId("product-card-1")).toBeVisible();
-      await expect(featuredProducts.getByTestId("product-card-4")).toBeVisible();
+      await expect(backendToolkitCard).toBeVisible();
+      await expect(dockerToolkitCard).toBeVisible();
 
       await searchInput.fill("Node");
       await expect(page.getByText("Showing results for: Node")).toBeVisible();
-      await expect(featuredProducts.getByTestId("product-card-1")).toBeVisible();
-      await expect(featuredProducts.getByTestId("product-card-14")).toBeVisible();
+      await expect(backendToolkitCard).toBeVisible();
+      await expect(nodeApiBuilderCard).toBeVisible();
 
       await searchInput.fill("Mobile Responsive");
       await expect(
         page.getByText("Showing results for: Mobile Responsive"),
       ).toBeVisible();
-      await expect(featuredProducts.getByTestId("product-card-15")).toBeVisible();
+      await expect(mobileResponsiveCard).toBeVisible();
 
       await searchInput.fill("zzzz-store-search");
       await expect(page.getByRole("heading", { name: "Search Results" })).toBeVisible();
@@ -118,8 +154,8 @@ test.describe("FULL STACK STORE SEARCH", () => {
         page.getByRole("heading", { name: "Featured Products" }),
       ).toBeVisible();
       await expect(page.getByText("Showing all products")).toBeVisible();
-      await expect(featuredProducts.getByTestId("product-card-1")).toBeVisible();
-      await expect(featuredProducts.getByTestId("product-card-4")).toBeVisible();
+      await expect(backendToolkitCard).toBeVisible();
+      await expect(dockerToolkitCard).toBeVisible();
       await expect(storeHighlights).toBeVisible();
     },
   );

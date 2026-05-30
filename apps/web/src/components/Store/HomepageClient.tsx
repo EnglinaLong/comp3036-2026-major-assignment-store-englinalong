@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { Post } from "@repo/db/data";
 import { TopMenu } from "@/components/Layout/TopMenu";
@@ -11,6 +11,7 @@ import {
   splitNormalizedTags,
 } from "@/functions/storefrontSearch";
 import {
+  FEATURED_PRODUCTS_HASH,
   readStorefrontUrlState,
   updateStorefrontUrlState,
   type StorefrontUrlState,
@@ -126,6 +127,7 @@ export function HomepageClient({
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(
     initialUrlState.searchQuery,
   );
+  const shouldPreserveInitialHashRef = useRef(true);
   const storefrontPosts = useMergedStorefrontPosts(posts);
 
   useEffect(() => {
@@ -289,7 +291,7 @@ export function HomepageClient({
   ]);
 
   useEffect(() => {
-    const nextUrl = updateStorefrontUrlState(
+    const nextBaseUrl = updateStorefrontUrlState(
       window.location.pathname,
       new URLSearchParams(window.location.search),
       {
@@ -299,8 +301,21 @@ export function HomepageClient({
         selectedHistoryKey: sanitizedHistoryKey,
       },
     );
+    const shouldPreserveFeaturedHash =
+      shouldPreserveInitialHashRef.current &&
+      window.location.hash === `#${FEATURED_PRODUCTS_HASH}` &&
+      !debouncedSearchQuery &&
+      !sanitizedCategory &&
+      !sanitizedCollection &&
+      !sanitizedHistoryKey;
+    const nextUrl =
+      shouldPreserveFeaturedHash && !nextBaseUrl.includes("#")
+        ? `${nextBaseUrl}#${FEATURED_PRODUCTS_HASH}`
+        : nextBaseUrl;
 
     const nextRelativeUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+
+    shouldPreserveInitialHashRef.current = false;
 
     if (nextUrl === nextRelativeUrl) {
       return;

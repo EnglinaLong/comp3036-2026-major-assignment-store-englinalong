@@ -23,22 +23,14 @@ export default async function UpdatePostPage({
   }
 
   const { urlId } = await params;
-  const posts = await client.db.post.findMany({
+  const posts = await client.db.product.findMany({
     orderBy: {
       id: "asc",
-    },
-    include: {
-      _count: {
-        select: {
-          Likes: true,
-        },
-      },
     },
   });
   const initialPosts = posts.map((post) => ({
     ...post,
     date: getSeededPostDate(post) ?? post.date,
-    likes: post._count.Likes,
   }));
 
   return (

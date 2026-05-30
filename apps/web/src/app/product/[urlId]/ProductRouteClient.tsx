@@ -1,7 +1,5 @@
 "use client";
-
-import Link from "next/link";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { marked } from "marked";
 import type { Post } from "@repo/db/data";
 import ProductDetailView from "@/components/Store/ProductDetailView";
@@ -34,6 +32,9 @@ function getRelatedProducts(products: Post[], currentProduct: Post) {
     })
     .sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
+      if (a.product.urlId !== b.product.urlId) {
+        return a.product.urlId.localeCompare(b.product.urlId);
+      }
       return a.product.id - b.product.id;
     });
 
@@ -49,6 +50,32 @@ function getRelatedProducts(products: Post[], currentProduct: Post) {
 
 function matchesProductRoute(post: Pick<Post, "title" | "urlId">, urlId: string) {
   return post.urlId === urlId || slugifyTitle(post.title) === urlId;
+}
+
+function sortProductsDeterministically(products: Post[]) {
+  return [...products].sort((a, b) => {
+    if (a.urlId !== b.urlId) {
+      return a.urlId.localeCompare(b.urlId);
+    }
+
+    return a.id - b.id;
+  });
+}
+
+function mergeProductByIdentity(baseProduct: Post, products: Post[]) {
+  const mergedProduct =
+    products.find((product) => product.urlId === baseProduct.urlId) ??
+    products.find((product) => product.id === baseProduct.id);
+
+  if (!mergedProduct) {
+    return baseProduct;
+  }
+
+  return {
+    ...mergedProduct,
+    id: baseProduct.id,
+    urlId: baseProduct.urlId,
+  };
 }
 
 function ProductUnavailableState({
@@ -71,12 +98,12 @@ function ProductUnavailableState({
             : "This product is unavailable right now or no longer exists."}
         </p>
         <div className="mt-6">
-          <Link
+          <a
             href="/#featured-products"
             className="inline-flex items-center justify-center rounded-full bg-[color:var(--color-wsu)] px-5 py-3 font-medium text-white transition hover:bg-[color:var(--color-wsu-light)]"
           >
             Back to Products
-          </Link>
+          </a>
         </div>
       </div>
     </div>
@@ -94,12 +121,80 @@ export function ProductRouteClient({
   initialProducts: Post[];
   initialSaved: boolean;
 }) {
+  const [hydrated, setHydrated] = useState(false);
   const mergedProducts = useMergedStorefrontPosts(initialProducts);
+  const serverProduct = useMemo(() => {
+    if (initialPost && matchesProductRoute(initialPost, urlId)) {
+      return initialPost;
+    }
 
-  const matchedProduct = useMemo(
-    () => mergedProducts.find((product) => matchesProductRoute(product, urlId)) ?? null,
-    [mergedProducts, urlId],
-  );
+    return (
+      initialProducts.find((product) => matchesProductRoute(product, urlId)) ?? null
+    );
+  }, [initialPost, initialProducts, urlId]);
+
+  const serverRelatedProducts = useMemo(() => {
+    if (!serverProduct?.active) {
+      return [];
+    }
+
+    const activeProducts = sortProductsDeterministically(
+      initialProducts.filter((product) => product.active),
+    );
+
+    return getRelatedProducts(activeProducts, serverProduct);
+  }, [initialProducts, serverProduct]);
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
+  const matchedProduct = useMemo(() => {
+    if (serverProduct) {
+      return hydrated
+        ? mergeProductByIdentity(serverProduct, mergedProducts)
+        : serverProduct;
+    }
+
+    if (!hydrated) {
+      return null;
+    }
+
+    return mergedProducts.find((product) => matchesProductRoute(product, urlId)) ?? null;
+  }, [hydrated, mergedProducts, serverProduct, urlId]);
+
+  const relatedProducts = useMemo(() => {
+    if (!matchedProduct?.active) {
+      return [];
+    }
+
+    if (!hydrated) {
+      return serverRelatedProducts;
+    }
+
+    if (serverProduct) {
+      return serverRelatedProducts
+        .map((product) => mergeProductByIdentity(product, mergedProducts))
+        .filter(
+          (product, index, products) =>
+            product.active &&
+            product.urlId !== matchedProduct.urlId &&
+            products.findIndex((item) => item.urlId === product.urlId) === index,
+        );
+    }
+
+    const activeProducts = sortProductsDeterministically(
+      mergedProducts.filter((product) => product.active),
+    );
+
+    return getRelatedProducts(activeProducts, matchedProduct);
+  }, [
+    hydrated,
+    matchedProduct,
+    mergedProducts,
+    serverProduct,
+    serverRelatedProducts,
+  ]);
 
   if (!matchedProduct) {
     return <ProductUnavailableState unavailable={false} />;
@@ -109,8 +204,6 @@ export function ProductRouteClient({
     return <ProductUnavailableState unavailable />;
   }
 
-  const activeProducts = mergedProducts.filter((product) => product.active);
-  const relatedProducts = getRelatedProducts(activeProducts, matchedProduct);
   const contentHtml = marked.parse(matchedProduct.content) as string;
   const tags = matchedProduct.tags
     .split(",")
@@ -127,7 +220,7 @@ export function ProductRouteClient({
       tags={tags}
       relatedProducts={relatedProducts}
       contentHtml={contentHtml}
-      initialSaved={initialPost?.id === matchedProduct.id ? initialSaved : false}
+      initialSaved={serverProduct?.urlId === matchedProduct.urlId ? initialSaved : false}
     />
   );
 }

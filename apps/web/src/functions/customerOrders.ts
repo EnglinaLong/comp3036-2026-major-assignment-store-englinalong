@@ -1,33 +1,16 @@
 "use client";
 
-import type { CartItem } from "@/components/Store/CartProvider";
+import type { CustomerOrder, CustomerOrderItem, OrderStatus } from "@/lib/orders";
+import { normalizeCustomerEmail } from "@/lib/customerAuth";
 
-export const CUSTOMER_ORDERS_STORAGE_KEY = "storefront-customer-orders";
 export const PAYMENT_SUCCESS_STORAGE_KEY = "storefront-payment-success";
 
-export type CustomerOrder = {
-  id: string;
-  date: string;
-  status: "Paid";
-  total: string;
-  itemCount: number;
-  items: CartItem[];
-  shipping: {
-    fullName: string;
-    email: string;
-    address: string;
-    city: string;
-    postalCode: string;
-  };
-  payment: {
-    cardholderName: string;
-    last4: string;
-  };
-};
-
-type PaymentSuccessState = {
+export type PaymentSuccessState = {
+  customerEmail: string;
   orderId: string;
   total: string;
+  status: OrderStatus;
+  items: CustomerOrderItem[];
 };
 
 function getStorage() {
@@ -38,51 +21,6 @@ function getStorage() {
   return window.localStorage;
 }
 
-export function readCustomerOrders() {
-  const storage = getStorage();
-
-  if (!storage) {
-    return [] as CustomerOrder[];
-  }
-
-  const rawValue = storage.getItem(CUSTOMER_ORDERS_STORAGE_KEY);
-
-  if (!rawValue) {
-    return [] as CustomerOrder[];
-  }
-
-  try {
-    const parsedValue = JSON.parse(rawValue) as CustomerOrder[];
-
-    return parsedValue.filter(
-      (order) =>
-        typeof order.id === "string" &&
-        typeof order.date === "string" &&
-        order.status === "Paid" &&
-        typeof order.total === "string" &&
-        typeof order.itemCount === "number" &&
-        Array.isArray(order.items),
-    );
-  } catch {
-    storage.removeItem(CUSTOMER_ORDERS_STORAGE_KEY);
-    return [] as CustomerOrder[];
-  }
-}
-
-export function saveCustomerOrder(order: CustomerOrder) {
-  const storage = getStorage();
-
-  if (!storage) {
-    return;
-  }
-
-  const currentOrders = readCustomerOrders();
-  storage.setItem(
-    CUSTOMER_ORDERS_STORAGE_KEY,
-    JSON.stringify([order, ...currentOrders]),
-  );
-}
-
 export function setPaymentSuccessState(state: PaymentSuccessState) {
   const storage = getStorage();
 
@@ -90,10 +28,23 @@ export function setPaymentSuccessState(state: PaymentSuccessState) {
     return;
   }
 
-  storage.setItem(PAYMENT_SUCCESS_STORAGE_KEY, JSON.stringify(state));
+  const customerEmail = normalizeCustomerEmail(state.customerEmail);
+
+  if (!customerEmail) {
+    storage.removeItem(PAYMENT_SUCCESS_STORAGE_KEY);
+    return;
+  }
+
+  storage.setItem(
+    PAYMENT_SUCCESS_STORAGE_KEY,
+    JSON.stringify({
+      ...state,
+      customerEmail,
+    }),
+  );
 }
 
-export function readPaymentSuccessState() {
+export function readPaymentSuccessState(customerEmail?: string | null) {
   const storage = getStorage();
 
   if (!storage) {
@@ -108,16 +59,30 @@ export function readPaymentSuccessState() {
 
   try {
     const parsedValue = JSON.parse(rawValue) as PaymentSuccessState;
+    const normalizedCustomerEmail = normalizeCustomerEmail(customerEmail ?? "");
+    const storedCustomerEmail = normalizeCustomerEmail(
+      parsedValue.customerEmail ?? "",
+    );
 
     if (
+      typeof parsedValue.customerEmail !== "string" ||
       typeof parsedValue.orderId !== "string" ||
-      typeof parsedValue.total !== "string"
+      typeof parsedValue.total !== "string" ||
+      typeof parsedValue.status !== "string" ||
+      !Array.isArray(parsedValue.items)
     ) {
       storage.removeItem(PAYMENT_SUCCESS_STORAGE_KEY);
       return null;
     }
 
-    return parsedValue;
+    if (!normalizedCustomerEmail || storedCustomerEmail !== normalizedCustomerEmail) {
+      return null;
+    }
+
+    return {
+      ...parsedValue,
+      customerEmail: storedCustomerEmail,
+    };
   } catch {
     storage.removeItem(PAYMENT_SUCCESS_STORAGE_KEY);
     return null;
@@ -132,4 +97,29 @@ export function clearPaymentSuccessState() {
   }
 
   storage.removeItem(PAYMENT_SUCCESS_STORAGE_KEY);
+}
+
+export function toFallbackCustomerOrder(
+  successState: PaymentSuccessState,
+): CustomerOrder {
+  return {
+    databaseId: 0,
+    id: successState.orderId,
+    date: new Date().toISOString(),
+    status: successState.status,
+    total: successState.total,
+    itemCount: successState.items.reduce((total, item) => total + item.quantity, 0),
+    items: successState.items,
+    shipping: {
+      fullName: "",
+      email: "",
+      address: "",
+      city: "",
+      postalCode: "",
+    },
+    payment: {
+      cardholderName: "",
+      last4: "",
+    },
+  };
 }

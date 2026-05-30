@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { Post } from "@repo/db/data";
@@ -11,11 +11,7 @@ import {
   getProductPrice,
   getProductPriceSupportingText,
 } from "@/functions/productPrice";
-import {
-  getProductViewsLabel,
-  getWishlistSavesLabel,
-} from "@/functions/productStats";
-import { useMergedStorefrontPosts } from "@/functions/storefrontPosts";
+import { getProductViewsLabel } from "@/functions/productStats";
 import {
   isProductWishlisted,
   setProductWishlisted,
@@ -35,25 +31,16 @@ export default function ProductDetailView({
   initialSaved: boolean;
 }) {
   const [saved, setSaved] = useState(initialSaved);
-  const [savedCount, setSavedCount] = useState(post.likes);
   const [cartAdded, setCartAdded] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const { addToCart } = useCart();
-  const mergedProducts = useMergedStorefrontPosts([post, ...relatedProducts]);
-  const displayPost = useMemo(
-    () => mergedProducts.find((item) => item.urlId === post.urlId) ?? post,
-    [mergedProducts, post],
-  );
-  const displayRelatedProducts = useMemo(() => {
-    return mergedProducts
-      .filter((item) => item.urlId !== displayPost.urlId && item.active)
-      .slice(0, relatedProducts.length);
-  }, [displayPost.urlId, mergedProducts, relatedProducts.length]);
+  const displayPost = post;
+  const displayRelatedProducts = relatedProducts;
+  const isOutOfStock = displayPost.active && displayPost.stockQuantity <= 0;
 
   function handleSaveToggle() {
     setSaved((current) => {
       const next = !current;
-      setSavedCount((count) => Math.max(0, count + (next ? 1 : -1)));
       setProductWishlisted(displayPost.urlId, next);
       return next;
     });
@@ -74,10 +61,6 @@ export default function ProductDetailView({
   }, []);
 
   useEffect(() => {
-    setSavedCount(displayPost.likes);
-  }, [displayPost.likes]);
-
-  useEffect(() => {
     if (!hydrated) {
       return;
     }
@@ -86,6 +69,10 @@ export default function ProductDetailView({
   }, [displayPost.urlId, hydrated]);
 
   function handleAddToCart() {
+    if (!displayPost.active || displayPost.stockQuantity <= 0) {
+      return;
+    }
+
     addToCart(displayPost);
     setCartAdded(true);
   }
@@ -108,12 +95,12 @@ export default function ProductDetailView({
             Please browse other available products.
           </p>
           <div className="mt-6">
-            <Link
+            <a
               href="/#featured-products"
               className="inline-flex items-center justify-center rounded-full bg-[color:var(--color-wsu)] px-5 py-3 font-medium text-white transition hover:bg-[color:var(--color-wsu-light)]"
             >
               Back to Products
-            </Link>
+            </a>
           </div>
         </div>
       </div>
@@ -127,16 +114,15 @@ export default function ProductDetailView({
       className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link
+        <a
           href="/#featured-products"
           className="inline-flex items-center rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition hover:border-neutral-400 hover:text-neutral-950 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:border-neutral-600 dark:hover:text-neutral-50"
         >
           Back to Products
-        </Link>
+        </a>
 
         <div className="flex flex-wrap items-center gap-3 text-sm text-neutral-500 dark:text-neutral-400">
           <span>{getProductViewsLabel(displayPost.views)}</span>
-          <span>{getWishlistSavesLabel(savedCount)}</span>
         </div>
       </div>
 
@@ -160,8 +146,12 @@ export default function ProductDetailView({
             <span className="rounded-full bg-neutral-100 px-3 py-1 text-sm font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
               {displayPost.category}
             </span>
-            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-700">
-              Available Now
+            <span className={`rounded-full px-3 py-1 text-sm font-medium ${
+              isOutOfStock
+                ? "border border-rose-200 bg-rose-50 text-rose-700"
+                : "border border-emerald-200 bg-emerald-50 text-emerald-700"
+            }`}>
+              {isOutOfStock ? "Out of stock" : "In stock"}
             </span>
           </div>
 
@@ -184,15 +174,25 @@ export default function ProductDetailView({
             <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">
               {getProductPriceSupportingText(displayPost)}
             </p>
+            <p className="mt-3 text-sm font-medium text-neutral-700 dark:text-neutral-200">
+              {isOutOfStock
+                ? "Out of stock"
+                : `In stock - ${displayPost.stockQuantity} available`}
+            </p>
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
             <button
               type="button"
               onClick={handleAddToCart}
-              className="inline-flex items-center justify-center rounded-full bg-[color:var(--color-wsu)] px-5 py-3 font-medium text-white transition hover:bg-[color:var(--color-wsu-light)]"
+              disabled={isOutOfStock}
+              className="inline-flex items-center justify-center rounded-full bg-[color:var(--color-wsu)] px-5 py-3 font-medium text-white transition hover:bg-[color:var(--color-wsu-light)] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {cartAdded ? "Added to Cart" : "Add to Cart"}
+              {isOutOfStock
+                ? "Out of Stock"
+                : cartAdded
+                  ? "Added to Cart"
+                  : "Add to Cart"}
             </button>
 
             <button
@@ -264,7 +264,7 @@ export default function ProductDetailView({
 
               return (
                 <article
-                  key={relatedProduct.id}
+                  key={`related-product-${relatedProduct.urlId}`}
                   className="flex h-full flex-col overflow-hidden rounded-[28px] border border-black/10 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_70px_rgba(15,23,42,0.14)] dark:border-white/10 dark:bg-neutral-900 dark:shadow-[0_20px_60px_rgba(0,0,0,0.30)]"
                 >
                   <Link href={productHref} className="block">

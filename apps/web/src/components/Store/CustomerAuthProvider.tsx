@@ -9,18 +9,21 @@ import {
   useState,
   type PropsWithChildren,
 } from "react";
+import { getSession, signIn, signOut, useSession } from "next-auth/react";
+import { CART_STORAGE_KEY } from "./CartProvider";
+import { clearPaymentSuccessState } from "@/functions/customerOrders";
+import { clearCustomerWishlist } from "@/functions/customerWishlist";
+import {
+  type CustomerProfile,
+  normalizeCustomerCreatedAt,
+  normalizeCustomerEmail,
+  toCustomerProfile as toAuthCustomerProfile,
+} from "@/lib/customerAuth";
 
 export const CUSTOMER_ACCOUNT_STORAGE_KEY = "storefront-customer-account";
 export const CUSTOMER_SESSION_STORAGE_KEY = "storefront-customer-session";
 
 type StoredCustomerAccount = {
-  name: string;
-  email: string;
-  password: string;
-  createdAt: string;
-};
-
-export type CustomerProfile = {
   name: string;
   email: string;
   createdAt: string;
@@ -38,36 +41,14 @@ type CustomerAuthContextValue = {
     name: string;
     email: string;
     password: string;
-  }) => AuthResult;
-  login: (input: { email: string; password: string }) => AuthResult;
-  logout: () => void;
+  }) => Promise<AuthResult>;
+  login: (input: { email: string; password: string }) => Promise<AuthResult>;
+  logout: () => Promise<void>;
 };
 
 const CustomerAuthContext = createContext<CustomerAuthContextValue | null>(null);
 
-function normalizeEmail(value: string) {
-  return value.trim().toLowerCase();
-}
-
-function getFallbackCreatedAt() {
-  return new Date().toISOString();
-}
-
-function normalizeCreatedAt(value: unknown) {
-  if (typeof value !== "string") {
-    return getFallbackCreatedAt();
-  }
-
-  const parsedDate = new Date(value);
-
-  if (Number.isNaN(parsedDate.getTime())) {
-    return getFallbackCreatedAt();
-  }
-
-  return parsedDate.toISOString();
-}
-
-function toCustomerProfile(account: StoredCustomerAccount): CustomerProfile {
+function toStoredCustomerProfile(account: StoredCustomerAccount): CustomerProfile {
   return {
     name: account.name,
     email: account.email,
@@ -86,9 +67,7 @@ function isStoredCustomerAccount(value: unknown): value is StoredCustomerAccount
     typeof candidate.name === "string" &&
     candidate.name.trim().length > 0 &&
     typeof candidate.email === "string" &&
-    normalizeEmail(candidate.email).length > 0 &&
-    typeof candidate.password === "string" &&
-    candidate.password.length > 0
+    normalizeCustomerEmail(candidate.email).length > 0
   );
 }
 
@@ -114,8 +93,8 @@ function readStoredAccount() {
     return {
       ...parsedValue,
       name: parsedValue.name.trim(),
-      email: normalizeEmail(parsedValue.email),
-      createdAt: normalizeCreatedAt(
+      email: normalizeCustomerEmail(parsedValue.email),
+      createdAt: normalizeCustomerCreatedAt(
         (parsedValue as { createdAt?: unknown }).createdAt,
       ),
     };
@@ -125,48 +104,78 @@ function readStoredAccount() {
   }
 }
 
-function readStoredSession(account: StoredCustomerAccount | null) {
-  if (typeof window === "undefined" || !account) {
-    return null;
-  }
+async function waitForSessionCustomer() {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const session = await getSession();
+    const customer = toAuthCustomerProfile({
+      name: session?.user?.name,
+      email: session?.user?.email,
+      createdAt: session?.user?.createdAt,
+    });
 
-  const rawValue = window.localStorage.getItem(CUSTOMER_SESSION_STORAGE_KEY);
-
-  if (!rawValue) {
-    return null;
-  }
-
-  try {
-    const parsedValue = JSON.parse(rawValue) as { email?: unknown };
-
-    if (normalizeEmail(String(parsedValue.email ?? "")) !== account.email) {
-      window.localStorage.removeItem(CUSTOMER_SESSION_STORAGE_KEY);
-      return null;
+    if (customer) {
+      return customer;
     }
 
-    return toCustomerProfile(account);
-  } catch {
-    window.localStorage.removeItem(CUSTOMER_SESSION_STORAGE_KEY);
-    return null;
+    await new Promise((resolve) => window.setTimeout(resolve, 150));
   }
+
+  return null;
+}
+
+function clearCustomerClientState() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(CUSTOMER_ACCOUNT_STORAGE_KEY);
+  window.localStorage.removeItem(CUSTOMER_SESSION_STORAGE_KEY);
+  window.localStorage.removeItem(CART_STORAGE_KEY);
+  clearCustomerWishlist();
+  clearPaymentSuccessState();
 }
 
 export function CustomerAuthProvider({ children }: PropsWithChildren) {
+  const { data: session, status } = useSession();
   const [storedAccount, setStoredAccount] = useState<StoredCustomerAccount | null>(
     null,
   );
   const [customer, setCustomer] = useState<CustomerProfile | null>(null);
-  const [hasHydrated, setHasHydrated] = useState(false);
+  const [hasLoadedStorage, setHasLoadedStorage] = useState(false);
 
   useEffect(() => {
     const account = readStoredAccount();
     setStoredAccount(account);
-    setCustomer(readStoredSession(account));
-    setHasHydrated(true);
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(CUSTOMER_SESSION_STORAGE_KEY);
+    }
+    setHasLoadedStorage(true);
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !hasHydrated) {
+    if (status === "loading") {
+      return;
+    }
+
+    const sessionCustomer = toAuthCustomerProfile({
+      name: session?.user?.name,
+      email: session?.user?.email,
+      createdAt: session?.user?.createdAt,
+    });
+
+    setCustomer(sessionCustomer);
+
+    if (sessionCustomer) {
+      setStoredAccount(sessionCustomer);
+    } else if (typeof window !== "undefined") {
+      window.localStorage.removeItem(CUSTOMER_SESSION_STORAGE_KEY);
+    }
+  }, [session, status]);
+
+  const hasHydrated = hasLoadedStorage && status !== "loading";
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !hasLoadedStorage) {
       return;
     }
 
@@ -179,10 +188,10 @@ export function CustomerAuthProvider({ children }: PropsWithChildren) {
       CUSTOMER_ACCOUNT_STORAGE_KEY,
       JSON.stringify(storedAccount),
     );
-  }, [hasHydrated, storedAccount]);
+  }, [hasLoadedStorage, storedAccount]);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !hasHydrated) {
+    if (typeof window === "undefined" || !hasLoadedStorage) {
       return;
     }
 
@@ -195,84 +204,137 @@ export function CustomerAuthProvider({ children }: PropsWithChildren) {
       CUSTOMER_SESSION_STORAGE_KEY,
       JSON.stringify({ email: customer.email }),
     );
-  }, [customer, hasHydrated]);
+  }, [customer, hasLoadedStorage]);
 
-  const register = useCallback<
-    CustomerAuthContextValue["register"]
-  >(({ name, email, password }) => {
-    const trimmedName = name.trim();
-    const normalizedEmail = normalizeEmail(email);
+  const register = useCallback<CustomerAuthContextValue["register"]>(
+    async ({ name, email, password }) => {
+      const trimmedName = name.trim();
+      const normalizedEmail = normalizeCustomerEmail(email);
 
-    if (!trimmedName || !normalizedEmail || !password) {
-      return {
-        ok: false,
-        error: "Enter your name, email, and password to create an account.",
-      };
-    }
-
-    if (storedAccount) {
-      return {
-        ok: false,
-        error: "An account with this email already exists. Please log in.",
-      };
-    }
-
-    const nextAccount: StoredCustomerAccount = {
-      name: trimmedName,
-      email: normalizedEmail,
-      password,
-      createdAt: getFallbackCreatedAt(),
-    };
-    const nextCustomer = toCustomerProfile(nextAccount);
-
-    setStoredAccount(nextAccount);
-    setCustomer(nextCustomer);
-
-    return {
-      ok: true,
-      customer: nextCustomer,
-    };
-  }, [storedAccount]);
-
-  const login = useCallback<CustomerAuthContextValue["login"]>(
-    ({ email, password }) => {
-      const normalizedEmail = normalizeEmail(email);
-
-      if (!storedAccount) {
+      if (!trimmedName || !normalizedEmail || !password) {
         return {
           ok: false,
-          error: "Create an account first before logging in.",
+          error: "Enter your name, email, and password to create an account.",
         };
       }
 
-      if (
-        storedAccount.email !== normalizedEmail ||
-        storedAccount.password !== password
-      ) {
+      const response = await fetch("/api/account/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: trimmedName,
+          email: normalizedEmail,
+          password,
+        }),
+      });
+
+      const payload = (await response.json().catch(() => null)) as
+        | { error?: string; customer?: CustomerProfile | null }
+        | null;
+
+      if (!response.ok) {
         return {
           ok: false,
-          error: "Incorrect email or password. Please try again.",
+          error:
+            payload?.error ||
+            "Unable to create your account right now. Please try again.",
         };
       }
 
-      const nextCustomer = toCustomerProfile(storedAccount);
+      const loginResult = await signIn("credentials", {
+        redirect: false,
+        email: normalizedEmail,
+        password,
+      });
+
+      if (!loginResult || loginResult.error) {
+        return {
+          ok: false,
+          error: "Your account was created, but we could not sign you in.",
+        };
+      }
+
+      const nextCustomer = await waitForSessionCustomer();
+
+      if (!nextCustomer) {
+        return {
+          ok: false,
+          error: "Your account was created, but we could not confirm your session.",
+        };
+      }
+
+      clearPaymentSuccessState();
       setCustomer(nextCustomer);
+      setStoredAccount(nextCustomer);
 
       return {
         ok: true,
         customer: nextCustomer,
       };
     },
-    [storedAccount],
+    [],
   );
 
-  const logout = useCallback(() => {
+  const login = useCallback<CustomerAuthContextValue["login"]>(
+    async ({ email, password }) => {
+      const normalizedEmail = normalizeCustomerEmail(email);
+
+      if (!normalizedEmail || !password) {
+        return {
+          ok: false,
+          error: "Enter your email and password to log in.",
+        };
+      }
+
+      const result = await signIn("credentials", {
+        redirect: false,
+        email: normalizedEmail,
+        password,
+      });
+
+      if (!result || result.error) {
+        return {
+          ok: false,
+          error: "Incorrect email or password. Please try again.",
+        };
+      }
+
+      const nextCustomer = await waitForSessionCustomer();
+
+      if (!nextCustomer) {
+        return {
+          ok: false,
+          error: "We could not confirm your account session. Please try again.",
+        };
+      }
+
+      clearPaymentSuccessState();
+      setCustomer(nextCustomer);
+      setStoredAccount(nextCustomer);
+
+      return {
+        ok: true,
+        customer: nextCustomer,
+      };
+    },
+    [],
+  );
+
+  const logout = useCallback(async () => {
+    clearCustomerClientState();
     setCustomer(null);
+    setStoredAccount(null);
+    await signOut({
+      redirect: false,
+    });
+    clearCustomerClientState();
   }, []);
 
   const value = useMemo<CustomerAuthContextValue>(
     () => ({
-      account: storedAccount ? toCustomerProfile(storedAccount) : null,
+      account: storedAccount ? toStoredCustomerProfile(storedAccount) : null,
       customer,
       hasHydrated,
       register,

@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start:web": "pnpm --filter web start --port 3001",
-    "start:admin": "pnpm --filter admin start --port 3002",
+    "start:web": "pnpm --filter @repo/web dev",
+    "start:admin": "pnpm --filter @repo/admin dev",
     "test-1": "pnpm playwright test --grep \"@a1\"",
     "test-2": "pnpm playwright test --grep \"@a2\"",
     "test-3": "pnpm playwright test --grep \"@a3\"",

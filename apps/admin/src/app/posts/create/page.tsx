@@ -23,8 +23,9 @@ export default async function CreatePostPage() {
         imageUrl: "",
         date: new Date(),
         views: 0,
-        likes: 0,
         active: true,
+        price: 0,
+        stockQuantity: 0,
         tags: "",
       }}
     />

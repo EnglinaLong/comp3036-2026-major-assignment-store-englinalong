@@ -3,17 +3,12 @@
 import { marked } from "marked";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type { Post } from "@repo/db/data";
-import {
-  upsertCreatedProduct,
-  upsertProductOverride,
-} from "@repo/ui/local-product-state";
+import styles from "./admin-ui.module.css";
 
-const PRODUCT_PRICE_OVERRIDES_COOKIE = "store-product-price-overrides";
 const CREATE_PRODUCT_DRAFT_STORAGE_KEY = "admin-create-product-draft";
 
 type PostEditorProps = {
   postId?: number;
-  isLocalOnly?: boolean;
   initialPost: Pick<
     Post,
     | "title"
@@ -25,8 +20,9 @@ type PostEditorProps = {
     | "urlId"
     | "date"
     | "views"
-    | "likes"
     | "active"
+    | "price"
+    | "stockQuantity"
   >;
 };
 
@@ -37,6 +33,7 @@ type FormValues = {
   content: string;
   imageUrl: string;
   price: string;
+  stockQuantity: string;
   tags: string;
 };
 
@@ -88,6 +85,14 @@ function validate(values: FormValues) {
     errors.tags = "At least one product tag or collection is required";
   }
 
+  const parsedStockQuantity = Number.parseInt(values.stockQuantity, 10);
+
+  if (!values.stockQuantity.trim()) {
+    errors.stockQuantity = "Stock quantity is required";
+  } else if (!Number.isInteger(parsedStockQuantity) || parsedStockQuantity < 0) {
+    errors.stockQuantity = "Stock quantity must be a non-negative integer";
+  }
+
   return errors;
 }
 
@@ -127,62 +132,6 @@ function getFallbackPrice(postId: number | undefined, category: string) {
   return String(base + ((postId % 3) * 5));
 }
 
-function readStoredPrice(title: string) {
-  if (typeof document === "undefined") {
-    return null;
-  }
-
-  const cookieValue = document.cookie
-    .split("; ")
-    .find((entry) => entry.startsWith(`${PRODUCT_PRICE_OVERRIDES_COOKIE}=`))
-    ?.split("=")[1];
-
-  if (!cookieValue) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(
-      decodeURIComponent(cookieValue),
-    ) as Record<string, number>;
-    const slugKey = slugifyTitle(title);
-    return parsed[slugKey] ?? null;
-  } catch {
-    return null;
-  }
-}
-
-function storePriceOverride(price: number, title: string) {
-  if (typeof document === "undefined") {
-    return;
-  }
-
-  const cookieValue = document.cookie
-    .split("; ")
-    .find((entry) => entry.startsWith(`${PRODUCT_PRICE_OVERRIDES_COOKIE}=`))
-    ?.split("=")[1];
-
-  let overrides: Record<string, number> = {};
-
-  if (cookieValue) {
-    try {
-      overrides = JSON.parse(decodeURIComponent(cookieValue)) as Record<
-        string,
-        number
-      >;
-    } catch {
-      overrides = {};
-    }
-  }
-
-  const slugKey = slugifyTitle(title);
-  overrides[slugKey] = price;
-
-  document.cookie = `${PRODUCT_PRICE_OVERRIDES_COOKIE}=${encodeURIComponent(
-    JSON.stringify(overrides),
-  )}; path=/; max-age=31536000; SameSite=Lax`;
-}
-
 function readCreateDraft() {
   if (typeof window === "undefined") {
     return null;
@@ -209,6 +158,10 @@ function readCreateDraft() {
       imageUrl:
         typeof parsedValue.imageUrl === "string" ? parsedValue.imageUrl : "",
       price: typeof parsedValue.price === "string" ? parsedValue.price : "",
+      stockQuantity:
+        typeof parsedValue.stockQuantity === "string"
+          ? parsedValue.stockQuantity
+          : "",
       tags: typeof parsedValue.tags === "string" ? parsedValue.tags : "",
     } satisfies FormValues;
   } catch {
@@ -238,7 +191,6 @@ function clearCreateDraft() {
 
 export function PostEditor({
   postId,
-  isLocalOnly = false,
   initialPost,
 }: PostEditorProps) {
   const isCreateMode = !initialPost.title.trim();
@@ -246,10 +198,11 @@ export function PostEditor({
     const baseValues = {
       ...initialPost,
       price: String(
-        readStoredPrice(initialPost.title) ??
-          getConfiguredPrice(initialPost.title) ??
-          getFallbackPrice(postId, initialPost.category),
+        initialPost.price ||
+          (getConfiguredPrice(initialPost.title) ??
+            getFallbackPrice(postId, initialPost.category)),
       ),
+      stockQuantity: String(initialPost.stockQuantity),
     };
 
     if (!isCreateMode) {
@@ -285,6 +238,9 @@ export function PostEditor({
       content: String(formData.get("content") ?? values.content),
       imageUrl: String(formData.get("imageUrl") ?? values.imageUrl),
       price: String(formData.get("price") ?? values.price),
+      stockQuantity: String(
+        formData.get("stockQuantity") ?? values.stockQuantity,
+      ),
       tags: String(formData.get("tags") ?? values.tags),
     };
   };
@@ -337,48 +293,18 @@ export function PostEditor({
         return;
       }
 
-      if (isLocalOnly) {
-        upsertCreatedProduct({
-          id: postId,
-          urlId: initialPost.urlId,
-          title: submissionValues.title.trim(),
-          category: submissionValues.category.trim(),
-          description: submissionValues.description.trim(),
-          content: submissionValues.content.trim(),
-          imageUrl: submissionValues.imageUrl.trim(),
-          date: initialPost.date,
-          tags: submissionValues.tags.trim(),
-          views: initialPost.views,
-          likes: initialPost.likes,
-          active: initialPost.active,
-        });
-      } else {
-        const response = await fetch(`/api/posts/${postId}`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(submissionValues),
-        });
+      const response = await fetch(`/api/posts/${postId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(submissionValues),
+      });
 
-        if (!response.ok) {
-          setShowSaveError(true);
-          setSaveMessage("");
-          return;
-        }
-
-        upsertProductOverride(initialPost.urlId, {
-          title: submissionValues.title.trim(),
-          category: submissionValues.category.trim(),
-          description: submissionValues.description.trim(),
-          content: submissionValues.content.trim(),
-          imageUrl: submissionValues.imageUrl.trim(),
-          tags: submissionValues.tags.trim(),
-          date: initialPost.date,
-          views: initialPost.views,
-          likes: initialPost.likes,
-          active: initialPost.active,
-        });
+      if (!response.ok) {
+        setShowSaveError(true);
+        setSaveMessage("");
+        return;
       }
     } else {
       const response = await fetch("/api/posts", {
@@ -395,28 +321,10 @@ export function PostEditor({
         return;
       }
 
-      const result = (await response.json()) as { id: number };
-      upsertCreatedProduct({
-        id: result.id,
-        urlId: slugifyTitle(submissionValues.title),
-        title: submissionValues.title.trim(),
-        category: submissionValues.category.trim(),
-        description: submissionValues.description.trim(),
-        content: submissionValues.content.trim(),
-        imageUrl: submissionValues.imageUrl.trim(),
-        date: new Date(),
-        tags: submissionValues.tags.trim(),
-        views: 0,
-        likes: 0,
-        active: true,
-      });
+      await response.json();
       clearCreateDraft();
     }
 
-    storePriceOverride(
-      Number.parseFloat(submissionValues.price),
-      submissionValues.title,
-    );
     setShowSaveError(false);
     setSaveMessage(
       isCreateMode
@@ -600,7 +508,7 @@ export function PostEditor({
           <button
             type="button"
             onClick={togglePreview}
-            style={secondaryButtonStyle}
+            className={styles.editorSecondaryButton}
           >
             {isPreviewOpen ? "Close Preview" : "Preview"}
           </button>
@@ -671,6 +579,32 @@ export function PostEditor({
           />
         </Field>
 
+        <Field
+          label="Stock Quantity"
+          htmlFor="stock-quantity"
+          error={errors.stockQuantity}
+        >
+          <input
+            id="stock-quantity"
+            name="stockQuantity"
+            type="number"
+            min="0"
+            step="1"
+            inputMode="numeric"
+            value={values.stockQuantity}
+            onChange={(event) =>
+              updateValue("stockQuantity", event.target.value)
+            }
+            placeholder="12"
+            style={{
+              ...inputStyle,
+              border: errors.stockQuantity
+                ? "1px solid #dc2626"
+                : inputStyle.border,
+            }}
+          />
+        </Field>
+
         {showImagePreview ? (
           <img
             src={values.imageUrl}
@@ -704,7 +638,7 @@ export function PostEditor({
         </Field>
 
         <div>
-          <button type="submit" style={primaryButtonStyle}>
+          <button type="submit" className={styles.editorPrimaryButton}>
             Save Product
           </button>
         </div>
@@ -761,22 +695,6 @@ const textAreaStyle = {
   ...inputStyle,
   fontFamily: "inherit",
   resize: "vertical" as const,
-};
-
-const primaryButtonStyle = {
-  padding: "0.85rem 1.5rem",
-  backgroundColor: "#374151",
-  color: "white",
-  border: "none",
-  borderRadius: "0.75rem",
-  cursor: "pointer",
-  fontWeight: 700,
-  fontSize: "1rem",
-};
-
-const secondaryButtonStyle = {
-  ...primaryButtonStyle,
-  backgroundColor: "#374151",
 };
 
 const previewStyle = {
