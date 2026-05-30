@@ -1,296 +1,221 @@
-# COMP3036 Major Assignment — Full Stack Store
+# Full Stack Store
 
-This project was originally based on the Assignment 2 blog application and has been extended into a B2C full stack digital product store for the COMP3036 Major Assignment.
+## Project Overview
 
-The application focuses on selling digital developer resources such as:
-- Full stack starter templates
-- Tailwind UI component packs
-- Dashboard templates
-- Backend toolkits
-- Developer productivity resources
+This project is a full stack digital product storefront built for COMP3036 Full Stack Development.
 
-The project contains:
-- Customer shopping application
-- Admin dashboard
-- Product management system
-- Shopping cart and checkout flow
+It includes:
+- A customer application for browsing and purchasing products
+- An admin dashboard for managing products and viewing customer orders
+- A shared backend database used by both applications
+
+Iteration 1 focused on frontend functionality.
+
+Iteration 2 added backend and database functionality.
+
+## Iteration Summary
+
+### Iteration 1
+Implemented the customer storefront and admin dashboard user interfaces using frontend state and local persistence.
+
+### Iteration 2
+Integrated Prisma and PostgreSQL, added authentication, order persistence, product persistence, stock management, and customer order history.
+
+## Technology Stack
+
+### Storefront
+- Next.js
+- React
+- TypeScript
+
+### Admin
+- Next.js
+- React
+- TypeScript
+
+### Backend
+- Prisma ORM
+- PostgreSQL / Neon
+
+### Authentication
+- NextAuth
+- `bcryptjs`
+- JWT
+
+### Testing
+- Playwright
+- GitHub Actions
+
+## Implemented Features
+
+### Customer Features
+- Browse products
+- Search products
+- Filter by category
+- Filter by collection/tag
+- View product details
+- Add products to cart
+- Update cart quantities
+- Remove products from cart
+- Customer registration
+- Customer login/logout
+- Protected checkout
+- Mock payment checkout
+- Purchase history
 - Wishlist functionality
-- Customer authentication
-- Order history system
 
----
+### Admin Features
+- Admin login/logout
+- View products
+- Create products
+- Edit products
+- Manage active/inactive products
+- Filter products
+- Sort products
+- View customer order records
 
-# Success Criteria
+### Database Features
+- Products stored in PostgreSQL
+- Users stored in PostgreSQL
+- Orders stored in PostgreSQL
+- Order items stored in PostgreSQL
+- Product stock quantity management
+- Shared database between customer and admin applications
+- All product, user, order, and stock data is shared between the customer storefront and admin dashboard through the same PostgreSQL database.
 
-- ✅ All tests must pass
-- ✅ Customer and admin applications function correctly
-- ✅ Products sync correctly between admin and customer applications
-- ✅ Customers can complete the shopping experience
-
----
-
-# Requirements — Iteration 1 Frontend Implementation
-
-Iteration 1 focuses on frontend functionality using local state and frontend-only persistence.
-
-## Customer Application
-
-### Home Screen
-- [ ] Display active products only
-- [ ] Display product categories
-- [ ] Display product collections/tags
-- [ ] Display featured products
-- [ ] Support dark/light mode
-- [ ] Search products by title or description
-- [ ] Display:
-  - product title
-  - product image
-  - product description
-  - product price
-  - category
-  - collections/tags
-
-### Product Detail Screen
-- [ ] Display full product information
-- [ ] Display large product image
-- [ ] Display pricing information
-- [ ] Add products to cart
-- [ ] Save products to wishlist
-- [ ] Display related products
-- [ ] Display product availability status
-
-### Category / Collection / Search Screens
-- [ ] Filter products by category
-- [ ] Filter products by collection/tag
-- [ ] Search products using query strings
-- [ ] Display empty states when no products are found
-
-### Customer Account Features
-- [ ] Customer registration
-- [ ] Customer login/logout
-- [ ] Account overview page
-- [ ] Wishlist page
-- [ ] Order history page
-
-### Shopping Cart and Checkout
-- [ ] Add/remove products from cart
-- [ ] Update product quantities
-- [ ] Display order summary
-- [ ] Frontend-only checkout flow
-- [ ] Prevent checkout for unavailable products
-- [ ] Display unavailable product warnings
-- [ ] Save completed orders locally
-
----
-
-# Admin Dashboard
-
-## Admin Authentication
-- [ ] Secure admin login
-- [ ] Protected admin pages
-- [ ] Logout functionality
-
-## Product Management
-- [ ] View all products
-- [ ] Create products
-- [ ] Update products
-- [ ] Activate/deactivate products
-- [ ] Filter products
-- [ ] Sort products
-- [ ] Preview product details
-- [ ] Validate form fields
-- [ ] Sync products with customer application
-
----
-
-# Requirements — Iteration 2 Backend Integration
-
-Iteration 2 extends the application using backend APIs and database persistence.
-
-## Backend / Customer Features
-
-### Product Data
-- [ ] Load products from database
-- [ ] Persist product changes across refreshes
-- [ ] Sync customer and admin product data
-- [ ] Perform server-side filtering and searching
-
-### Shopping Cart
-- [ ] Persist cart items
-- [ ] Prevent checkout for unavailable products
-- [ ] Update cart data using backend APIs
-
-### Wishlist
-- [ ] Persist wishlist items to database
-- [ ] Allow customers to view saved products
-
-### Orders and Checkout
-- [ ] Store completed orders in database
-- [ ] Display purchase history
-- [ ] Store purchased products and totals
+## Authentication
 
 ### Customer Authentication
-- [ ] JWT-based authentication
-- [ ] Secure customer login/register
-- [ ] Protected customer account routes
+- Customer registration
+- Customer login/logout
+- Password hashing using `bcryptjs`
+- NextAuth JWT sessions
+- Protected checkout
+- Protected order history
 
----
+### Admin Authentication
+- Password-based admin login
+- JWT authentication cookie
+- Protected admin dashboard
+- Protected admin product management
+- Protected customer order records
 
-# Backend / Admin Features
+## Database
 
-## Admin Authentication
-- [ ] Validate admin login on the server
-- [ ] Use secure JWT authentication
-- [ ] Protect admin routes
-- [ ] Support logout functionality
+### Product
+- title
+- description
+- category
+- image
+- price
+- stock quantity
+- active status
+- tags
 
-## Product Management
-- [ ] Create products in database
-- [ ] Update products in database
-- [ ] Activate/deactivate products
-- [ ] Persist product changes
-- [ ] Sync updates with customer application
+### User
+- name
+- email
+- password hash
+- role
 
-## Admin Dashboard
-- [ ] View all database products
-- [ ] Filter and sort products
-- [ ] Manage active/inactive products
-- [ ] View customer purchase records
+### Order
+- customer
+- order status
+- total amount
 
----
+### Order Item
+- product
+- quantity
+- purchase price
 
-# Database Integration
+## Running Locally
 
-The backend system will use:
-- Prisma ORM
-- Neon PostgreSQL
-- Next.js API routes
-- JWT authentication
-
-The backend will manage:
-- Product persistence
-- Customer accounts
-- Orders and purchase history
-- Wishlist persistence
-- Product availability
-- Authentication and authorization
-
----
-
-# Technology Stack
-
-## Applications
-- `apps/web` — Customer Store
-- `apps/admin` — Admin Dashboard
-
-## Shared Packages
-- `packages/ui` — Shared UI components
-- `packages/utils` — Shared utility functions
-- `packages/db` — Prisma and database utilities
-- `packages/env` — Environment configuration
-
-## Testing
-- `tests/playwright` — End-to-end testing
-
----
-
-# Running the Project
-
-Install dependencies:
+Installation:
 
 ```bash
 pnpm install
 ```
 
-Run development servers:
+Generate Prisma client:
+
+```bash
+pnpm --filter @repo/db db:generate
+```
+
+Push database schema:
+
+```bash
+pnpm --filter @repo/db db:push
+```
+
+Start development servers:
 
 ```bash
 turbo dev
 ```
 
-Applications:
-- Customer Store → http://localhost:3001
-- Admin Dashboard → http://localhost:3002
+Storefront:
+`http://localhost:3001`
 
----
+Admin:
+`http://localhost:3002`
 
-# Running Tests
+## Testing
 
-## Customer Store Tests
-
-Run customer storefront tests:
+Storefront tests:
 
 ```bash
 turbo test-1
 ```
 
-This includes:
-- Product browsing
-- Product detail pages
-- Search and filtering
-- Cart and checkout
-- Customer account features
-- Wishlist functionality
-
----
-
-## Admin Dashboard Tests
-
-Run admin dashboard tests:
+Admin tests:
 
 ```bash
 turbo test-2
 ```
 
-This includes:
-- Admin authentication
-- Product management
-- Product create/update
-- Product filtering/sorting
-- Product activation/deactivation
-
----
-
-## Full Project Tests
-
-Run all project tests:
-
-```bash
-turbo all:test
-```
-
----
-
-# Build Project
+Build verification:
 
 ```bash
 turbo build
 ```
 
----
+## Deployment
 
-# Project Structure
+### Production Stack
+- Vercel
+- Neon PostgreSQL
+- Prisma ORM
 
-```text
-apps/
-  admin/
-  web/
+### Environment Variables
 
-packages/
-  db/
-  env/
-  ui/
-  utils/
+`DATABASE_URL`  
+`NEXTAUTH_SECRET`  
+`JWT_SECRET`  
+`PASSWORD`  
+`NEXTAUTH_URL`  
+`SKIP_ENV_VALIDATION`
 
-tests/
-  playwright/
-```
+### Deployment URLs
 
----
+Storefront:
+`To be added after deployment`
 
-# Notes
+Admin:
+`To be added after deployment`
 
-- Iteration 1 currently uses frontend/localStorage persistence
-- Iteration 2 will integrate Neon PostgreSQL with Prisma
-- Customer and admin applications share synchronized product state
-- The project uses a Turborepo monorepo architecture
+## Screenshots
+
+### Customer Storefront
+
+### Product Details
+
+### Checkout
+
+### Customer Order History
+
+### Admin Dashboard
+
+### Admin Product Management
+
+### Admin Customer Orders
