@@ -1,5 +1,5 @@
 export async function seedTestData() {
-  const { seed } = await import("@repo/db/seed");
+  const { seedForTests } = await import("../../../packages/db/src/seed.ts");
 
-  await seed();
+  await seedForTests();
 }

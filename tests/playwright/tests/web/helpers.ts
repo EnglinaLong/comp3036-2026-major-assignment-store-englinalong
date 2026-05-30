@@ -100,6 +100,8 @@ export async function registerOrLoginCustomer(
     intent?: "checkout";
   },
 ) {
+  // This helper can hit the live register endpoint and create a real user.
+  // Keep it out of read-only Playwright coverage that runs against shared Neon.
   const loginSucceeded = await loginCustomer(page, customer, {
     returnTo: options?.intent === "checkout" ? options.returnTo : "/account",
     intent: options?.intent,

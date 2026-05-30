@@ -42,7 +42,8 @@ export async function seed() {
 }
 
 export async function seedForTests() {
-  console.log("Seeding safe store test data");
+  // Keep Playwright seeding product-only so local runs against Neon do not
+  // recreate customer accounts, orders, or order items.
   await seed();
 }
 
