@@ -67,7 +67,7 @@ test.describe("FULL STACK STORE ADMIN PRODUCT FILTERS", () => {
   );
 
   test(
-    "Admin date added filter only matches full MMDDYYYY values",
+    "Admin date added filter progressively matches MMDDYYYY prefixes",
     {
       tag: "@a2",
     },
@@ -78,9 +78,21 @@ test.describe("FULL STACK STORE ADMIN PRODUCT FILTERS", () => {
 
       await dateFilter.fill("05");
       await expect(dateFilter).toHaveValue("05");
-      await expect(userPage.locator("article").first()).toBeVisible();
+      await expect(productCard(userPage, "Docker Deployment Toolkit")).toBeVisible();
+      await expect(
+        productCard(userPage, "Cloud Deployment Starter Pack"),
+      ).toBeVisible();
+      await expect(productCard(userPage, "Backend Starter Toolkit")).not.toBeVisible();
+
+      await dateFilter.fill("0514");
+      await expect(dateFilter).toHaveValue("0514");
+      await expect(productCard(userPage, "Docker Deployment Toolkit")).toBeVisible();
+      await expect(
+        productCard(userPage, "Frontend Performance Toolkit"),
+      ).not.toBeVisible();
 
       await dateFilter.fill("05142026");
+      await expect(dateFilter).toHaveValue("05142026");
       await expect(productCard(userPage, "Docker Deployment Toolkit")).toBeVisible();
       await expect(
         productCard(userPage, "Cloud Deployment Starter Pack"),

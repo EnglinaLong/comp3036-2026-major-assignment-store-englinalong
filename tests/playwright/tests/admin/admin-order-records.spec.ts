@@ -47,7 +47,7 @@ test.describe("FULL STACK STORE ADMIN ORDER RECORDS", () => {
       await expect(
         firstOrderCard.getByText(/^(Paid|Processing|Shipped|Cancelled)$/),
       ).toBeVisible();
-      await expect(firstOrderCard.getByText(/Qty \d+/)).toBeVisible();
+      await expect(firstOrderCard.getByText(/Qty \d+/).first()).toBeVisible();
     },
   );
 });

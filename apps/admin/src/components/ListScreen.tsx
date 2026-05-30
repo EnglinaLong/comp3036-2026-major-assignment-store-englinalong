@@ -137,13 +137,13 @@ export function ListScreen({
       }
 
       if (dateFilter) {
-        const searchTerm = dateFilter.trim();
+        const searchTerm = dateFilter.replace(/\D/g, "");
 
-        if (!/^\d{8}$/.test(searchTerm)) {
-          return false;
+        if (!searchTerm) {
+          return true;
         }
 
-        if (formatDateAsMmddyyyy(new Date(post.date)) !== searchTerm) {
+        if (!formatDateAsMmddyyyy(new Date(post.date)).startsWith(searchTerm)) {
           return false;
         }
       }
