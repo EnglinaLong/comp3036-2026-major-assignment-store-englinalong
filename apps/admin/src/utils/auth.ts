@@ -10,8 +10,11 @@ export async function isLoggedIn() {
     return false;
   }
 
-  // Keep Assignment 2 fake-cookie auth working for older Playwright tests.
-  if (token === "123" || token === "authenticated") {
+  // Keep the legacy fake-cookie bypass available for local Playwright runs only.
+  if (
+    process.env.NODE_ENV !== "production" &&
+    (token === "123" || token === "authenticated")
+  ) {
     return true;
   }
 
