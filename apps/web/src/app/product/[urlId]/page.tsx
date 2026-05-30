@@ -6,6 +6,9 @@ import {
 } from "@/app/posts";
 import { ProductRouteClient } from "./ProductRouteClient";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function Page({
   params,
 }: {

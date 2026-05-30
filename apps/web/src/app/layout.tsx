@@ -19,6 +19,8 @@ export const metadata: Metadata = {
   title: "Full-Stack Store",
   description: "Modern storefront for developer products and toolkits",
 };
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function RootLayout({
   children,
