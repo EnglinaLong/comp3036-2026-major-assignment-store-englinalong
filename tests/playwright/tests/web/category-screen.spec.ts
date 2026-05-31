@@ -1,6 +1,10 @@
 import { seedTestData } from "../dbSeed";
 import { expect, test } from "./fixtures";
-import { featuredProductsSection, resetStorefrontState } from "./helpers";
+import {
+  featuredProductCard,
+  featuredProductsSection,
+  resetStorefrontState,
+} from "./helpers";
 
 test.describe("FULL STACK STORE CATEGORIES", () => {
   test.beforeEach(async ({ page }) => {
@@ -16,8 +20,29 @@ test.describe("FULL STACK STORE CATEGORIES", () => {
     async ({ page }) => {
       await page.goto("/");
       const featuredProducts = featuredProductsSection(page);
+      const categorySummary = featuredProducts
+        .locator("p.text-sm.font-medium:visible")
+        .filter({ hasText: /^Showing / });
+      const backendToolkitCard = featuredProductCard(
+        page,
+        "Backend Starter Toolkit",
+      );
+      const reactStorefrontCard = featuredProductCard(
+        page,
+        "React Storefront UI Kit",
+      );
+      const dockerToolkitCard = featuredProductCard(
+        page,
+        "Docker Deployment Toolkit",
+      );
+      const mobileResponsiveCard = featuredProductCard(
+        page,
+        "Mobile Responsive Design Pack",
+      );
       await expect(
-        featuredProducts.getByText("Backend Starter Toolkit"),
+        backendToolkitCard.locator("a").filter({
+          hasText: "Backend Starter Toolkit",
+        }),
       ).toBeVisible();
 
       await page
@@ -25,48 +50,38 @@ test.describe("FULL STACK STORE CATEGORIES", () => {
         .getByRole("button", { name: /React/ })
         .click();
       await expect(page).toHaveURL(/\/\?category=react#featured-products$/);
-      await expect(page.getByText("Showing React products")).toBeVisible();
-      await expect(
-        featuredProducts.getByText("React Storefront UI Kit"),
-      ).toBeVisible();
-      await expect(
-        featuredProducts.getByText("Docker Deployment Toolkit"),
-      ).not.toBeVisible();
+      await expect(categorySummary).toHaveText("Showing React products");
+      await expect(reactStorefrontCard).toBeVisible();
+      await expect(dockerToolkitCard).not.toBeVisible();
 
       await page.reload();
       await expect(page).toHaveURL(/\/\?category=react#featured-products$/);
-      await expect(page.getByText("Showing React products")).toBeVisible();
+      await expect(categorySummary).toHaveText("Showing React products");
 
       await page.getByRole("button", { name: "Clear filters" }).click();
       await expect(page).toHaveURL("http://localhost:3001/");
-      await expect(page.getByText("Showing all products")).toBeVisible();
+      await expect(categorySummary).toHaveText("Showing all products");
 
       await page
         .locator("#shop-by-category")
         .getByRole("button", { name: /DevOps/ })
         .click();
       await expect(page).toHaveURL(/\/\?category=devops#featured-products$/);
-      await expect(page.getByText("Showing DevOps products")).toBeVisible();
-      await expect(
-        featuredProducts.getByText("Docker Deployment Toolkit"),
-      ).toBeVisible();
-      await expect(
-        featuredProducts.getByText("React Storefront UI Kit"),
-      ).not.toBeVisible();
+      await expect(categorySummary).toHaveText("Showing DevOps products");
+      await expect(dockerToolkitCard).toBeVisible();
+      await expect(reactStorefrontCard).not.toBeVisible();
 
       await page.getByRole("button", { name: "Clear filters" }).click();
-      await expect(page.getByText("Showing all products")).toBeVisible();
+      await expect(categorySummary).toHaveText("Showing all products");
 
       await page
         .locator("#shop-by-category")
         .getByRole("button", { name: /Responsive Design/ })
         .click();
-      await expect(
-        page.getByText("Showing Responsive Design products"),
-      ).toBeVisible();
-      await expect(
-        featuredProducts.getByText("Mobile Responsive Design Pack"),
-      ).toBeVisible();
+      await expect(categorySummary).toHaveText(
+        "Showing Responsive Design products",
+      );
+      await expect(mobileResponsiveCard).toBeVisible();
     },
   );
 });

@@ -111,6 +111,10 @@ export async function GET(request: NextRequest) {
   const orders = await client.db.order.findMany({
     where: {
       userId: user.id,
+      email: {
+        equals: user.email,
+        mode: "insensitive",
+      },
     },
     orderBy: [
       {

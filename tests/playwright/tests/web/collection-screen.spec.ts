@@ -16,15 +16,18 @@ test.describe("FULL STACK STORE COLLECTIONS", () => {
     async ({ page }) => {
       await page.goto("/");
       const featuredProducts = featuredProductsSection(page);
+      const collectionSummary = featuredProducts
+        .locator("p:visible")
+        .filter({ hasText: "Showing products tagged:" });
 
       await page
         .locator("#collections")
         .getByRole("button", { name: /Front-End/ })
         .click();
       await expect(page).toHaveURL(/\/\?collection=front-end#featured-products$/);
-      await expect(
-        page.getByText("Showing products tagged: Front-End"),
-      ).toBeVisible();
+      await expect(collectionSummary).toHaveText(
+        "Showing products tagged: Front-End",
+      );
       await expect(featuredProducts.getByTestId("product-card-2")).toBeVisible();
       await expect(
         featuredProducts.getByTestId("product-card-4"),
@@ -32,9 +35,9 @@ test.describe("FULL STACK STORE COLLECTIONS", () => {
 
       await page.reload();
       await expect(page).toHaveURL(/\/\?collection=front-end#featured-products$/);
-      await expect(
-        page.getByText("Showing products tagged: Front-End"),
-      ).toBeVisible();
+      await expect(collectionSummary).toHaveText(
+        "Showing products tagged: Front-End",
+      );
 
       await page.getByRole("button", { name: "Clear filters" }).click();
       await page
@@ -42,9 +45,9 @@ test.describe("FULL STACK STORE COLLECTIONS", () => {
         .getByRole("button", { name: /Docker/ })
         .click();
       await expect(page).toHaveURL(/\/\?collection=docker#featured-products$/);
-      await expect(
-        page.getByText("Showing products tagged: Docker"),
-      ).toBeVisible();
+      await expect(collectionSummary).toHaveText(
+        "Showing products tagged: Docker",
+      );
       await expect(featuredProducts.getByTestId("product-card-4")).toBeVisible();
       await expect(
         featuredProducts.getByTestId("product-card-2"),
@@ -59,9 +62,9 @@ test.describe("FULL STACK STORE COLLECTIONS", () => {
         .getByRole("button", { name: /Mobile/ })
         .click();
       await expect(page).toHaveURL(/\/\?collection=mobile#featured-products$/);
-      await expect(
-        page.getByText("Showing products tagged: Mobile"),
-      ).toBeVisible();
+      await expect(collectionSummary).toHaveText(
+        "Showing products tagged: Mobile",
+      );
       await expect(featuredProducts.getByTestId("product-card-15")).toBeVisible();
     },
   );

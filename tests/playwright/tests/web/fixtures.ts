@@ -1,12 +1,16 @@
 import "dotenv/config";
 
-import { type BrowserContext } from "@playwright/test";
+import { test as base, type BrowserContext } from "@playwright/test";
+import { restoreSeededProductState } from "../dbSeed";
 // Placeholder for future storefront-specific browser options.
 export async function seedData(...options: any[]) {
   void options;
 }
 
 type AppOptions = {};
+type MyFixtures = {
+  dbSeedCleanup: void;
+};
 
 export function createOptions(options: Partial<AppOptions>) {
   return JSON.stringify({});
@@ -26,3 +30,12 @@ export async function setOptions(
 }
 
 export * from "@playwright/test";
+export const test = base.extend<MyFixtures>({
+  dbSeedCleanup: [
+    async ({}, use) => {
+      await use();
+      await restoreSeededProductState();
+    },
+    { auto: true },
+  ],
+});

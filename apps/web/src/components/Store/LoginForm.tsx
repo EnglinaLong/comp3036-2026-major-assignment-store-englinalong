@@ -20,7 +20,7 @@ export function LoginForm() {
 
   function navigateTo(target: string) {
     router.refresh();
-    router.replace(target);
+    window.location.assign(target);
   }
 
   useEffect(() => {

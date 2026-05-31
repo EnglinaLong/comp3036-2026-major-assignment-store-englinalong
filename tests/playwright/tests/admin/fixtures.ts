@@ -1,6 +1,7 @@
 import "dotenv/config";
 
 import { test as base, type BrowserContext, type Page } from "@playwright/test";
+import { restoreSeededProductState } from "../dbSeed";
 
 export const e2epassword = "superpassword";
 const sharedProductStateKeys = [
@@ -18,6 +19,7 @@ export async function seedData(...options: any[]) {}
 
 // Declare the types of your fixtures.
 type MyFixtures = {
+  dbSeedCleanup: void;
   // adminPage: Page;
   userPage: Page;
 };
@@ -43,6 +45,13 @@ export async function setOptions(
 
 export * from "@playwright/test";
 export const test = base.extend<MyFixtures>({
+  dbSeedCleanup: [
+    async ({}, use) => {
+      await use();
+      await restoreSeededProductState();
+    },
+    { auto: true },
+  ],
   // adminPage: async ({ browser }, use) => {
   //   const context = await browser.newContext({
   //     storageState: ".auth/admin.json",

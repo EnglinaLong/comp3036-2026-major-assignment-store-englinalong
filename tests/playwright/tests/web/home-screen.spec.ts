@@ -5,6 +5,12 @@ import {
   resetStorefrontState,
 } from "./helpers";
 
+function availableProductsStat(page: Parameters<typeof featuredProductsSection>[0]) {
+  return page
+    .locator("#store-top p")
+    .filter({ hasText: /^Available products$/ });
+}
+
 test.describe("FULL STACK STORE HOME", () => {
   test.beforeEach(async ({ page }) => {
     await resetStorefrontState(page);
@@ -54,7 +60,7 @@ test.describe("FULL STACK STORE HOME", () => {
       await page.getByRole("link", { name: "Collections", exact: true }).click();
       await expect(page).toHaveURL(/#collections$/);
 
-      await expect(page.getByText("Available products")).toBeVisible();
+      await expect(availableProductsStat(page)).toBeVisible();
       await expect(
         page.locator("#store-top").getByText("Categories", { exact: true }),
       ).toBeVisible();
@@ -86,7 +92,7 @@ test.describe("FULL STACK STORE HOME", () => {
         "Mobile Responsive Design Pack",
       );
 
-      await expect(page.getByText("Available products")).toBeVisible();
+      await expect(availableProductsStat(page)).toBeVisible();
       await expect(
         page.getByRole("heading", { name: "Featured Products" }),
       ).toBeVisible();

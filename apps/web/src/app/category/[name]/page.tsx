@@ -2,6 +2,9 @@ import { Main } from "@/components/Main";
 import { categorySlug } from "@/functions/categories";
 import { getProducts } from "@/app/posts";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function Page({
   params,
 }: {

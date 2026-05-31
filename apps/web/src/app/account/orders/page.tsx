@@ -27,6 +27,7 @@ export default async function OrdersPage() {
         },
         select: {
           id: true,
+          email: true,
         },
       })
     : sessionEmail
@@ -39,17 +40,30 @@ export default async function OrdersPage() {
           },
           select: {
             id: true,
+            email: true,
           },
         })
       : null;
 
-  if (!sessionUser) {
+  if (
+    !sessionUser ||
+    (sessionEmail &&
+      normalizeCustomerEmail(sessionUser.email) !== sessionEmail)
+  ) {
     redirect("/account/login?returnTo=%2Faccount%2Forders");
   }
 
   const orders = await client.db.order.findMany({
     where: {
       userId: sessionUser.id,
+      ...(sessionEmail
+        ? {
+            email: {
+              equals: sessionEmail,
+              mode: "insensitive" as const,
+            },
+          }
+        : {}),
     },
     orderBy: [
       {

@@ -1,6 +1,10 @@
 import { seedTestData } from "../dbSeed";
 import { expect, test } from "./fixtures";
-import { productDetail, resetStorefrontState } from "./helpers";
+import {
+  featuredProductCard,
+  productDetail,
+  resetStorefrontState,
+} from "./helpers";
 
 test.describe("FULL STACK STORE PRODUCT DETAILS", () => {
   test.beforeEach(async ({ page }) => {
@@ -55,9 +59,13 @@ test.describe("FULL STACK STORE PRODUCT DETAILS", () => {
     },
     async ({ page }) => {
       await page.goto("/");
-      await expect(page.getByText("Mobile Responsive Design Pack")).toBeVisible();
+      await expect(
+        featuredProductCard(page, "Mobile Responsive Design Pack"),
+      ).toBeVisible();
 
-      const searchInput = page.getByPlaceholder("Search products");
+      const searchInput = page.locator(
+        'input[placeholder="Search products"]:visible',
+      );
       await searchInput.fill("Mobile Responsive");
       await expect(page.getByTestId("product-card-15")).toBeVisible();
 
