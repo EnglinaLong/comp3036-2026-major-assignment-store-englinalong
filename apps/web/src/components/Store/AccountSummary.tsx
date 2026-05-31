@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useCart } from "./CartProvider";
 import { useCustomerAuth } from "./CustomerAuthProvider";
@@ -21,6 +22,7 @@ function formatMemberSinceLabel(value: string | undefined) {
 }
 
 export function AccountSummary() {
+  const router = useRouter();
   const { cartCount, openCart } = useCart();
   const { account, customer, logout } = useCustomerAuth();
   const [wishlistCount, setWishlistCount] = useState(0);
@@ -89,7 +91,11 @@ export function AccountSummary() {
           </Link>
           <button
             type="button"
-            onClick={logout}
+            onClick={async () => {
+              await logout();
+              router.refresh();
+              window.location.assign("/account/login");
+            }}
             className="inline-flex items-center justify-center rounded-full border border-neutral-300 bg-white px-5 py-3 text-sm font-medium text-neutral-700 transition hover:border-neutral-400 hover:text-neutral-950 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:border-neutral-600 dark:hover:text-neutral-50"
           >
             Logout

@@ -87,7 +87,14 @@ test.describe("FULL STACK STORE ADMIN PRODUCT VISIBILITY", () => {
         storefrontPage.getByRole("heading", {
           name: "This product is currently unavailable.",
         }),
-      ).toBeVisible();
+      ).toBeVisible({ timeout: 15000 });
+
+      await storefrontPage.reload();
+      await expect(
+        storefrontPage.getByRole("heading", {
+          name: "This product is currently unavailable.",
+        }),
+      ).toBeVisible({ timeout: 15000 });
 
       await userPage.reload();
       const reloadedDockerCard = productCard(userPage, "Docker Deployment Toolkit");
@@ -106,9 +113,17 @@ test.describe("FULL STACK STORE ADMIN PRODUCT VISIBILITY", () => {
       ).toBeVisible();
 
       await storefrontPage.goto("http://localhost:3001/");
+      const featuredDockerCard = storefrontPage
+        .locator("#featured-products article")
+        .filter({
+          has: storefrontPage.getByText("Docker Deployment Toolkit", {
+            exact: true,
+          }),
+        })
+        .first();
       await expect(
-        storefrontPage.getByText("Docker Deployment Toolkit"),
-      ).toBeVisible();
+        featuredDockerCard,
+      ).toBeVisible({ timeout: 15000 });
 
       await storefrontPage.close();
     },

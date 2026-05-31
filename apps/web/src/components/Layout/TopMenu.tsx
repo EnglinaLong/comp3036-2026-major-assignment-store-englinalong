@@ -107,7 +107,11 @@ export function TopMenu({
                 </Link>
                 <button
                   type="button"
-                  onClick={logout}
+                  onClick={async () => {
+                    await logout();
+                    router.refresh();
+                    window.location.assign("/");
+                  }}
                   className="rounded-full px-4 py-2 transition hover:bg-neutral-100 hover:text-neutral-950 dark:hover:bg-neutral-800 dark:hover:text-neutral-50"
                 >
                   Logout
