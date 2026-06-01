@@ -1,5 +1,6 @@
 # Full Stack Store
 
+This project was originally based on the Assignment 2 blog application and was extended into a B2C full stack digital product store for the COMP3036 Major Assignment.
 ## Project Overview
 
 This project is a full stack digital product storefront built for COMP3036 Full Stack Development.
@@ -12,6 +13,14 @@ It includes:
 Iteration 1 focused on frontend functionality.
 
 Iteration 2 added backend and database functionality.
+
+## Documentation
+
+### API Documentation
+
+Detailed API documentation is available here:
+
+- [API_DOCUMENTATION.md](./API_DOCUMENTATION.md)
 
 ## Iteration Summary
 
@@ -199,23 +208,8 @@ turbo build
 ### Deployment URLs
 
 Storefront:
-`To be added after deployment`
+https://comp3036-2026-major-assignment-store-englinalong-raflq4e44.vercel.app/
 
 Admin:
-`To be added after deployment`
+https://comp3036-2026-major-assignment-store-englinalong-ap8bu6j37.vercel.app/
 
-## Screenshots
-
-### Customer Storefront
-
-### Product Details
-
-### Checkout
-
-### Customer Order History
-
-### Admin Dashboard
-
-### Admin Product Management
-
-### Admin Customer Orders
