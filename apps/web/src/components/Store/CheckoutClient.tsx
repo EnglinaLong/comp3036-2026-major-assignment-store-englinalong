@@ -13,9 +13,6 @@ import type { CustomerOrder } from "@/lib/orders";
 type CheckoutFormState = {
   fullName: string;
   email: string;
-  address: string;
-  city: string;
-  postalCode: string;
   cardholderName: string;
   cardNumber: string;
   expiryDate: string;
@@ -79,9 +76,6 @@ function validateForm(values: CheckoutFormState) {
 
   if (!values.fullName.trim()) errors.fullName = "Enter your full name.";
   if (!values.email.trim()) errors.email = "Enter your email.";
-  if (!values.address.trim()) errors.address = "Enter your address.";
-  if (!values.city.trim()) errors.city = "Enter your city.";
-  if (!values.postalCode.trim()) errors.postalCode = "Enter your postal code.";
   if (!values.cardholderName.trim()) {
     errors.cardholderName = "Enter the cardholder name.";
   }
@@ -116,9 +110,6 @@ export function CheckoutClient() {
   const [formState, setFormState] = useState<CheckoutFormState>({
     fullName: "",
     email: "",
-    address: "",
-    city: "",
-    postalCode: "",
     cardholderName: "",
     cardNumber: "",
     expiryDate: "",
@@ -344,7 +335,7 @@ export function CheckoutClient() {
       <div className="space-y-6">
         <section className="rounded-[28px] border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-neutral-950 sm:p-7">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[color:var(--color-wsu)]">
-            Shipping Information
+            Customer Information
           </p>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             <Field
@@ -360,29 +351,8 @@ export function CheckoutClient() {
               type="email"
               value={formState.email}
               error={errors.email}
-              onChange={(value) => updateField("email", value)}
-            />
-            <Field
-              id="checkout-address"
-              label="Address"
-              value={formState.address}
-              error={errors.address}
               className="md:col-span-2"
-              onChange={(value) => updateField("address", value)}
-            />
-            <Field
-              id="checkout-city"
-              label="City"
-              value={formState.city}
-              error={errors.city}
-              onChange={(value) => updateField("city", value)}
-            />
-            <Field
-              id="checkout-postal-code"
-              label="Postal Code"
-              value={formState.postalCode}
-              error={errors.postalCode}
-              onChange={(value) => updateField("postalCode", value)}
+              onChange={(value) => updateField("email", value)}
             />
           </div>
         </section>
