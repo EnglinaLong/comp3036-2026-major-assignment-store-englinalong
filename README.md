@@ -1,6 +1,7 @@
 # Full Stack Store
 
 This project was originally based on the Assignment 2 blog application and was extended into a B2C full stack digital product store for the COMP3036 Major Assignment.
+
 ## Project Overview
 
 This project is a full stack digital product storefront built for COMP3036 Full Stack Development.
@@ -68,7 +69,6 @@ Integrated Prisma and PostgreSQL, added authentication, order persistence, produ
 - Remove products from cart
 - Customer registration
 - Customer login/logout
-- Protected checkout
 - Mock payment checkout
 - Purchase history
 - Wishlist functionality
@@ -139,51 +139,93 @@ Integrated Prisma and PostgreSQL, added authentication, order persistence, produ
 
 ## Running Locally
 
-Installation:
+Follow these steps in order to set up the project from scratch.
+
+### 1. Prerequisites
+
+- Node.js 20+
+- PNPM
+
+Install PNPM globally if it is not already installed:
+
+```bash
+npm install -g pnpm
+```
+
+### 2. Clone the Repository
+
+```bash
+git clone https://github.com/EnglinaLong/comp3036-2026-major-assignment-store-englinalong.git
+cd comp3036-2026-major-assignment-store-englinalong
+```
+
+### 3. Install Dependencies
 
 ```bash
 pnpm install
 ```
 
-Generate Prisma client:
+## Database Setup
+
+This project uses Neon PostgreSQL with Prisma ORM. The Prisma schema is located at `packages/db/prisma/schema.prisma`, and both the storefront and admin applications use the same PostgreSQL database.
+
+The easiest setup approach is to create a root `.env` file in the repository directory so all apps and packages can read the same environment variables.
+
+### 4. Configure Environment Variables
+
+Create a `.env` file in the project root with the following values:
+
+```env
+DATABASE_URL="postgresql://neondb_owner:npg_I3vDLaN7Qmjs@ep-red-voice-a7ncmq9h-pooler.ap-southeast-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+```
+
+### 5. Generate Prisma Client
 
 ```bash
 pnpm --filter @repo/db db:generate
 ```
 
-Push database schema:
+### 6. Push the Prisma Schema to Neon
 
 ```bash
 pnpm --filter @repo/db db:push
 ```
 
-Start development servers:
+### 7. Seed the Database
+
+```bash
+pnpm --filter @repo/db db:seed
+```
+
+The seed command creates demo products, demo users, demo orders, and demo order items for marking and demonstration.
+
+### 8. Start the Applications
 
 ```bash
 turbo dev
 ```
 
-Storefront:
+Storefront URL:
 `http://localhost:3001`
 
-Admin:
+Admin URL:
 `http://localhost:3002`
 
 ## Testing
 
-Storefront tests:
+Run storefront Playwright tests:
 
 ```bash
 turbo test-1
 ```
 
-Admin tests:
+Run admin Playwright tests:
 
 ```bash
 turbo test-2
 ```
 
-Build verification:
+Build the project:
 
 ```bash
 turbo build
@@ -195,15 +237,6 @@ turbo build
 - Vercel
 - Neon PostgreSQL
 - Prisma ORM
-
-### Environment Variables
-
-`DATABASE_URL`  
-`NEXTAUTH_SECRET`  
-`JWT_SECRET`  
-`PASSWORD`  
-`NEXTAUTH_URL`  
-`SKIP_ENV_VALIDATION`
 
 ### Deployment URLs
 

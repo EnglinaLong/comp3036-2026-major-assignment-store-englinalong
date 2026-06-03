@@ -1,6 +1,3 @@
-import { client } from "@repo/db/client";
-import { products } from "@repo/db/data";
-
 type SeededProductSnapshot = {
   active: boolean;
   category: string;
@@ -19,7 +16,20 @@ type SeededProductSnapshot = {
 
 let seededProductSnapshots = new Map<string, SeededProductSnapshot>();
 
+async function getDbModules() {
+  const [{ client }, { products }] = await Promise.all([
+    import("../../../packages/db/src/client.ts"),
+    import("../../../packages/db/src/data.ts"),
+  ]);
+
+  return {
+    client,
+    products,
+  };
+}
+
 export async function seedTestData() {
+  const { client, products } = await getDbModules();
   const seededUrlIds = products.map((product) => product.urlId);
 
   const existingSeededProducts = await client.db.product.findMany({
@@ -58,6 +68,8 @@ export async function restoreSeededProductState() {
   if (seededProductSnapshots.size === 0) {
     return;
   }
+
+  const { client } = await getDbModules();
 
   const snapshots = Array.from(seededProductSnapshots.values());
   seededProductSnapshots = new Map();

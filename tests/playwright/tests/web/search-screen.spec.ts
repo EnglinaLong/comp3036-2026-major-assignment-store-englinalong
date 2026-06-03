@@ -72,9 +72,6 @@ test.describe("FULL STACK STORE SEARCH", () => {
         page,
         "Mobile Responsive Design Pack",
       );
-      const storeHighlights = page
-        .locator("section")
-        .filter({ has: page.getByText("Store highlights") });
 
       await searchInput.click();
       await expect(searchInput).toBeFocused();
@@ -100,7 +97,6 @@ test.describe("FULL STACK STORE SEARCH", () => {
       await expect(frontendPerformanceCard).toBeVisible();
       await expect(reactEcommerceCard).toBeVisible();
       await expect(backendToolkitCard).not.toBeVisible();
-      await expect(storeHighlights).not.toBeVisible();
 
       await searchInput.fill("toolkit");
       await expect(page).toHaveURL(/\/\?q=toolkit#featured-products$/);
@@ -128,7 +124,6 @@ test.describe("FULL STACK STORE SEARCH", () => {
       await expect(searchSummary).toHaveText("Showing results for: containerised");
       await expect(dockerToolkitCard).toBeVisible();
       await expect(backendToolkitCard).not.toBeVisible();
-      await expect(storeHighlights).not.toBeVisible();
 
       await searchInput.fill("Back-End");
       await expect(searchSummary).toHaveText("Showing results for: Back-End");
@@ -151,7 +146,6 @@ test.describe("FULL STACK STORE SEARCH", () => {
         "Showing results for: zzzz-store-search",
       );
       await expect(emptySearchState).toBeVisible();
-      await expect(storeHighlights).not.toBeVisible();
 
       await page.reload();
       await expect(page.getByRole("heading", { name: "Search Results" })).toBeVisible();
@@ -168,7 +162,6 @@ test.describe("FULL STACK STORE SEARCH", () => {
       await expect(page.getByText("Showing all products")).toBeVisible();
       await expect(backendToolkitCard).toBeVisible();
       await expect(dockerToolkitCard).toBeVisible();
-      await expect(storeHighlights).toBeVisible();
     },
   );
 });

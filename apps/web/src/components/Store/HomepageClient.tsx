@@ -336,7 +336,6 @@ export function HomepageClient({
       </div>
 
       <StoreHomepage
-        posts={activeProducts}
         availableProductCount={activeProducts.length}
         filteredPosts={filteredPosts}
         searchQuery={deferredSearchQuery}

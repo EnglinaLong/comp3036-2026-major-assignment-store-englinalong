@@ -57,6 +57,21 @@ test.describe("FULL STACK STORE COLLECTIONS", () => {
       await expect(page).toHaveURL("http://localhost:3001/");
       await expect(page.getByText("Showing all products")).toBeVisible();
 
+      const backEndButton = page
+        .locator("#collections")
+        .getByRole("button", { name: /Back-End/ });
+      await backEndButton.click();
+      await expect(page).toHaveURL(/\/\?collection=back-end#featured-products$/);
+      await expect(collectionSummary).toHaveText(
+        "Showing products tagged: Back-End",
+      );
+      await expect(backEndButton).toHaveClass(
+        /bg-\[color:var\(--color-wsu\)\]\/10/,
+      );
+      await expect(featuredProducts.getByTestId("product-card-1")).toBeVisible();
+      await expect(featuredProducts.getByTestId("product-card-2")).not.toBeVisible();
+
+      await page.getByRole("button", { name: "Clear filters" }).click();
       await page
         .locator("#collections")
         .getByRole("button", { name: /Mobile/ })
