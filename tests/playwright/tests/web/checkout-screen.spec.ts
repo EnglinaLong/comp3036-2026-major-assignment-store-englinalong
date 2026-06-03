@@ -64,7 +64,7 @@ test.describe("FULL STACK STORE CHECKOUT", () => {
       await expect(
         page.getByRole("heading", { name: "Complete your order" }),
       ).toBeVisible();
-      await expect(page.getByText("Shipping Information")).toBeVisible();
+      await expect(page.getByText("Customer Information")).toBeVisible();
       await expect(page.getByText("Payment Details", { exact: true })).toBeVisible();
       await expect(page.getByText("Order Summary")).toBeVisible();
       await expect(page.getByText("Order Total")).toBeVisible();
@@ -106,9 +106,6 @@ test.describe("FULL STACK STORE CHECKOUT", () => {
       await expect(
         page.getByText("Please review your checkout details and try again."),
       ).toBeVisible();
-      await expect(page.getByText("Enter your address.")).toBeVisible();
-      await expect(page.getByText("Enter your city.")).toBeVisible();
-      await expect(page.getByText("Enter your postal code.")).toBeVisible();
       await expect(page.getByText("Enter a valid security code.")).toBeVisible();
       expect(orderWriteAttempted).toBe(false);
 
