@@ -1,8 +1,6 @@
 "use client";
 
-import Link from "next/link";
 import type { Post } from "@repo/db/data";
-import { getProductHref } from "@/functions/productHref";
 import {
   normalizeCategoryValue,
   normalizeSearchValue,
@@ -27,7 +25,6 @@ const months = [
 ];
 
 export function StoreHomepage({
-  posts,
   availableProductCount,
   filteredPosts,
   searchQuery,
@@ -45,7 +42,6 @@ export function StoreHomepage({
   collectionItems,
   historyItems,
 }: {
-  posts: Post[];
   availableProductCount: number;
   filteredPosts: Post[];
   searchQuery: string;
@@ -68,13 +64,7 @@ export function StoreHomepage({
   const hasCategoryFilter = Boolean(selectedCategoryLabel);
   const hasCollectionFilter = Boolean(selectedCollectionLabel);
   const hasHistoryFilter = Boolean(selectedHistoryLabel);
-  const hasActiveHomepageFilter =
-    hasSearchQuery ||
-    hasCategoryFilter ||
-    hasCollectionFilter ||
-    hasHistoryFilter;
   const visibleProductCount = filteredPosts.length;
-  const spotlightItems = posts.slice(0, 3);
 
   const filterStatusText = hasSearchQuery
     ? `Showing results for: ${searchQuery.trim()}`
@@ -115,7 +105,7 @@ export function StoreHomepage({
         <div className="bg-[color:var(--color-wsu)]/10 absolute -right-24 top-12 h-64 w-64 rounded-full blur-3xl" />
         <div className="absolute bottom-0 left-1/2 h-40 w-40 -translate-x-1/2 rounded-full bg-amber-200/40 blur-3xl" />
 
-        <div className="relative grid gap-8 xl:grid-cols-[1.1fr_0.9fr] xl:items-center">
+        <div className="relative grid gap-8 xl:grid-cols-1">
           <div className="space-y-6">
             <span className="inline-flex rounded-full border border-black/10 bg-white/80 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-neutral-600 dark:border-white/10 dark:bg-neutral-900/70 dark:text-neutral-300">
               Full Stack Store
@@ -145,10 +135,8 @@ export function StoreHomepage({
                 Browse Categories
               </a>
             </div>
-          </div>
 
-          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-1">
-            <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-3">
               <div className="rounded-[24px] bg-white/85 p-5 shadow-sm ring-1 ring-black/5 dark:bg-neutral-900/80 dark:ring-white/10">
                 <p className="text-sm text-neutral-500 dark:text-neutral-400">
                   Available products
@@ -174,30 +162,6 @@ export function StoreHomepage({
                 </p>
               </div>
             </div>
-
-            {!hasSearchQuery ? (
-              <div className="rounded-[28px] border border-white/70 bg-white/80 p-5 shadow-sm backdrop-blur dark:border-white/10 dark:bg-neutral-900/70">
-                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[color:var(--color-wsu)]">
-                  Store highlights
-                </p>
-                <div className="mt-4 grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-                  {spotlightItems.map((item) => (
-                    <Link
-                      key={`spotlight-product-${item.urlId}`}
-                      href={getProductHref(item)}
-                      className="rounded-[20px] border border-black/5 bg-white/90 p-4 transition hover:-translate-y-1 hover:shadow-md dark:border-white/10 dark:bg-neutral-950/90"
-                    >
-                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500 dark:text-neutral-400">
-                        {item.category}
-                      </p>
-                      <p className="mt-2 line-clamp-2 text-base font-semibold text-neutral-950 dark:text-neutral-50">
-                        {item.title}
-                      </p>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            ) : null}
           </div>
         </div>
       </section>
