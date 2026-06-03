@@ -108,8 +108,25 @@ test.describe("FULL STACK STORE ADMIN PRODUCT VISIBILITY", () => {
       await reloadedDockerCard
         .getByRole("button", { name: "Inactive", exact: true })
         .click();
+      await userPage.waitForResponse(
+        (response) =>
+          response.url().includes("/api/posts/") &&
+          response.url().includes("/active") &&
+          response.request().method() === "PATCH" &&
+          response.ok(),
+      );
+
+      await userPage.reload();
+      await waitForAdminProductList(userPage);
+      const reactivatedDockerCard = productCard(
+        userPage,
+        "Docker Deployment Toolkit",
+      );
       await expect(
-        reloadedDockerCard.getByRole("button", { name: "Active", exact: true }),
+        reactivatedDockerCard.getByRole("button", {
+          name: "Active",
+          exact: true,
+        }),
       ).toBeVisible();
 
       await storefrontPage.goto("http://localhost:3001/");

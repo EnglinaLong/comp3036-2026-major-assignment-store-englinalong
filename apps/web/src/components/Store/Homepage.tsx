@@ -3,6 +3,10 @@
 import Link from "next/link";
 import type { Post } from "@repo/db/data";
 import { getProductHref } from "@/functions/productHref";
+import {
+  normalizeCategoryValue,
+  normalizeSearchValue,
+} from "@/functions/storefrontSearch";
 import { SummaryItem } from "@/components/Menu/SummaryItem";
 import ProductCard from "./ProductCard";
 
@@ -214,32 +218,32 @@ export function StoreHomepage({
           </p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           {categoryItems.map((item) => {
             const isSelected =
-              selectedCategory === item.name.trim().toLowerCase();
+              selectedCategory === normalizeCategoryValue(item.name);
 
             return (
             <button
               key={item.name}
               type="button"
               onClick={() => onCategorySelect(item.name)}
-              className={`group rounded-[24px] border bg-white p-5 text-left shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.10)] dark:bg-neutral-900 dark:shadow-[0_18px_40px_rgba(0,0,0,0.30)] ${
+              className={`group rounded-[20px] border bg-white px-4 py-3.5 text-left shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.10)] dark:bg-neutral-900 dark:shadow-[0_18px_40px_rgba(0,0,0,0.30)] ${
                 isSelected
                   ? "border-[color:var(--color-wsu)] bg-[color:var(--color-wsu)]/5 shadow-[0_18px_40px_rgba(152,30,50,0.12)] dark:border-[color:var(--color-wsu)] dark:bg-[color:var(--color-wsu)]/10"
                   : "border-black/10 hover:border-[color:var(--color-wsu)]/20 dark:border-white/10"
               }`}
             >
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500 dark:text-neutral-400">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-neutral-500 dark:text-neutral-400">
                 Category
               </p>
-              <p className="mt-3 text-2xl font-semibold text-neutral-950 transition group-hover:text-[color:var(--color-wsu)] dark:text-neutral-50">
+              <p className="mt-2 text-xl font-semibold leading-tight text-neutral-950 transition group-hover:text-[color:var(--color-wsu)] dark:text-neutral-50">
                 {item.name}
               </p>
-              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">
+              <p className="mt-1.5 text-sm text-neutral-600 dark:text-neutral-300">
                 {item.count} products available
               </p>
-              <p className="mt-4 text-sm font-medium text-[color:var(--color-wsu)]">
+              <p className="mt-3 text-sm font-medium text-[color:var(--color-wsu)]">
                 {isSelected ? "Category selected" : "Shop category"}
               </p>
             </button>
@@ -271,7 +275,7 @@ export function StoreHomepage({
           <div className="flex flex-wrap gap-3">
             {collectionItems.map((item) => {
               const isSelected =
-                selectedCollection === item.name.trim().toLowerCase();
+                selectedCollection === normalizeSearchValue(item.name);
 
               return (
               <button
