@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AuthBrandCard } from "./AuthBrandCard";
 import { useCustomerAuth } from "./CustomerAuthProvider";
 
@@ -14,6 +14,7 @@ export function RegisterForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const returnTo = searchParams.get("returnTo") || "/account";
   const intent = searchParams.get("intent");
@@ -22,6 +23,15 @@ export function RegisterForm() {
     router.refresh();
     window.location.assign(target);
   }
+
+  useEffect(() => {
+    if (!hasHydrated || customer) {
+      return;
+    }
+
+    setError(null);
+    setIsSubmitting(false);
+  }, [customer, hasHydrated]);
 
   if (!hasHydrated) {
     return (
@@ -64,6 +74,8 @@ export function RegisterForm() {
         className="space-y-5"
         onSubmit={async (event) => {
           event.preventDefault();
+          setError(null);
+          setIsSubmitting(true);
 
           const result = await register({
             name,
@@ -73,10 +85,10 @@ export function RegisterForm() {
 
           if (!result.ok) {
             setError(result.error);
+            setIsSubmitting(false);
             return;
           }
 
-          setError(null);
           navigateTo(intent === "checkout" ? returnTo : "/account");
         }}
       >
@@ -92,7 +104,12 @@ export function RegisterForm() {
             name="name"
             autoComplete="name"
             value={name}
-            onChange={(event) => setName(event.target.value)}
+            onChange={(event) => {
+              setName(event.target.value);
+              if (error) {
+                setError(null);
+              }
+            }}
             className="w-full rounded-[20px] border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-[color:var(--color-wsu)] focus:bg-white dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:bg-neutral-950"
           />
         </div>
@@ -110,7 +127,12 @@ export function RegisterForm() {
             type="email"
             autoComplete="email"
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              if (error) {
+                setError(null);
+              }
+            }}
             className="w-full rounded-[20px] border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-[color:var(--color-wsu)] focus:bg-white dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:bg-neutral-950"
           />
         </div>
@@ -128,7 +150,12 @@ export function RegisterForm() {
             type="password"
             autoComplete="new-password"
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={(event) => {
+              setPassword(event.target.value);
+              if (error) {
+                setError(null);
+              }
+            }}
             className="w-full rounded-[20px] border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-[color:var(--color-wsu)] focus:bg-white dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:bg-neutral-950"
           />
         </div>
@@ -141,9 +168,10 @@ export function RegisterForm() {
 
         <button
           type="submit"
+          disabled={isSubmitting}
           className="inline-flex items-center justify-center rounded-full bg-[color:var(--color-wsu)] px-5 py-3 font-medium text-white transition hover:bg-[color:var(--color-wsu-light)]"
         >
-          Create Account
+          {isSubmitting ? "Creating Account..." : "Create Account"}
         </button>
       </form>
 

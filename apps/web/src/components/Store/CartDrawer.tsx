@@ -19,7 +19,7 @@ export default function CartDrawer() {
     increaseQuantity,
     decreaseQuantity,
   } = useCart();
-  const { customer } = useCustomerAuth();
+  const { customer, hasHydrated } = useCustomerAuth();
   const router = useRouter();
   const hasAvailableItems = availableCartCount > 0;
   const canCheckout = hasAvailableItems && !hasStockIssues;
@@ -42,6 +42,10 @@ export default function CartDrawer() {
 
   function handleCheckout() {
     if (!canCheckout) {
+      return;
+    }
+
+    if (!hasHydrated) {
       return;
     }
 
@@ -213,6 +217,8 @@ export default function CartDrawer() {
               <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
                 {!hasAvailableItems
                   ? "No available products to checkout."
+                  : !hasHydrated
+                    ? "Checking your account before checkout."
                   : hasStockIssues
                     ? "Reduce quantities to match available stock before checkout."
                   : customer
@@ -228,20 +234,11 @@ export default function CartDrawer() {
                 <button
                   type="button"
                   onClick={handleCheckout}
-                  disabled={!canCheckout}
+                  disabled={!canCheckout || !hasHydrated}
                   className="inline-flex items-center justify-center rounded-full bg-[color:var(--color-wsu)] px-5 py-3 font-medium text-white transition hover:bg-[color:var(--color-wsu-light)] disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   Proceed to Checkout
                 </button>
-                {!customer ? (
-                  <Link
-                    href="/account/login"
-                    onClick={closeCart}
-                    className="inline-flex items-center justify-center rounded-full border border-neutral-300 bg-white px-5 py-3 text-sm font-medium text-neutral-700 transition hover:border-neutral-400 hover:text-neutral-950 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:border-neutral-600 dark:hover:text-neutral-50"
-                  >
-                    Login First
-                  </Link>
-                ) : null}
               </div>
             </div>
           </>

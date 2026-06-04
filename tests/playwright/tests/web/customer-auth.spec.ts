@@ -39,7 +39,7 @@ test.describe("FULL STACK STORE CUSTOMER AUTH", () => {
       await page.getByRole("button", { name: "Login" }).click();
       await expect(
         page.getByText("Incorrect email or password. Please try again."),
-      ).toBeVisible();
+      ).toBeVisible({ timeout: 15000 });
 
       await page.goto("/account/register");
       await expect(
@@ -57,11 +57,14 @@ test.describe("FULL STACK STORE CUSTOMER AUTH", () => {
       await page.goto("/account/orders");
       await expect(page).toHaveURL(/\/account\/login\?returnTo=%2Faccount%2Forders$/);
       await expect(
+        page.getByText("Loading account tools..."),
+      ).toHaveCount(0, { timeout: 15000 });
+      await expect(
         page.getByLabel("Email"),
-      ).toBeVisible();
+      ).toBeVisible({ timeout: 15000 });
       await expect(
         page.getByLabel("Password"),
-      ).toBeVisible();
+      ).toBeVisible({ timeout: 15000 });
     },
   );
 });

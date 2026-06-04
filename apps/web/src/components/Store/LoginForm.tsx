@@ -1,13 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AuthBrandCard } from "./AuthBrandCard";
 import { useCustomerAuth } from "./CustomerAuthProvider";
 
 export function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { customer, hasHydrated, login } = useCustomerAuth();
   const [email, setEmail] = useState("");
@@ -17,11 +16,6 @@ export function LoginForm() {
   const returnTo = searchParams.get("returnTo") || "/";
   const intent = searchParams.get("intent");
   const needsCheckout = intent === "checkout";
-
-  function navigateTo(target: string) {
-    router.refresh();
-    window.location.assign(target);
-  }
 
   useEffect(() => {
     if (!hasHydrated || customer) {
@@ -75,6 +69,7 @@ export function LoginForm() {
         autoComplete="off"
         onSubmit={async (event) => {
           event.preventDefault();
+          setError(null);
 
           const result = await login({
             email,
@@ -87,7 +82,6 @@ export function LoginForm() {
           }
 
           setError(null);
-          navigateTo(needsCheckout ? returnTo : "/account");
         }}
       >
         {needsCheckout ? (
@@ -109,7 +103,12 @@ export function LoginForm() {
             type="email"
             autoComplete="off"
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              if (error) {
+                setError(null);
+              }
+            }}
             className="w-full rounded-[20px] border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-[color:var(--color-wsu)] focus:bg-white dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:bg-neutral-950"
           />
         </div>
@@ -127,7 +126,12 @@ export function LoginForm() {
             type="password"
             autoComplete="new-password"
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={(event) => {
+              setPassword(event.target.value);
+              if (error) {
+                setError(null);
+              }
+            }}
             className="w-full rounded-[20px] border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-[color:var(--color-wsu)] focus:bg-white dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:bg-neutral-950"
           />
         </div>
