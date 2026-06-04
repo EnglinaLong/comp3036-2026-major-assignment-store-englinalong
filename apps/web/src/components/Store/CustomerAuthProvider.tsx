@@ -249,19 +249,15 @@ export function CustomerAuthProvider({ children }: PropsWithChildren) {
         password,
       });
 
-      if (!loginResult || loginResult.error) {
-        return {
-          ok: false,
-          error: "Your account was created, but we could not sign you in.",
-        };
-      }
-
       const nextCustomer = await waitForSessionCustomer();
 
       if (!nextCustomer) {
         return {
           ok: false,
-          error: "Your account was created, but we could not confirm your session.",
+          error:
+            !loginResult || loginResult.error
+              ? "Your account was created, but we could not sign you in."
+              : "Your account was created, but we could not confirm your session.",
         };
       }
 

@@ -19,6 +19,7 @@ export default defineWorkspace([
     },
     resolve: {
       alias: {
+        "@": path.resolve(__dirname, "src"),
         // Adjust the path as needed based on your project structure
         "next/link": path.resolve(__dirname, "src/mocks/link"),
       },

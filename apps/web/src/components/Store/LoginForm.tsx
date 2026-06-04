@@ -75,6 +75,7 @@ export function LoginForm() {
         autoComplete="off"
         onSubmit={async (event) => {
           event.preventDefault();
+          setError(null);
 
           const result = await login({
             email,
@@ -109,7 +110,12 @@ export function LoginForm() {
             type="email"
             autoComplete="off"
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              if (error) {
+                setError(null);
+              }
+            }}
             className="w-full rounded-[20px] border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-[color:var(--color-wsu)] focus:bg-white dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:bg-neutral-950"
           />
         </div>
@@ -127,7 +133,12 @@ export function LoginForm() {
             type="password"
             autoComplete="new-password"
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={(event) => {
+              setPassword(event.target.value);
+              if (error) {
+                setError(null);
+              }
+            }}
             className="w-full rounded-[20px] border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-[color:var(--color-wsu)] focus:bg-white dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:bg-neutral-950"
           />
         </div>
