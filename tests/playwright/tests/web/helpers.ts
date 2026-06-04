@@ -25,6 +25,12 @@ function getLoginErrorMessage(page: Page) {
   return page.getByText("Incorrect email or password. Please try again.");
 }
 
+function getSignedInDestination(page: Page, returnTo?: string) {
+  return returnTo && returnTo !== "/account"
+    ? page.getByRole("link", { name: "Continue Shopping" })
+    : page.getByRole("link", { name: "View Account" });
+}
+
 export async function resetStorefrontState(page: Page) {
   await page.context().clearCookies();
   await page.goto("/");
@@ -71,12 +77,7 @@ export async function loginCustomer(
   }
 
   if (await getAlreadySignedInMessage(page).isVisible().catch(() => false)) {
-    const signedInDestination =
-      options?.returnTo && options.returnTo !== "/account"
-        ? page.getByRole("link", { name: "Continue Shopping" })
-        : page.getByRole("link", { name: "View Account" });
-
-    await signedInDestination.click();
+    await getSignedInDestination(page, options?.returnTo).click();
     return true;
   }
 
@@ -85,7 +86,8 @@ export async function loginCustomer(
   await page.getByRole("button", { name: "Login" }).click();
 
   try {
-    await page.waitForURL(/\/(account|checkout)(\?|$)/, { timeout: 5000 });
+    await getAlreadySignedInMessage(page).waitFor({ state: "visible", timeout: 5000 });
+    await getSignedInDestination(page, options?.returnTo).click();
     return true;
   } catch {
     return !(await getLoginErrorMessage(page).isVisible().catch(() => false));

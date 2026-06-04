@@ -24,7 +24,7 @@ function formatMemberSinceLabel(value: string | undefined) {
 export function AccountSummary() {
   const router = useRouter();
   const { cartCount, openCart } = useCart();
-  const { account, customer, logout } = useCustomerAuth();
+  const { account, customer, hasHydrated, logout } = useCustomerAuth();
   const [wishlistCount, setWishlistCount] = useState(0);
   const memberSinceLabel = formatMemberSinceLabel(account?.createdAt);
 
@@ -35,6 +35,20 @@ export function AccountSummary() {
       setWishlistCount(readCustomerWishlist().length);
     });
   }, []);
+
+  if (!hasHydrated) {
+    return (
+      <div className="rounded-[24px] border border-black/10 bg-neutral-50 p-5 dark:border-white/10 dark:bg-neutral-900">
+        <p className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">
+          Checking your account...
+        </p>
+        <div className="mt-5 space-y-3">
+          <div className="h-12 animate-pulse rounded-full bg-neutral-200 dark:bg-neutral-800" />
+          <div className="h-12 animate-pulse rounded-full bg-neutral-200 dark:bg-neutral-800" />
+        </div>
+      </div>
+    );
+  }
 
   if (!customer) {
     return (

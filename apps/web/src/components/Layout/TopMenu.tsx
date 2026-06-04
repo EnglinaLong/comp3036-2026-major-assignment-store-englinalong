@@ -30,7 +30,7 @@ export function TopMenu({
   const router = useRouter();
   const [search, setSearch] = useState(query ?? "");
   const { cartCount, openCart } = useCart();
-  const { customer, logout } = useCustomerAuth();
+  const { customer, hasHydrated, logout } = useCustomerAuth();
   const isControlled = typeof searchValue === "string";
   const inputValue = isControlled ? searchValue : search;
 
@@ -97,7 +97,12 @@ export function TopMenu({
             >
               Collections
             </Link>
-            {customer ? (
+            {!hasHydrated ? (
+              <div aria-hidden="true" className="flex items-center gap-2">
+                <span className="h-10 w-20 animate-pulse rounded-full bg-neutral-200 dark:bg-neutral-800" />
+                <span className="h-10 w-28 animate-pulse rounded-full bg-neutral-200 dark:bg-neutral-800" />
+              </div>
+            ) : customer ? (
               <>
                 <Link
                   href="/account"
@@ -165,7 +170,12 @@ export function TopMenu({
             />
           </form>
 
-          {customer ? (
+          {!hasHydrated ? (
+            <div
+              aria-hidden="true"
+              className="h-[54px] w-full rounded-[24px] border border-black/10 bg-neutral-100/80 px-4 py-3 md:w-56 dark:border-white/10 dark:bg-neutral-900"
+            />
+          ) : customer ? (
             <Link
               href="/account"
               className="rounded-[24px] border border-[color:var(--color-wsu)]/15 bg-[color:var(--color-wsu)]/5 px-4 py-3 text-sm text-neutral-700 transition hover:border-[color:var(--color-wsu)]/30 hover:bg-[color:var(--color-wsu)]/10 dark:text-neutral-200"

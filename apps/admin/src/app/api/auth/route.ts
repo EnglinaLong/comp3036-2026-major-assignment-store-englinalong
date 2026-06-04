@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     }
 
     const token = jwt.sign({ authenticated: true }, env.JWT_SECRET || "", {
-      expiresIn: "10m",
+      expiresIn: "60m",
     });
 
     const response = NextResponse.json({ success: true });
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: 60 * 10,
+      maxAge: 60 * 60,
     });
 
     return response;

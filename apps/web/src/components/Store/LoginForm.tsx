@@ -1,13 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AuthBrandCard } from "./AuthBrandCard";
 import { useCustomerAuth } from "./CustomerAuthProvider";
 
 export function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { customer, hasHydrated, login } = useCustomerAuth();
   const [email, setEmail] = useState("");
@@ -17,11 +16,6 @@ export function LoginForm() {
   const returnTo = searchParams.get("returnTo") || "/";
   const intent = searchParams.get("intent");
   const needsCheckout = intent === "checkout";
-
-  function navigateTo(target: string) {
-    router.refresh();
-    window.location.assign(target);
-  }
 
   useEffect(() => {
     if (!hasHydrated || customer) {
@@ -88,7 +82,6 @@ export function LoginForm() {
           }
 
           setError(null);
-          navigateTo(needsCheckout ? returnTo : "/account");
         }}
       >
         {needsCheckout ? (

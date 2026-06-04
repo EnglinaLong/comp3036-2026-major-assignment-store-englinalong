@@ -6,60 +6,9 @@ import ProductDetailView from "@/components/Store/ProductDetailView";
 import { slugifyTitle } from "@/functions/productHref";
 import { getStorefrontCollectionHref } from "@/functions/storefrontNavigation";
 import { useMergedStorefrontPosts } from "@/functions/storefrontPosts";
-import { normalizeTag } from "@/functions/tags";
-
-function getNormalizedTags(value: string) {
-  return value
-    .split(",")
-    .map((tag) => normalizeTag(tag))
-    .filter(Boolean);
-}
-
-function getRelatedProducts(products: Post[], currentProduct: Post) {
-  const currentTags = new Set(getNormalizedTags(currentProduct.tags));
-
-  const rankedMatches = products
-    .filter((product) => product.id !== currentProduct.id)
-    .map((product) => {
-      const productTags = getNormalizedTags(product.tags);
-      const sharedTags = productTags.filter((tag) =>
-        currentTags.has(tag),
-      ).length;
-      const sameCategory = product.category === currentProduct.category ? 1 : 0;
-      const score = sameCategory * 3 + sharedTags * 2;
-
-      return { product, score };
-    })
-    .sort((a, b) => {
-      if (b.score !== a.score) return b.score - a.score;
-      if (a.product.urlId !== b.product.urlId) {
-        return a.product.urlId.localeCompare(b.product.urlId);
-      }
-      return a.product.id - b.product.id;
-    });
-
-  const matched = rankedMatches
-    .filter((item) => item.score > 0)
-    .map((item) => item.product);
-  const fallback = rankedMatches
-    .filter((item) => item.score === 0)
-    .map((item) => item.product);
-
-  return [...matched, ...fallback].slice(0, 3);
-}
 
 function matchesProductRoute(post: Pick<Post, "title" | "urlId">, urlId: string) {
   return post.urlId === urlId || slugifyTitle(post.title) === urlId;
-}
-
-function sortProductsDeterministically(products: Post[]) {
-  return [...products].sort((a, b) => {
-    if (a.urlId !== b.urlId) {
-      return a.urlId.localeCompare(b.urlId);
-    }
-
-    return a.id - b.id;
-  });
 }
 
 function mergeProductByIdentity(baseProduct: Post, products: Post[]) {
@@ -133,18 +82,6 @@ export function ProductRouteClient({
     );
   }, [initialPost, initialProducts, urlId]);
 
-  const serverRelatedProducts = useMemo(() => {
-    if (!serverProduct?.active) {
-      return [];
-    }
-
-    const activeProducts = sortProductsDeterministically(
-      initialProducts.filter((product) => product.active),
-    );
-
-    return getRelatedProducts(activeProducts, serverProduct);
-  }, [initialProducts, serverProduct]);
-
   useEffect(() => {
     setHydrated(true);
   }, []);
@@ -162,39 +99,6 @@ export function ProductRouteClient({
 
     return mergedProducts.find((product) => matchesProductRoute(product, urlId)) ?? null;
   }, [hydrated, mergedProducts, serverProduct, urlId]);
-
-  const relatedProducts = useMemo(() => {
-    if (!matchedProduct?.active) {
-      return [];
-    }
-
-    if (!hydrated) {
-      return serverRelatedProducts;
-    }
-
-    if (serverProduct) {
-      return serverRelatedProducts
-        .map((product) => mergeProductByIdentity(product, mergedProducts))
-        .filter(
-          (product, index, products) =>
-            product.active &&
-            product.urlId !== matchedProduct.urlId &&
-            products.findIndex((item) => item.urlId === product.urlId) === index,
-        );
-    }
-
-    const activeProducts = sortProductsDeterministically(
-      mergedProducts.filter((product) => product.active),
-    );
-
-    return getRelatedProducts(activeProducts, matchedProduct);
-  }, [
-    hydrated,
-    matchedProduct,
-    mergedProducts,
-    serverProduct,
-    serverRelatedProducts,
-  ]);
 
   if (!matchedProduct) {
     return <ProductUnavailableState unavailable={false} />;
@@ -218,7 +122,6 @@ export function ProductRouteClient({
     <ProductDetailView
       post={matchedProduct}
       tags={tags}
-      relatedProducts={relatedProducts}
       contentHtml={contentHtml}
       initialSaved={serverProduct?.urlId === matchedProduct.urlId ? initialSaved : false}
     />

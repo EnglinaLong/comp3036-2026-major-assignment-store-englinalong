@@ -13,7 +13,7 @@ test.describe("FULL STACK STORE PRODUCT DETAILS", () => {
   });
 
   test(
-    "Product detail page shows store content, pricing, collections, and related products",
+    "Product detail page shows store content, pricing, and collections",
     {
       tag: "@a1",
     },
@@ -35,17 +35,8 @@ test.describe("FULL STACK STORE PRODUCT DETAILS", () => {
       await expect(productDetail(page, 1).getByText("Collections")).toBeVisible();
       await expect(
         page.getByRole("heading", { name: "You may also like" }),
-      ).toBeVisible();
-
-      const currentUrl = page.url();
-      await page
-        .locator("section")
-        .filter({ has: page.getByRole("heading", { name: "You may also like" }) })
-        .getByRole("link", { name: "View Product" })
-        .first()
-        .click();
-      await expect(page).not.toHaveURL(currentUrl);
-      await expect(page).toHaveURL(/\/product\//);
+      ).toHaveCount(0);
+      await expect(page.getByText("More to explore")).toHaveCount(0);
 
       await page.getByRole("link", { name: "Back to Products" }).click();
       await expect(page).toHaveURL(/#featured-products$/);
