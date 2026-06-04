@@ -241,8 +241,8 @@ turbo build
 ### Deployment URLs
 
 Storefront:
-https://comp3036-2026-major-assignment-store-englinalong-njon5ars3.vercel.app/
+https://comp3036-2026-major-assignment-stor.vercel.app/
 
 Admin:
-https://comp3036-2026-major-assignment-store-englinalong-ap8bu6j37.vercel.app/
+https://comp3036-2026-major-assignment-stor-beta.vercel.app/
 
