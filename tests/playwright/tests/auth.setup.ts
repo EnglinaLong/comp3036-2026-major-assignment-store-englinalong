@@ -37,7 +37,7 @@ setup(
 
 setup(
   "Store admin API authentication flow",
-  { tag: "@a3" },
+  { tag: ["@a2", "@a3"] },
   async ({ playwright }) => {
     const authFile = ".auth/user.json";
 

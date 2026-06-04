@@ -14,6 +14,7 @@ import { getProductViewsLabel } from "@/functions/productStats";
 import {
   isProductWishlisted,
   setProductWishlisted,
+  subscribeToCustomerWishlist,
 } from "@/functions/customerWishlist";
 
 export default function ProductDetailView({
@@ -35,11 +36,13 @@ export default function ProductDetailView({
   const isOutOfStock = displayPost.active && displayPost.stockQuantity <= 0;
 
   function handleSaveToggle() {
-    setSaved((current) => {
-      const next = !current;
-      setProductWishlisted(displayPost.urlId, next);
-      return next;
-    });
+    if (!hydrated) {
+      return;
+    }
+
+    const next = !isProductWishlisted(displayPost.urlId);
+    setProductWishlisted(displayPost.urlId, next);
+    setSaved(next);
   }
 
   useEffect(() => {
@@ -61,7 +64,13 @@ export default function ProductDetailView({
       return;
     }
 
-    setSaved(isProductWishlisted(displayPost.urlId));
+    const syncSavedState = () => {
+      setSaved(isProductWishlisted(displayPost.urlId));
+    };
+
+    syncSavedState();
+
+    return subscribeToCustomerWishlist(syncSavedState);
   }, [displayPost.urlId, hydrated]);
 
   function handleAddToCart() {
@@ -196,8 +205,10 @@ export default function ProductDetailView({
               data-testid="save-product-button"
               data-test-id="save-product-button"
               onClick={handleSaveToggle}
+              disabled={!hydrated}
               aria-pressed={saved}
-              className="inline-flex items-center justify-center rounded-full border border-neutral-300 bg-white px-5 py-3 font-medium text-neutral-900 transition hover:border-neutral-400 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100 dark:hover:border-neutral-600 dark:hover:bg-neutral-900"
+              data-wishlist-ready={hydrated ? "true" : "false"}
+              className="inline-flex items-center justify-center rounded-full border border-neutral-300 bg-white px-5 py-3 font-medium text-neutral-900 transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-wait disabled:opacity-60 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100 dark:hover:border-neutral-600 dark:hover:bg-neutral-900"
             >
               {saved ? "Saved to Wishlist" : "Save to Wishlist"}
             </button>

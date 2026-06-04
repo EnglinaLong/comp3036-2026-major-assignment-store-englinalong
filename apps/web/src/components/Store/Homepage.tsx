@@ -136,8 +136,14 @@ export function StoreHomepage({
               </a>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="rounded-[24px] bg-white/85 p-5 shadow-sm ring-1 ring-black/5 dark:bg-neutral-900/80 dark:ring-white/10">
+            <div
+              data-testid="homepage-hero-stats"
+              className="grid gap-4 sm:grid-cols-3"
+            >
+              <div
+                data-testid="homepage-available-products-stat"
+                className="rounded-[24px] bg-white/85 p-5 shadow-sm ring-1 ring-black/5 dark:bg-neutral-900/80 dark:ring-white/10"
+              >
                 <p className="text-sm text-neutral-500 dark:text-neutral-400">
                   Available products
                 </p>

@@ -7,8 +7,17 @@ import {
 
 function availableProductsStat(page: Parameters<typeof featuredProductsSection>[0]) {
   return page
-    .locator("#store-top p")
-    .filter({ hasText: /^Available products$/ });
+    .locator("#store-top div")
+    .filter({
+      has: page.getByText("Available products", { exact: true }),
+    })
+    .filter({
+      has: page.getByText("Categories", { exact: true }),
+    })
+    .filter({
+      has: page.getByText("Collections", { exact: true }),
+    })
+    .first();
 }
 
 test.describe("FULL STACK STORE HOME", () => {
@@ -62,6 +71,11 @@ test.describe("FULL STACK STORE HOME", () => {
 
       await expect(availableProductsStat(page)).toBeVisible();
       await expect(
+        availableProductsStat(page).getByText("Available products", {
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(
         page.locator("#store-top").getByText("Categories", { exact: true }),
       ).toBeVisible();
       await expect(
@@ -93,6 +107,11 @@ test.describe("FULL STACK STORE HOME", () => {
       );
 
       await expect(availableProductsStat(page)).toBeVisible();
+      await expect(
+        availableProductsStat(page).getByText("Available products", {
+          exact: true,
+        }),
+      ).toBeVisible();
       await expect(
         page.getByRole("heading", { name: "Featured Products" }),
       ).toBeVisible();
